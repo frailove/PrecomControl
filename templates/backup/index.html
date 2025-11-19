@@ -1,0 +1,269 @@
+﻿{% extends "base_industrial.html" %}
+
+{% block title %}备份与同步管理 - 预试车管理系统{% endblock %}
+
+{% block extra_styles %}
+.backup-hero {
+    background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,64,175,0.85));
+    border-radius: 16px;
+    padding: 2rem;
+    color: white;
+    border: 2px solid rgba(255,255,255,0.12);
+    box-shadow: 0 25px 50px rgba(15,23,42,0.35);
+}
+.backup-hero .badge {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+}
+.action-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.action-card .icon-pill {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+}
+.industrial-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+.industrial-panel h5 {
+    font-weight: 800;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.spec-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+.spec-list li {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed rgba(15,23,42,0.08);
+    padding: 0.4rem 0;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.spec-list li span {
+    color: var(--text-primary);
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid px-0">
+        <div class="backup-hero">
+            <div class="d-flex justify-content-between flex-wrap gap-3">
+                <div>
+                    <span class="badge bg-warning text-dark fw-bold">DATA SAFETY</span>
+                    <h1 class="display-6 fw-bolder mt-3 mb-2">
+                        <i class="bi bi-database-fill-gear me-2"></i>备份与同步控制台
+                    </h1>
+                    <p class="text-light opacity-75 mb-0">
+                        自动化备份 + 智能同步流水线，确保导入/恢复可控、可追溯。
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="info-tag">
+                        <i class="bi bi-hdd-network"></i>
+                        最近备份：{{ backups_last_time if backups_last_time else '暂无记录' }}
+                    </div>
+                    <div class="info-tag">
+                        <i class="bi bi-clock-history"></i>
+                        最近同步：{{ sync_last_time if sync_last_time else '暂无记录' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-0 mt-4">
+    <div class="row g-3">
+        <div class="col-xl-4 col-md-6">
+            <div class="action-card">
+                <div class="icon-pill bg-primary text-white">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <h4 class="fw-bold mb-0">备份管理</h4>
+                <p class="text-muted mb-2">生成、查看、恢复全量备份，保障数据安全</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('backup.backup_list') }}" class="btn btn-outline-primary btn-sm px-3">
+                        <i class="bi bi-list-ul me-1"></i>历史记录
+                    </a>
+                    <button class="btn btn-primary btn-sm px-3" onclick="createBackup()">
+                        <i class="bi bi-save2 me-1"></i>立即备份
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="action-card">
+                <div class="icon-pill bg-success text-white">
+                    <i class="bi bi-arrow-repeat"></i>
+                </div>
+                <h4 class="fw-bold mb-0">同步流水线</h4>
+                <p class="text-muted mb-2">焊口导入后的系统/子系统/试压包自动同步</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('backup.sync_logs') }}" class="btn btn-outline-success btn-sm px-3">
+                        <i class="bi bi-clock-history me-1"></i>日志
+                    </a>
+                    <button class="btn btn-success btn-sm px-3" onclick="runSync()">
+                        <i class="bi bi-lightning-charge me-1"></i>执行同步
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="action-card">
+                <div class="icon-pill bg-info text-white">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h4 class="fw-bold mb-0">数据统计</h4>
+                <p class="text-muted mb-2">清理归档、资源占用与趋势一目了然</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('backup.statistics') }}" class="btn btn-outline-info btn-sm px-3">
+                        <i class="bi bi-bar-chart me-1"></i>进入看板
+                    </a>
+                    <button class="btn btn-info text-dark btn-sm px-3" onclick="cleanPreview()">
+                        <i class="bi bi-broom me-1"></i>清理预览
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-xl-6">
+            <div class="industrial-panel h-100">
+                <h5 class="mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>快捷操作</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <button class="btn btn-lg btn-outline-primary w-100" onclick="createBackup()">
+                            <i class="bi bi-cloud-arrow-down me-2"></i>生成全量备份
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-lg btn-outline-success w-100" onclick="runSync()">
+                            <i class="bi bi-diagram-3 me-2"></i>触发同步流水线
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-secondary w-100" onclick="window.location.href='{{ url_for('backup.backup_list') }}'">
+                            <i class="bi bi-hdd-stack me-2"></i>查看更多备份
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-warning w-100" onclick="window.location.href='{{ url_for('backup.statistics') }}'">
+                            <i class="bi bi-exclamation-triangle me-2"></i>数据清理中心
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="industrial-panel h-100">
+                <h5 class="mb-3"><i class="bi bi-info-circle-fill text-primary me-2"></i>策略说明</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6 class="text-uppercase text-muted fw-bold small">备份策略</h6>
+                        <ul class="spec-list">
+                            <li><span>自动备份</span><small>导入前自动执行</small></li>
+                            <li><span>手动备份</span><small>任意时间创建</small></li>
+                            <li><span>保留策略</span><small>最近 30 天 / 10 份</small></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-uppercase text-muted fw-bold small">同步机制</h6>
+                        <ul class="spec-list">
+                            <li><span>增量清理</span><small>保留必要历史</small></li>
+                            <li><span>联动同步</span><small>系统/子系统/试压包</small></li>
+                            <li><span>人工维护</span><small>避免遗漏冲突</small></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmAction(message) {
+    return confirm(message);
+}
+
+function createBackup() {
+    if (!confirmAction('确定要创建备份吗？可能需要几分钟时间。')) {
+        return;
+    }
+    const description = prompt('请输入备份说明（可选）:', '手动备份 - ' + new Date().toLocaleString('zh-CN'));
+    if (description === null) return;
+    alert('正在创建备份，请稍候...');
+
+    fetch('/backup/api/create-backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description })
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = '/backup/list';
+        } else {
+            alert('备份失败: ' + data.message);
+        }
+    })
+    .catch(error => alert('备份失败: ' + error));
+}
+
+function runSync() {
+    if (!confirmAction('确定要执行数据同步吗？')) {
+        return;
+    }
+    alert('正在同步数据，请稍候...');
+    fetch('/backup/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = '/backup/sync-logs';
+        } else {
+            alert('同步失败: ' + data.message);
+        }
+    })
+    .catch(error => alert('同步失败: ' + error));
+}
+
+function cleanPreview() {
+    if (!confirmAction('将跳转到统计页面并加载可清理数据，继续吗？')) return;
+    window.location.href = '{{ url_for("backup.statistics") }}';
+}
+</script>
+{% endblock %}

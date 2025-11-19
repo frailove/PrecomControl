@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}预试车管理系统{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        /* ==================== 工业化配色方案 ==================== */
+        :root {
+            /* 主色调 - 工业深蓝 */
+            --primary-blue: #1e3a8a;
+            --primary-blue-light: #3b82f6;
+            --primary-blue-dark: #1e40af;
+            
+            /* 辅助色 - 钢铁灰 */
+            --steel-gray: #475569;
+            --steel-gray-light: #64748b;
+            --steel-gray-dark: #334155;
+            
+            /* 强调色 - 工业橙 */
+            --industrial-orange: #f97316;
+            --industrial-orange-light: #fb923c;
+            
+            /* 成功/警告/危险 */
+            --success-green: #10b981;
+            --warning-yellow: #f59e0b;
+            --danger-red: #ef4444;
+            
+            /* 背景色 */
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            
+            /* 文字色 */
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+        }
+        
+        /* ==================== 全局样式 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--bg-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        /* ==================== 顶部导航栏 ==================== */
+        .top-navbar {
+            background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-blue) 100%);
+            padding: 0.75rem 0;
+            margin-bottom: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .top-navbar .nav-link {
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            margin: 0 0.25rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .top-navbar .nav-link:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+        
+        .top-navbar .nav-link.active {
+            background: var(--industrial-orange);
+            color: white;
+        }
+        
+        .top-navbar .dropdown-toggle::after {
+            margin-left: 0.4rem;
+            vertical-align: 0.15em;
+        }
+        
+        .top-navbar .dropdown-menu {
+            background: white;
+            border: 2px solid var(--primary-blue);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: 0.5rem;
+            padding: 0.5rem 0;
+            min-width: 200px;
+        }
+        
+        .top-navbar .dropdown-item {
+            padding: 0.625rem 1.25rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease;
+        }
+        
+        .top-navbar .dropdown-item:hover {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+        
+        .top-navbar .dropdown-item i {
+            margin-right: 0.5rem;
+            width: 1.25rem;
+            color: var(--industrial-orange);
+        }
+        
+        .top-navbar .dropdown-item:hover i {
+            color: white;
+        }
+        
+        .top-navbar .brand {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-pill {
+            background: rgba(255,255,255,0.12);
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            color: white;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        .top-navbar .brand i {
+            color: var(--industrial-orange);
+            font-size: 1.5rem;
+        }
+        
+        /* ==================== 页面头部 ==================== */
+        .page-header {
+            background: white;
+            padding: 1rem 0;
+            border-bottom: 3px solid var(--industrial-orange);
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .page-header h1 {
+            font-size: 1.625rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary-blue-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .page-header h1 i {
+            color: var(--industrial-orange);
+            font-size: 1.5rem;
+        }
+        
+        .breadcrumb {
+            background: transparent;
+            padding: 0.375rem 0 0 0;
+            margin: 0;
+            font-size: 0.8125rem;
+        }
+        
+        .breadcrumb-item a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: var(--primary-blue);
+        }
+        
+        .breadcrumb-item.active {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        
+        /* ==================== 按钮样式 ==================== */
+        .btn {
+            font-weight: 700;
+            padding: 0.625rem 1.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            font-size: 0.8125rem;
+            letter-spacing: 0.6px;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-blue-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(30, 58, 138, 0.3);
+        }
+        
+        .btn-secondary {
+            background: var(--steel-gray);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--steel-gray-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: var(--success-green);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background: var(--industrial-orange);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #ea580c;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: var(--danger-red);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+        
+        /* ==================== 成功提示 ==================== */
+        .alert {
+            border-radius: 8px;
+            border-left: 5px solid;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            border-left-color: var(--success-green);
+            color: #065f46;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+            border-left-color: var(--danger-red);
+            color: #991b1b;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            border-left-color: var(--warning-yellow);
+            color: #92400e;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            border-left-color: var(--primary-blue-light);
+            color: #1e40af;
+        }
+        
+        .alert i {
+            font-size: 1.25rem;
+            margin-right: 0.75rem;
+        }
+        
+        /* ==================== 表格样式 ==================== */
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: var(--primary-blue-dark);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8125rem;
+            letter-spacing: 0.5px;
+            border: none;
+            padding: 0.875rem 0.75rem;
+        }
+        
+        .table tbody tr {
+            transition: background-color 0.15s ease;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(30, 58, 138, 0.04);
+        }
+        
+        .table tbody td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        /* ==================== 卡片样式 ==================== */
+        .card-industrial {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 1rem;
+        }
+        
+        .card-industrial-header {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 3px solid var(--industrial-orange);
+            background: white;
+        }
+        
+        .card-industrial-header i {
+            font-size: 1.375rem;
+            color: var(--industrial-orange);
+        }
+        
+        .card-industrial-header h5 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--primary-blue-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        
+        .card-industrial-body {
+            padding: 1.25rem;
+        }
+        
+        /* ==================== 状态徽章 ==================== */
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #fbbf24;
+        }
+        
+        .badge-inprogress {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #60a5fa;
+        }
+        
+        .badge-completed {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #34d399;
+        }
+        
+        /* ==================== 信息标签 ==================== */
+        .info-tag {
+            display: inline-flex;
+            align-items: center;
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 2px solid var(--border-color);
+            border-left: 4px solid var(--primary-blue);
+            font-weight: 700;
+            font-size: 0.8125rem;
+            color: var(--text-primary);
+            letter-spacing: 0.3px;
+        }
+        
+        .info-tag i {
+            color: var(--primary-blue);
+            margin-right: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        /* ==================== 表单样式 ==================== */
+        .form-label {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.375rem;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        
+        .form-control,
+        .form-select {
+            border: 2px solid var(--border-color);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--industrial-orange);
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+            background: white;
+            outline: none;
+        }
+        
+        .required::after {
+            content: " *";
+            color: var(--danger-red);
+            font-weight: 900;
+            font-size: 1.1em;
+        }
+        
+        /* ==================== 自定义样式块 ==================== */
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="top-navbar">
+        <div class="container-fluid" style="max-width: 1850px; padding: 0 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="brand">
+                    <i class="bi bi-gear-wide-connected"></i>
+                    <span>预试车管理系统</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex gap-1">
+                        <a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}">
+                            <i class="bi bi-house-door"></i> 首页
+                        </a>
+                        <a href="/systems" class="nav-link {% if active_page == 'systems' %}active{% endif %}">
+                            <i class="bi bi-diagram-3"></i> 系统
+                        </a>
+                        <a href="/subsystems" class="nav-link {% if active_page == 'subsystems' %}active{% endif %}">
+                            <i class="bi bi-bezier2"></i> 子系统
+                        </a>
+                        <a href="/test_packages" class="nav-link {% if active_page == 'test_packages' %}active{% endif %}">
+                            <i class="bi bi-box-seam"></i> 试压包
+                        </a>
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="precomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-clipboard-check"></i> 预试车任务管理
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="precomDropdown">
+                                <li><a class="dropdown-item" href="/precom/manhole"><i class="bi bi-door-open"></i> 人孔检查</a></li>
+                                <li><a class="dropdown-item" href="/precom/motor_solo"><i class="bi bi-lightning-charge-fill"></i> 电机单试</a></li>
+                                <li><a class="dropdown-item" href="/precom/skid_install"><i class="bi bi-hdd-network"></i> 台件安装</a></li>
+                                <li><a class="dropdown-item" href="/precom/loop_test"><i class="bi bi-activity"></i> 回路测试</a></li>
+                                <li><a class="dropdown-item" href="/precom/alignment"><i class="bi bi-arrow-repeat"></i> 最终对中</a></li>
+                                <li><a class="dropdown-item" href="/precom/mrt"><i class="bi bi-diagram-3"></i> MRT 联动测试</a></li>
+                                <li><a class="dropdown-item" href="/precom/function_test"><i class="bi bi-check2-square"></i> Function Test</a></li>
+                            </ul>
+                        </div>
+                        {% if has_permission('backup.manage') %}
+                        <a href="/backup" class="nav-link {% if active_page == 'backup' %}active{% endif %}">
+                            <i class="bi bi-database"></i> 备份
+                        </a>
+                        {% endif %}
+                        {% if has_permission('user.view') %}
+                            <a href="/admin/users" class="nav-link {% if active_page == 'admin_users' %}active{% endif %}">
+                                <i class="bi bi-shield-lock"></i> 账户
+                            </a>
+                        {% else %}
+                            <a href="/profile" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
+                                <i class="bi bi-person-circle"></i> 个人信息
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if current_user %}
+                            <span class="user-pill">
+                                <i class="bi bi-person-badge"></i>
+                                {{ current_user.full_name or current_user.username }}
+                            </span>
+                            <a href="/logout" class="nav-link">
+                                <i class="bi bi-box-arrow-right"></i> 退出
+                            </a>
+                        {% else %}
+                            <a href="/login" class="nav-link">
+                                <i class="bi bi-box-arrow-in-right"></i> 登录
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="container-fluid" style="max-width: 1850px; padding: 0 1.5rem;">
+        {% block content %}{% endblock %}
+        
+        <!-- 底部间距 -->
+        <div style="height: 2rem;"></div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+

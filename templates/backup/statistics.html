@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}数据统计{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-bar-chart"></i> 数据统计</h1>
+        <a href="{{ url_for('backup.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <!-- 软删除记录统计 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-trash"></i> 软删除记录统计</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>表名</th>
+                            <th>总记录数</th>
+                            <th>已删除记录数</th>
+                            <th>删除比例</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for table_name, data in stats.deleted_records.items() %}
+                        <tr>
+                            <td><strong>{{ table_name }}</strong></td>
+                            <td>{{ data.total }}</td>
+                            <td>{{ data.deleted }}</td>
+                            <td>
+                                {% set percent = (data.deleted / data.total * 100) if data.total > 0 else 0 %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar 
+                                        {% if percent < 20 %}bg-success
+                                        {% elif percent < 50 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        style="width: {{ percent }}%;">
+                                        {{ "%.1f" | format(percent) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% set percent = (data.deleted / data.total * 100) if data.total > 0 else 0 %}
+                                {% if percent == 0 %}
+                                <span class="badge bg-success">正常</span>
+                                {% elif percent < 20 %}
+                                <span class="badge bg-info">良好</span>
+                                {% elif percent < 50 %}
+                                <span class="badge bg-warning">需要关注</span>
+                                {% else %}
+                                <span class="badge bg-danger">建议清理</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 孤立记录统计 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-link-45deg"></i> 孤立记录统计</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>表名</th>
+                            <th>孤立记录数</th>
+                            <th>状态</th>
+                            <th>建议</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for table_name, count in stats.orphaned_records.items() %}
+                        <tr>
+                            <td><strong>{{ table_name }}</strong></td>
+                            <td>{{ count }}</td>
+                            <td>
+                                {% if count == 0 %}
+                                <span class="badge bg-success">正常</span>
+                                {% elif count < 10 %}
+                                <span class="badge bg-info">良好</span>
+                                {% elif count < 100 %}
+                                <span class="badge bg-warning">需要清理</span>
+                                {% else %}
+                                <span class="badge bg-danger">严重</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if count > 0 %}
+                                <button class="btn btn-sm btn-outline-warning" onclick="cleanOrphaned()">
+                                    <i class="bi bi-trash"></i> 清理孤立记录
+                                </button>
+                                {% else %}
+                                <span class="text-muted">无需操作</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日志统计 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-journal-text"></i> 日志统计</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">{{ stats.sync_log_count }}</h3>
+                            <p class="mb-0">同步日志</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3 class="text-success">{{ stats.change_log_count }}</h3>
+                            <p class="mb-0">变更日志</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3 class="text-info">{{ stats.backup_count }}</h3>
+                            <p class="mb-0">备份记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据清理操作 -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-broom"></i> 数据清理操作</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> 
+                <strong>注意：</strong>数据清理操作不可逆，请谨慎操作！
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <button class="btn btn-outline-warning w-100" onclick="cleanData(false)">
+                        <i class="bi bi-info-circle"></i> 查看可清理数据（预览）
+                    </button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button class="btn btn-outline-danger w-100" onclick="cleanData(true)">
+                        <i class="bi bi-trash"></i> 永久删除旧数据
+                    </button>
+                </div>
+            </div>
+
+            <hr>
+
+            <h6>清理策略设置</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">保留天数：</label>
+                    <input type="number" class="form-control" id="daysToKeep" value="90" min="30" max="365">
+                    <small class="text-muted">软删除记录保留天数（30-365天）</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function cleanOrphaned() {
+    if (!confirm('确定要清理孤立记录吗？')) {
+        return;
+    }
+
+    fetch('/backup/api/clean-data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            days_to_keep: 0,  // 清理孤立记录不受天数限制
+            permanent_delete: false  // 仅清理孤立记录，不永久删除
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('清理失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('清理失败: ' + error);
+    });
+}
+
+function cleanData(permanentDelete) {
+    const daysToKeep = parseInt(document.getElementById('daysToKeep').value);
+    
+    if (isNaN(daysToKeep) || daysToKeep < 30 || daysToKeep > 365) {
+        alert('保留天数必须在30-365天之间');
+        return;
+    }
+
+    const action = permanentDelete ? '永久删除' : '查看';
+    const message = permanentDelete 
+        ? `确定要永久删除超过 ${daysToKeep} 天的软删除记录吗？\n\n警告：此操作不可恢复！` 
+        : `将查看超过 ${daysToKeep} 天的可清理数据`;
+
+    if (!confirm(message)) {
+        return;
+    }
+
+    fetch('/backup/api/clean-data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            days_to_keep: daysToKeep,
+            permanent_delete: permanentDelete
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            if (permanentDelete) {
+                location.reload();
+            }
+        } else {
+            alert('操作失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('操作失败: ' + error);
+    });
+}
+</script>
+{% endblock %}
+

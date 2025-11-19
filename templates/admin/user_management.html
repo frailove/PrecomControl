@@ -1,0 +1,744 @@
+{% extends 'base_industrial.html' %}
+
+{% block title %}账户管理 - 预试车管理系统{% endblock %}
+
+{% block extra_styles %}
+.industrial-tabs .nav-link {
+    color: var(--text-secondary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+.industrial-tabs .nav-link.active {
+    background: var(--industrial-orange);
+    color: white;
+}
+.table-actions .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+}
+.permission-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(30,58,138,0.08);
+    color: var(--primary-blue-dark);
+    font-size: 0.75rem;
+    margin: 0.1rem;
+}
+{% endblock %}
+
+{% block content %}
+{% set can_manage_users = has_permission('user.manage') %}
+{% set can_manage_roles = has_permission('role.manage') %}
+{% set can_view_audit = has_permission('audit.view') %}
+
+<div class="page-header">
+    <div class="container-fluid px-0">
+        <div class="d-flex justify-content-between align-items-end">
+            <div>
+                <h1><i class="bi bi-people-fill"></i> 系统账户管理</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">首页</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">系统账户</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="info-tag">
+                <i class="bi bi-shield-lock-fill"></i>
+                共 {{ users|length }} 个用户 · {{ roles|length }} 个角色
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card-industrial">
+    <div class="card-industrial-header d-flex justify-content-between">
+        <div class="industrial-tabs">
+            <ul class="nav nav-pills" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-users-btn" data-bs-toggle="pill" data-bs-target="#tab-users" type="button">
+                        <i class="bi bi-people"></i> 用户
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-roles-btn" data-bs-toggle="pill" data-bs-target="#tab-roles" type="button">
+                        <i class="bi bi-diagram-2"></i> 角色
+                    </button>
+                </li>
+                {% if can_view_audit %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-audit-btn" data-bs-toggle="pill" data-bs-target="#tab-audit" type="button">
+                        <i class="bi bi-activity"></i> 审计日志
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            {% if not can_manage_users and not can_manage_roles %}
+                <span class="badge bg-secondary text-uppercase">只读模式</span>
+            {% else %}
+                {% if not can_manage_users %}
+                    <span class="badge bg-secondary text-uppercase">用户只读</span>
+                {% endif %}
+                {% if not can_manage_roles %}
+                    <span class="badge bg-secondary text-uppercase">角色只读</span>
+                {% endif %}
+            {% endif %}
+            {% if can_manage_users %}
+            <button class="btn btn-primary" id="btnAddUser">
+                <i class="bi bi-person-plus"></i> 新增用户
+            </button>
+            {% endif %}
+            {% if can_manage_roles %}
+            <button class="btn btn-secondary" id="btnAddRole">
+                <i class="bi bi-node-plus"></i> 新增角色
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-industrial-body">
+        <div class="tab-content" id="adminTabsContent">
+            <div class="tab-pane fade show active" id="tab-users">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div class="info-tag">
+                        {% if can_manage_users %}
+                            <i class="bi bi-info-circle"></i> 双击行可快速编辑
+                        {% else %}
+                            <i class="bi bi-eye-fill"></i> 当前为只读视图，如需修改请联系系统管理员
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="userSearchInput" placeholder="搜索用户名 / 姓名 / 角色">
+                            <button class="btn btn-outline-primary" type="button" id="btnReloadUsers">刷新</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>最后登录</th>
+                                {% if can_manage_users %}
+                                <th style="width: 180px;">操作</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <!-- JS 动态渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="tab-roles">
+                <div class="row">
+                    <div class="col-lg-7">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>角色</th>
+                                        <th>权限</th>
+                                        {% if can_manage_roles %}
+                                        <th style="width: 120px;">操作</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody id="roleTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="border rounded p-3" style="max-height: 420px; overflow:auto;">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-key"></i> 权限字典</h6>
+                            {% for perm in permissions %}
+                                <div class="mb-2">
+                                    <div class="fw-bold">{{ perm.DisplayName }}</div>
+                                    <div class="text-muted small">{{ perm.PermissionCode }} · {{ perm.Description }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if can_view_audit %}
+            <div class="tab-pane fade" id="tab-audit">
+                <form class="row g-2 mb-3" id="auditFilterForm">
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" name="action">
+                            <option value="">所有操作</option>
+                            {% for code in audit_action_codes %}
+                                <option value="{{ code }}">{{ code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" name="keyword" placeholder="按用户名/目标ID搜索">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" name="limit">
+                            <option value="50">最近 50 条</option>
+                            <option value="100" selected>最近 100 条</option>
+                            <option value="200">最近 200 条</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel"></i> 筛选</button>
+                    </div>
+                </form>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>操作</th>
+                                <th>用户</th>
+                                <th>目标</th>
+                                <th>路径</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if can_manage_users %}
+<!-- 用户 Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form id="userForm">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-gear"></i> <span id="userModalTitle">新增用户</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="userIdInput">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">用户名</label>
+                            <input type="text" class="form-control" name="username" id="usernameInput" autocomplete="off">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">姓名</label>
+                            <input type="text" class="form-control" name="full_name" id="fullNameInput">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">邮箱</label>
+                            <input type="email" class="form-control" name="email" id="emailInput">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">电话</label>
+                            <input type="text" class="form-control" name="phone" id="phoneInput">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">状态</label>
+                            <select class="form-select" name="is_active" id="activeInput">
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">超级管理员</label>
+                            <select class="form-select" name="is_super_admin" id="superAdminInput">
+                                <option value="0">否</option>
+                                <option value="1">是</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">角色分配</label>
+                            <div class="border rounded p-3" style="max-height: 180px; overflow:auto;" id="roleCheckboxGroup">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">模块权限 <small class="text-muted">(可访问的模块，留空则继承角色权限)</small></label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow:auto;" id="moduleCheckboxGroup">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+                        <div class="col-md-12" id="passwordBlock">
+                            <label class="form-label">初始密码</label>
+                            <input type="text" class="form-control" name="password" id="passwordInput" placeholder="留空则系统自动生成">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</div>
+{% endif %}
+
+{% if can_manage_roles %}
+<!-- 角色 Modal -->
+<div class="modal fade" id="roleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form id="roleForm">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-diagram-3"></i> <span id="roleModalTitle">新增角色</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="role_id" id="roleIdInput">
+                    <div class="mb-3">
+                        <label class="form-label required">角色名称</label>
+                        <input type="text" class="form-control" name="role_name" id="roleNameInput">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">角色描述</label>
+                        <textarea class="form-control" rows="2" name="description" id="roleDescInput"></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">权限配置</label>
+                        <div class="border rounded p-3" style="max-height: 260px; overflow:auto;" id="permissionCheckboxGroup">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">模块权限 <small class="text-muted">(可访问的模块)</small></label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow:auto;" id="roleModuleCheckboxGroup">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.canManageUsers = {{ 'true' if can_manage_users else 'false' }};
+window.canManageRoles = {{ 'true' if can_manage_roles else 'false' }};
+const canManageUsers = window.canManageUsers;
+const canManageRoles = window.canManageRoles;
+let usersData = {{ users|tojson }};
+let rolesData = {{ roles|tojson }};
+const PERMISSIONS_INIT = {{ permissions|tojson }};
+const MODULES_INIT = {{ modules|tojson }};
+let auditData = {{ audit_logs|tojson }};
+
+const userTableBody = document.getElementById('userTableBody');
+const roleTableBody = document.getElementById('roleTableBody');
+const auditTableBody = document.getElementById('auditTableBody');
+const userModalEl = document.getElementById('userModal');
+const userModal = userModalEl ? new bootstrap.Modal(userModalEl) : null;
+const roleModalEl = document.getElementById('roleModal');
+const roleModal = roleModalEl ? new bootstrap.Modal(roleModalEl) : null;
+
+function renderUsers(filterText = '') {
+    const keyword = filterText.trim().toLowerCase();
+    const rows = usersData.filter(u => {
+        if (!keyword) return true;
+        return (
+            (u.Username || '').toLowerCase().includes(keyword) ||
+            (u.FullName || '').toLowerCase().includes(keyword) ||
+            (u.RoleNames || '').toLowerCase().includes(keyword)
+        );
+    }).map(u => {
+        const roleDisplay = u.RoleNames || '—';
+        const statusBadge = u.IsActive
+            ? '<span class="badge bg-success">启用</span>'
+            : '<span class="badge bg-secondary">禁用</span>';
+        const superBadge = u.IsSuperAdmin ? '<span class="badge bg-warning text-dark ms-1">Super</span>' : '';
+        let actionCol = '';
+        if (canManageUsers) {
+            actionCol = `
+                <div class="btn-group table-actions">
+                    <button class="btn btn-outline-primary btn-sm" data-action="edit" data-user='${JSON.stringify(u)}'>编辑</button>
+                    <button class="btn btn-outline-warning btn-sm" data-action="reset" data-user='${JSON.stringify(u)}'>重置密码</button>
+                </div>
+            `;
+        }
+        return `
+            <tr data-user='${JSON.stringify(u)}'>
+                <td><strong>${u.Username}</strong>${superBadge}</td>
+                <td>${u.FullName || '-'}</td>
+                <td>${roleDisplay}</td>
+                <td>${statusBadge}</td>
+                <td>${u.LastLoginAt || '未登录'}</td>
+                ${canManageUsers ? `<td>${actionCol}</td>` : ''}
+            </tr>
+        `;
+    }).join('');
+    userTableBody.innerHTML = rows || `<tr><td colspan="${canManageUsers ? 6 : 5}" class="text-center text-muted py-4">暂无用户数据</td></tr>`;
+}
+
+function renderRoles() {
+    const rows = rolesData.map(role => {
+        const chips = (role.PermissionCodes || []).map(code => `<span class="permission-chip">${code}</span>`).join('');
+        let actionCol = '';
+        if (canManageRoles) {
+            actionCol = `
+                <div class="btn-group table-actions">
+                    <button class="btn btn-outline-primary btn-sm" data-role='${JSON.stringify(role)}'>配置</button>
+                </div>`;
+        }
+        return `
+            <tr data-role='${JSON.stringify(role)}'>
+                <td>
+                    <strong>${role.RoleName}</strong>
+                    ${role.IsSystemRole ? '<span class="badge bg-primary ms-1">系统</span>' : ''}
+                    <div class="text-muted small">${role.Description || '—'}</div>
+                </td>
+                <td>${chips || '<span class="text-muted">暂无权限</span>'}</td>
+                ${canManageRoles ? `<td>${actionCol}</td>` : ''}
+            </tr>
+        `;
+    }).join('');
+    roleTableBody.innerHTML = rows || `<tr><td colspan="${canManageRoles ? 3 : 2}" class="text-center text-muted py-4">暂无角色</td></tr>`;
+}
+
+function renderAuditLogs(logs = auditData) {
+    if (!auditTableBody) return;
+    const rows = logs.map(log => `
+        <tr>
+            <td>${log.CreatedAt || '-'}</td>
+            <td><span class="badge bg-dark">${log.ActionCode}</span><div class="small text-muted">${log.ActionName || ''}</div></td>
+            <td>${log.UsernameSnapshot || '-'}</td>
+            <td>${log.TargetType || ''} ${log.TargetID || ''}</td>
+            <td>${log.RequestMethod || ''} ${log.RequestPath || ''}</td>
+            <td>${log.ClientIP || ''}</td>
+        </tr>
+    `).join('');
+    auditTableBody.innerHTML = rows || '<tr><td colspan="6" class="text-center text-muted py-4">暂无日志</td></tr>';
+}
+
+function fillRoleCheckboxes(selected = []) {
+    const container = document.getElementById('roleCheckboxGroup');
+    container.innerHTML = (rolesData || []).map(role => `
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" value="${role.RoleID}" id="role_${role.RoleID}"
+                ${selected.includes(role.RoleID) ? 'checked' : ''}>
+            <label class="form-check-label" for="role_${role.RoleID}">${role.RoleName}</label>
+        </div>
+    `).join('') || '<div class="text-muted">暂无角色，请先创建</div>';
+}
+
+function fillPermissionCheckboxes(selectedCodes = []) {
+    const container = document.getElementById('permissionCheckboxGroup');
+    const group = PERMISSIONS_INIT.map(perm => `
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="${perm.PermissionCode}" id="perm_${perm.PermissionID}"
+                ${selectedCodes.includes(perm.PermissionCode) ? 'checked' : ''}>
+            <label class="form-check-label" for="perm_${perm.PermissionID}">
+                <strong>${perm.DisplayName}</strong> <span class="text-muted">(${perm.PermissionCode})</span>
+                <div class="small text-muted">${perm.Description || ''}</div>
+            </label>
+        </div>
+    `).join('');
+    container.innerHTML = group || '<div class="text-muted">没有可配置的权限</div>';
+}
+
+function fillModuleCheckboxes(selectedModuleIds = []) {
+    const container = document.getElementById('moduleCheckboxGroup');
+    if (!MODULES_INIT || MODULES_INIT.length === 0) {
+        container.innerHTML = '<div class="text-muted">暂无模块</div>';
+        return;
+    }
+    const group = MODULES_INIT.map(module => `
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="${module.ModuleID}" id="module_${module.ModuleID}"
+                ${selectedModuleIds.includes(module.ModuleID) ? 'checked' : ''}>
+            <label class="form-check-label" for="module_${module.ModuleID}">
+                <strong>${module.DisplayName}</strong> <span class="text-muted">(${module.ModuleCode})</span>
+                <div class="small text-muted">${module.Description || ''}</div>
+            </label>
+        </div>
+    `).join('');
+    container.innerHTML = group;
+}
+
+async function loadUserModules(userId) {
+    if (!userId) {
+        fillModuleCheckboxes([]);
+        return;
+    }
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/modules`);
+        const data = await res.json();
+        if (data.success) {
+            fillModuleCheckboxes(data.module_ids || []);
+        }
+    } catch (err) {
+        console.error('加载用户模块权限失败:', err);
+        fillModuleCheckboxes([]);
+    }
+}
+
+async function openUserModal(user = null) {
+    if (!userModal) return;
+    document.getElementById('userForm').reset();
+    document.getElementById('userIdInput').value = user ? user.UserID : '';
+    document.getElementById('usernameInput').value = user ? user.Username : '';
+    document.getElementById('usernameInput').readOnly = !!user;
+    document.getElementById('fullNameInput').value = user ? (user.FullName || '') : '';
+    document.getElementById('emailInput').value = user ? (user.Email || '') : '';
+    document.getElementById('phoneInput').value = user ? (user.Phone || '') : '';
+    document.getElementById('activeInput').value = user ? (user.IsActive ? '1' : '0') : '1';
+    document.getElementById('superAdminInput').value = user ? (user.IsSuperAdmin ? '1' : '0') : '0';
+    document.getElementById('passwordBlock').style.display = user ? 'none' : 'block';
+    document.getElementById('passwordInput').value = '';
+    const selectedRoles = user && user.RoleIDs ? user.RoleIDs : [];
+    fillRoleCheckboxes(selectedRoles);
+    // 加载用户模块权限
+    await loadUserModules(user ? user.UserID : null);
+    document.getElementById('userModalTitle').textContent = user ? `编辑用户 - ${user.Username}` : '新增用户';
+    userModal.show();
+}
+
+async function loadRoleModules(roleId) {
+    if (!roleId) {
+        fillRoleModuleCheckboxes([]);
+        return;
+    }
+    try {
+        const res = await fetch(`/api/admin/roles/${roleId}/modules`);
+        const data = await res.json();
+        if (data.success) {
+            fillRoleModuleCheckboxes(data.module_ids || []);
+        }
+    } catch (err) {
+        console.error('加载角色模块权限失败:', err);
+        fillRoleModuleCheckboxes([]);
+    }
+}
+
+function fillRoleModuleCheckboxes(selectedModuleIds = []) {
+    const container = document.getElementById('roleModuleCheckboxGroup');
+    if (!MODULES_INIT || MODULES_INIT.length === 0) {
+        container.innerHTML = '<div class="text-muted">暂无模块</div>';
+        return;
+    }
+    const group = MODULES_INIT.map(module => `
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="${module.ModuleID}" id="role_module_${module.ModuleID}"
+                ${selectedModuleIds.includes(module.ModuleID) ? 'checked' : ''}>
+            <label class="form-check-label" for="role_module_${module.ModuleID}">
+                <strong>${module.DisplayName}</strong> <span class="text-muted">(${module.ModuleCode})</span>
+                <div class="small text-muted">${module.Description || ''}</div>
+            </label>
+        </div>
+    `).join('');
+    container.innerHTML = group;
+}
+
+async function openRoleModal(role = null) {
+    if (!roleModal) return;
+    document.getElementById('roleForm').reset();
+    document.getElementById('roleIdInput').value = role ? role.RoleID : '';
+    document.getElementById('roleNameInput').value = role ? role.RoleName : '';
+    document.getElementById('roleNameInput').readOnly = !!(role && role.IsSystemRole);
+    document.getElementById('roleDescInput').value = role ? (role.Description || '') : '';
+    fillPermissionCheckboxes(role ? (role.PermissionCodes || []) : []);
+    // 加载角色模块权限
+    await loadRoleModules(role ? role.RoleID : null);
+    document.getElementById('roleModalTitle').textContent = role ? `编辑角色 - ${role.RoleName}` : '新增角色';
+    roleModal.show();
+}
+
+async function reloadUsers() {
+    const res = await fetch('/api/admin/users');
+    const data = await res.json();
+    if (data.success) {
+        usersData = data.data;
+        renderUsers(document.getElementById('userSearchInput').value);
+    }
+}
+
+async function reloadRoles() {
+    const res = await fetch('/api/admin/roles');
+    const data = await res.json();
+    if (data.success) {
+        rolesData = data.data;
+        renderRoles();
+    }
+}
+
+async function reloadAuditLogs(params) {
+    const query = new URLSearchParams(params);
+    const res = await fetch(`/api/admin/audit_logs?${query.toString()}`);
+    const data = await res.json();
+    if (data.success) {
+        auditData = data.data;
+        renderAuditLogs();
+    }
+}
+
+// Event bindings
+document.getElementById('btnAddUser')?.addEventListener('click', () => openUserModal());
+document.getElementById('btnAddRole')?.addEventListener('click', () => openRoleModal());
+document.getElementById('btnReloadUsers')?.addEventListener('click', reloadUsers);
+document.getElementById('userSearchInput')?.addEventListener('input', (e) => renderUsers(e.target.value));
+
+userTableBody.addEventListener('click', (e) => {
+    const button = e.target.closest('button[data-action]');
+    if (!button) return;
+    const user = JSON.parse(button.dataset.user || button.closest('tr').dataset.user);
+    if (button.dataset.action === 'edit') {
+        openUserModal(user);
+    } else if (button.dataset.action === 'reset') {
+        if (confirm(`确认重置 ${user.Username} 的密码？`)) {
+            fetch(`/api/admin/users/${user.UserID}/reset_password`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    alert(`新密码：${data.new_password}`);
+                    reloadUsers();
+                } else {
+                    alert(data.message || '操作失败');
+                }
+            });
+        }
+    }
+});
+
+roleTableBody.addEventListener('click', (e) => {
+    const button = e.target.closest('button[data-role]');
+    if (!button) return;
+    const role = JSON.parse(button.dataset.role || button.closest('tr').dataset.role);
+    openRoleModal(role);
+});
+
+document.getElementById('userForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const userId = document.getElementById('userIdInput').value;
+    const payload = {
+        username: document.getElementById('usernameInput').value.trim(),
+        full_name: document.getElementById('fullNameInput').value,
+        email: document.getElementById('emailInput').value,
+        phone: document.getElementById('phoneInput').value,
+        is_active: document.getElementById('activeInput').value === '1',
+        is_super_admin: document.getElementById('superAdminInput').value === '1',
+        role_ids: Array.from(document.querySelectorAll('#roleCheckboxGroup input:checked')).map(el => Number(el.value))
+    };
+    if (!userId) {
+        payload.password = document.getElementById('passwordInput').value;
+    }
+    const url = userId ? `/api/admin/users/${userId}` : '/api/admin/users';
+    const method = userId ? 'PUT' : 'POST';
+    
+    // 先保存用户基本信息
+    const userRes = await fetch(url, {
+        method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+    const userData = await userRes.json();
+    
+    if (userData.success) {
+        // 保存模块权限（如果有用户ID）
+        const finalUserId = userId || userData.user_id;
+        if (finalUserId) {
+            const moduleIds = Array.from(document.querySelectorAll('#moduleCheckboxGroup input:checked')).map(el => Number(el.value));
+            const moduleRes = await fetch(`/api/admin/users/${finalUserId}/modules`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ module_ids: moduleIds })
+            });
+            const moduleData = await moduleRes.json();
+            if (!moduleData.success) {
+                console.warn('保存模块权限失败:', moduleData.message);
+            }
+        }
+        
+        if (userData.temp_password) {
+            alert(`用户创建成功，初始密码：${userData.temp_password}`);
+        }
+        userModal.hide();
+        reloadUsers();
+    } else {
+        alert(userData.message || '操作失败');
+    }
+});
+
+document.getElementById('roleForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const roleId = document.getElementById('roleIdInput').value;
+    const payload = {
+        role_name: document.getElementById('roleNameInput').value.trim(),
+        description: document.getElementById('roleDescInput').value,
+        permission_codes: Array.from(document.querySelectorAll('#permissionCheckboxGroup input:checked')).map(el => el.value)
+    };
+    const url = roleId ? `/api/admin/roles/${roleId}` : '/api/admin/roles';
+    const method = roleId ? 'PUT' : 'POST';
+    
+    // 先保存角色基本信息
+    const roleRes = await fetch(url, {
+        method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+    const roleData = await roleRes.json();
+    
+    if (roleData.success) {
+        // 保存模块权限（如果有角色ID）
+        const finalRoleId = roleId || roleData.role_id;
+        if (finalRoleId) {
+            const moduleIds = Array.from(document.querySelectorAll('#roleModuleCheckboxGroup input:checked')).map(el => Number(el.value));
+            const moduleRes = await fetch(`/api/admin/roles/${finalRoleId}/modules`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ module_ids: moduleIds })
+            });
+            const moduleData = await moduleRes.json();
+            if (!moduleData.success) {
+                console.warn('保存角色模块权限失败:', moduleData.message);
+            }
+        }
+        
+        if (roleData.role_id) {
+            alert('角色创建成功');
+        }
+        roleModal.hide();
+        reloadRoles();
+    } else {
+        alert(roleData.message || '操作失败');
+    }
+});
+
+document.getElementById('auditFilterForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    reloadAuditLogs({
+        action: formData.get('action') || '',
+        keyword: formData.get('keyword') || '',
+        limit: formData.get('limit') || '100'
+    });
+});
+
+// 初始化渲染
+renderUsers();
+renderRoles();
+renderAuditLogs();
+</script>
+{% endblock %}

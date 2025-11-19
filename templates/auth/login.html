@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统登录 - 预试车管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0f172a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #fff;
+        }
+        .login-card {
+            width: 420px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 16px;
+            padding: 2.25rem;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+        }
+        .login-card h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        .login-card p {
+            color: #cbd5f5;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 0.4px;
+        }
+        .form-label {
+            color: #e2e8f0;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .form-control {
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(226, 232, 240, 0.25);
+            color: #f8fafc;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+        }
+        .form-control:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.25);
+            background: rgba(15, 23, 42, 0.8);
+            color: #fff;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #f97316, #fbbf24);
+            border: none;
+            color: #0f172a;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(249, 115, 22, 0.35);
+        }
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        .alert {
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="mb-4 text-center">
+            <i class="bi bi-shield-lock-fill" style="font-size: 2.5rem; color: #fbbf24;"></i>
+            <h1>系统登录</h1>
+            <p>Pre-commissioning Control Platform</p>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="post" autocomplete="off">
+            <div class="mb-3">
+                <label class="form-label">用户名</label>
+                <input type="text" name="username" class="form-control" value="{{ username or '' }}" autofocus>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">密码</label>
+                <input type="password" name="password" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-login">
+                <i class="bi bi-door-open-fill me-2"></i> 登录
+            </button>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

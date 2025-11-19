@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+myenv/
+venv/
+env/
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+
+# SSL证书（敏感文件，不要提交）
+cert.pem
+key.pem
+*.pem
+
+# 临时文件
+*.log
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 上传的文件
+uploads/*
+!uploads/.gitignore
+!uploads/.gitkeep
+
+# Excel临时文件
+~$*.xlsx
+~$*.xls
+

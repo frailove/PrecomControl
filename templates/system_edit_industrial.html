@@ -1,0 +1,134 @@
+{% extends "base_industrial.html" %}
+
+{% block title %}{{ '添加系统' if mode == 'create' else '编辑系统' }} - 预试车管理系统{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .form-section {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.75rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    .form-section h5 {
+        font-weight: 700;
+        color: var(--primary-blue);
+        text-transform: uppercase;
+        letter-spacing: .1em;
+    }
+    .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .btn-rounded {
+        border-radius: 999px;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <h1>
+            <i class="bi {{ 'bi-plus-circle-fill' if mode == 'create' else 'bi-pencil-fill' }}"></i>
+            {{ '添加系统' if mode == 'create' else '编辑系统' }}
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
+                <li class="breadcrumb-item"><a href="/systems">系统管理</a></li>
+                <li class="breadcrumb-item active">{{ '添加' if mode == 'create' else '编辑' }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="container-fluid">
+    {% if error_message %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error_message }}
+    </div>
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="form-section">
+                <h5>{{ 'System Information' }}</h5>
+                <p class="text-muted mb-4">
+                    {% if system %}
+                        {{ '请填写完整的系统基础信息' if mode == 'create' else '更新系统基本信息并保存' }}
+                    {% else %}
+                        系统不存在或已被删除
+                    {% endif %}
+                </p>
+
+                {% if system %}
+                <form method="post" action="{{ url_for('system.add_system') if mode == 'create' else url_for('system.edit_system', system_code=system['SystemCode']) }}">
+                    <div class="mb-3">
+                        <label class="form-label">系统代码 *</label>
+                        {% if mode == 'create' %}
+                        <input type="text" class="form-control" name="SystemCode" required placeholder="例如：SYS-001"
+                               value="{{ system['SystemCode'] }}">
+                        <div class="form-text">系统唯一标识代码（创建后不可更改）</div>
+                        {% else %}
+                        <input type="text" class="form-control" value="{{ system['SystemCode'] }}" readonly>
+                        <div class="form-text text-muted">系统代码不可修改</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">英文描述 *</label>
+                        <input type="text" class="form-control" name="SystemDescriptionENG" required
+                               placeholder="例如：Cooling Water System"
+                               value="{{ system['SystemDescriptionENG'] }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">类型 *</label>
+                        <select class="form-select" name="ProcessOrNonProcess" required>
+                            <option value="">请选择类型</option>
+                            <option value="Process" {{ 'selected' if system['ProcessOrNonProcess'] == 'Process' else '' }}>Process - 工艺系统</option>
+                            <option value="NonProcess" {{ 'selected' if system['ProcessOrNonProcess'] == 'NonProcess' else '' }}>NonProcess - 非工艺系统</option>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">优先级</label>
+                                <input type="number" class="form-control" name="Priority" min="0" max="10"
+                                       value="{{ system['Priority'] or 0 }}">
+                                <div class="form-text">范围 0-10，数字越大优先级越高</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">备注</label>
+                                <textarea class="form-control" name="Remarks" rows="3" placeholder="可选的备注信息">{{ system['Remarks'] or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="/systems" class="btn btn-outline-secondary btn-rounded">
+                            <i class="bi bi-arrow-left-circle me-1"></i> 返回列表
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-rounded">
+                            <i class="bi bi-save me-1"></i> {{ '创建系统' if mode == 'create' else '保存修改' }}
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <a href="/systems" class="btn btn-outline-secondary btn-rounded">
+                    <i class="bi bi-arrow-left-circle me-1"></i> 返回列表
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,501 @@
+{% extends "base_industrial.html" %}
+
+{% block title %}子系统管理 - 预试车管理系统{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .filter-section {
+        background: white;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .table-container {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.375rem;
+    }
+    
+    .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    .stat-card {
+        background: white;
+    padding: 0.65rem 0.9rem;
+        border: 2px solid var(--border-color);
+        border-left: 5px solid var(--primary-blue);
+        border-radius: 8px;
+        text-align: center;
+    min-width: 140px;
+    }
+    
+    .faclist-scroll {
+        display: flex;
+        gap: 0.6rem;
+        overflow-x: auto;
+        padding: 0.25rem 0;
+    }
+    
+    .faclist-scroll .form-select {
+        min-width: 150px;
+        white-space: nowrap;
+    }
+    
+    .stat-card h3 {
+    font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--primary-blue);
+        margin: 0;
+    }
+    
+    .stat-card p {
+    font-size: 0.7rem;
+        color: var(--text-secondary);
+    margin: 0.15rem 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页面头部 -->
+<div class="page-header d-flex justify-content-between align-items-end">
+    <div>
+        <h1>
+            <i class="bi bi-bezier2"></i>
+            子系统管理
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
+                <li class="breadcrumb-item active">子系统管理</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="row g-2 mini-stat-wrap text-end">
+        <div class="col-auto">
+            <div class="stat-card mini-card">
+                <h3>{{ total_count }}</h3>
+                <p>子系统总数</p>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="stat-card mini-card border-left-success">
+                <h3>{{ process_count }}</h3>
+                <p>工艺子系统</p>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="stat-card mini-card border-left-orange">
+                <h3>{{ non_process_count }}</h3>
+                <p>非工艺子系统</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 筛选区域 -->
+<div class="filter-section">
+    <form method="GET" action="/subsystems" id="filterForm">
+        <!-- 第一行：基本筛选 -->
+        <div class="filter-row">
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="q" placeholder="搜索子系统代码..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="system_code">
+                        <option value="">全部系统</option>
+                        {% for system in systems %}
+                        <option value="{{ system.SystemCode }}" {% if system.SystemCode == filter_system %}selected{% endif %}>
+                            {{ system.SystemCode }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="type">
+                        <option value="">全部类型</option>
+                        <option value="Process" {% if filter_type == 'Process' %}selected{% endif %}>工艺</option>
+                        <option value="NonProcess" {% if filter_type == 'NonProcess' %}selected{% endif %}>非工艺</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-search"></i> 搜索
+                        </button>
+                        <a href="/subsystems" class="btn btn-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> 重置
+                        </a>
+                        <button type="button" class="btn btn-warning" onclick="toggleFaclistFilter()">
+                            <i class="bi bi-funnel"></i> Faclist筛选
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 第二行：Faclist高级筛选（可折叠） -->
+        <div id="faclistFilter" style="display: {{ 'block' if (filter_subproject or filter_train or filter_unit or filter_simpleblk or filter_mainblock or filter_block or filter_bccquarter) else 'none' }};">
+            <hr style="margin: 0.75rem 0;">
+            <div class="faclist-scroll">
+                <select class="form-select" name="subproject_code">
+                    <option value="">全部项目</option>
+                    {% for code in faclist_options.subproject_codes %}
+                    <option value="{{ code }}" {% if code == filter_subproject %}selected{% endif %}>{{ code }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select" name="train">
+                    <option value="">全部项目期</option>
+                    {% for train in faclist_options.trains %}
+                    <option value="{{ train }}" {% if train == filter_train %}selected{% endif %}>{{ train }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select" name="unit">
+                    <option value="">全部装置</option>
+                    {% for unit in faclist_options.units %}
+                    <option value="{{ unit }}" {% if unit == filter_unit %}selected{% endif %}>{{ unit }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select" name="bccquarter">
+                    <option value="">全部片区</option>
+                    {% for quarter in faclist_options.bccquarters %}
+                    <option value="{{ quarter }}" {% if quarter == filter_bccquarter %}selected{% endif %}>{{ quarter }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select" name="simpleblk">
+                    <option value="">全部大主项</option>
+                    {% for blk in faclist_options.simpleblks %}
+                    <option value="{{ blk }}" {% if blk == filter_simpleblk %}selected{% endif %}>{{ blk }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select" name="mainblock">
+                    <option value="">全部主项</option>
+                    {% for mainblock in (available_mainblocks or []) %}
+                    <option value="{{ mainblock }}" {% if mainblock == filter_mainblock %}selected{% endif %}>{{ mainblock }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select" name="block">
+                    <option value="">全部CIA主子项</option>
+                    {% for blk in (available_blocks or []) %}
+                    <option value="{{ blk }}" {% if blk == filter_block %}selected{% endif %}>{{ blk }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- 操作按钮 -->
+<div class="mb-2 text-end">
+    <a class="btn btn-primary" href="/subsystems/add">
+        <i class="bi bi-plus-circle"></i> 添加子系统
+    </a>
+</div>
+
+<!-- 表格 -->
+<div class="table-container">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th style="width: 150px;">子系统代码</th>
+                <th style="width: 120px;">系统代码</th>
+                <th style="width: 220px;">子系统描述(EN)</th>
+                <th style="width: 140px;">类型</th>
+                <th style="width: 200px;">试压包状态统计</th>
+                <th style="width: 110px;">DIN总量</th>
+                <th style="width: 110px;">DIN完成量</th>
+                <th style="width: 180px;">焊接进度</th>
+                <th style="width: 180px;">测试进度</th>
+                <th style="width: 80px;">优先级</th>
+                <th>备注</th>
+                <th style="width: 200px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if subsystems %}
+                {% for subsystem in subsystems %}
+                <tr>
+                    <td><strong>{{ subsystem.SubSystemCode }}</strong></td>
+                    <td>{{ subsystem.SystemCode or '-' }}</td>
+                    <td>{{ subsystem.SubSystemDescriptionENG or '-' }}</td>
+                    {% set stats = subsystem.stats %}
+                    <td>
+                        {% if subsystem.ProcessOrNonProcess == 'Process' %}
+                        <span class="badge badge-completed">
+                            <i class="bi bi-circle-fill"></i>
+                            工艺
+                        </span>
+                        {% else %}
+                        <span class="badge badge-pending">
+                            <i class="bi bi-circle-fill"></i>
+                            非工艺
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if stats.total_packages %}
+                        <div class="fw-semibold text-primary">{{ stats.tested_packages }}/{{ stats.total_packages }} 已完成</div>
+                        <div class="text-muted small">DIN进度 {{ (stats.welding_progress * 100)|round(1) }}%</div>
+                        {% else %}
+                        <span class="text-muted small">暂无试压包</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ '%.1f' % stats.total_din }}</td>
+                    <td>{{ '%.1f' % stats.completed_din }}</td>
+                    <td>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: {{ (stats.welding_progress * 100)|round(1) }}%;"
+                                 aria-valuenow="{{ (stats.welding_progress * 100)|round(1) }}"
+                                 aria-valuemin="0" aria-valuemax="100">
+                                 {{ (stats.welding_progress * 100)|round(1) }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar bg-info" role="progressbar"
+                                 style="width: {{ (stats.test_progress * 100)|round(1) }}%;"
+                                 aria-valuenow="{{ (stats.test_progress * 100)|round(1) }}"
+                                 aria-valuemin="0" aria-valuemax="100">
+                                 {{ (stats.test_progress * 100)|round(1) }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center">{{ subsystem.Priority or 0 }}</td>
+                    <td>{{ subsystem.Remarks or '-' }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a class="btn btn-sm btn-primary" href="/subsystems/edit/{{ subsystem.SubSystemCode }}">
+                                <i class="bi bi-pencil"></i> 编辑
+                            </a>
+                            <a href="/test_packages?subsystem_code={{ subsystem.SubSystemCode }}" class="btn btn-sm btn-success">
+                                <i class="bi bi-box-seam"></i> 试压包
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox"></i> 暂无数据
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- 分页信息 -->
+{% if subsystems %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+    <div class="text-muted small">
+        {% if total_count %}
+        显示第 {{ pagination.start_index }} - {{ pagination.end_index }} 条，共 {{ total_count }} 条
+        {% endif %}
+    </div>
+    {% if pagination.total_pages > 1 %}
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ pagination.prev_url if pagination.has_prev else '#' }}">上一页</a>
+            </li>
+            {% for page_num in pagination.window %}
+            <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                <a class="page-link" href="{{ pagination.base_url }}{{ page_num }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ pagination.next_url if pagination.has_next else '#' }}">下一页</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 切换Faclist筛选显示
+function toggleFaclistFilter() {
+    var filterDiv = document.getElementById('faclistFilter');
+    if (filterDiv.style.display === 'none') {
+        filterDiv.style.display = 'block';
+    } else {
+        filterDiv.style.display = 'none';
+    }
+}
+
+$(document).ready(function() {
+    var submitTimer;
+    
+    // Faclist级联筛选 - 使用AJAX更新选项（不刷新页面）
+    function updateFaclistOptions(changedField) {
+        var params = {
+            system_code: $('select[name="system_code"]').val() || '',
+            subproject_code: $('select[name="subproject_code"]').val() || '',
+            train: $('select[name="train"]').val() || '',
+            unit: $('select[name="unit"]').val() || '',
+            simpleblk: $('select[name="simpleblk"]').val() || '',
+            mainblock: $('select[name="mainblock"]').val() || '',
+            block: $('select[name="block"]').val() || '',
+            bccquarter: $('select[name="bccquarter"]').val() || ''
+        };
+        
+        $.get('/api/faclist_options', params, function(data) {
+            // 更新项目（不更新自己）
+            if (changedField !== 'subproject_code') {
+                var select = $('select[name="subproject_code"]');
+                var current = select.val();
+                select.empty().append('<option value="">全部项目</option>');
+                $.each(data.subproject_codes || [], function(i, code) {
+                    select.append('<option value="' + code + '">' + code + '</option>');
+                });
+                if (current) select.val(current);
+            }
+            
+            // 更新项目期
+            if (changedField !== 'train') {
+                var select = $('select[name="train"]');
+                var current = select.val();
+                select.empty().append('<option value="">全部项目期</option>');
+                $.each(data.trains || [], function(i, train) {
+                    select.append('<option value="' + train + '">' + train + '</option>');
+                });
+                if (current) select.val(current);
+            }
+            
+            // 更新装置
+            if (changedField !== 'unit') {
+                var select = $('select[name="unit"]');
+                var current = select.val();
+                select.empty().append('<option value="">全部装置</option>');
+                $.each(data.units || [], function(i, unit) {
+                    select.append('<option value="' + unit + '">' + unit + '</option>');
+                });
+                if (current) select.val(current);
+            }
+            
+            // 更新大主项
+            if (changedField !== 'simpleblk') {
+                var simpleSelect = $('select[name="simpleblk"]');
+                var currentSimple = simpleSelect.val();
+                simpleSelect.empty().append('<option value="">全部大主项</option>');
+                $.each(data.simpleblks || [], function(i, blk) {
+                    simpleSelect.append('<option value="' + blk + '">' + blk + '</option>');
+                });
+                if (currentSimple) simpleSelect.val(currentSimple);
+            }
+            
+            // 更新主项
+            if (changedField !== 'mainblock') {
+                var mainSelect = $('select[name="mainblock"]');
+                var currentMain = mainSelect.val();
+                mainSelect.empty().append('<option value="">全部主项</option>');
+                var currentSimpleblk = $('select[name="simpleblk"]').val();
+                if (currentSimpleblk && data.mainblocks && data.mainblocks[currentSimpleblk]) {
+                    $.each(data.mainblocks[currentSimpleblk].sort(), function(i, mb) {
+                        mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
+                    });
+                } else {
+                    var allMainblocks = [];
+                    $.each(data.mainblocks || {}, function(simpleblk, mbs) {
+                        $.each(mbs, function(i, mb) {
+                            if (allMainblocks.indexOf(mb) === -1) {
+                                allMainblocks.push(mb);
+                            }
+                        });
+                    });
+                    allMainblocks.sort();
+                    $.each(allMainblocks, function(i, mb) {
+                        mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
+                    });
+                }
+                if (currentMain) mainSelect.val(currentMain);
+            }
+            
+            // 更新CIA主子项
+            if (changedField !== 'block') {
+                var blockSelect = $('select[name="block"]');
+                var currentBlock = blockSelect.val();
+                blockSelect.empty().append('<option value="">全部CIA主子项</option>');
+                var currentMainblock = $('select[name="mainblock"]').val();
+                if (currentMainblock && data.blocks && data.blocks[currentMainblock]) {
+                    $.each(data.blocks[currentMainblock].sort(), function(i, blk) {
+                        blockSelect.append('<option value="' + blk + '">' + blk + '</option>');
+                    });
+                } else {
+                    var allBlocks = [];
+                    $.each(data.blocks || {}, function(mainblock, blks) {
+                        $.each(blks, function(i, blk) {
+                            if (allBlocks.indexOf(blk) === -1) {
+                                allBlocks.push(blk);
+                            }
+                        });
+                    });
+                    allBlocks.sort();
+                    $.each(allBlocks, function(i, blk) {
+                        blockSelect.append('<option value="' + blk + '">' + blk + '</option>');
+                    });
+                }
+                if (currentBlock) blockSelect.val(currentBlock);
+            }
+            
+            // 更新片区
+            if (changedField !== 'bccquarter') {
+                var select = $('select[name="bccquarter"]');
+                var current = select.val();
+                select.empty().append('<option value="">全部片区</option>');
+                $.each(data.bccquarters || [], function(i, quarter) {
+                    select.append('<option value="' + quarter + '">' + quarter + '</option>');
+                });
+                if (current) select.val(current);
+            }
+        });
+    }
+    
+    // 系统代码变化时，更新Faclist
+    $('select[name="system_code"]').change(function() {
+        clearTimeout(submitTimer);
+        submitTimer = setTimeout(function() {
+            updateFaclistOptions('system_code');
+        }, 300);
+    });
+    
+    // Faclist字段变化时，通过AJAX更新选项
+    $('select[name="subproject_code"], select[name="train"], select[name="unit"], select[name="simpleblk"], select[name="mainblock"], select[name="block"], select[name="bccquarter"]').change(function() {
+        var changedField = $(this).attr('name');
+        
+        if (changedField === 'simpleblk') {
+            $('select[name="mainblock"]').val('');
+            $('select[name="block"]').val('');
+        } else if (changedField === 'mainblock') {
+            $('select[name="block"]').val('');
+        }
+        
+        clearTimeout(submitTimer);
+        submitTimer = setTimeout(function() {
+            updateFaclistOptions(changedField);
+        }, 300);
+    });
+});
+</script>
+{% endblock %}
+

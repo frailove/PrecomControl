@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}同步日志{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-arrow-repeat"></i> 同步日志</h1>
+        <a href="{{ url_for('backup.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    {% if logs %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>同步ID</th>
+                            <th>同步时间</th>
+                            <th>同步类型</th>
+                            <th>新增</th>
+                            <th>更新</th>
+                            <th>删除</th>
+                            <th>跳过</th>
+                            <th>状态</th>
+                            <th>耗时</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td><strong>{{ log.SyncID }}</strong></td>
+                            <td>{{ log.SyncTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if log.SyncType == 'WELDING_IMPORT' %}
+                                <span class="badge bg-primary">焊接数据导入</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ log.SyncType }}</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-success">+{{ log.RecordsAdded }}</span></td>
+                            <td><span class="badge bg-info">~{{ log.RecordsUpdated }}</span></td>
+                            <td><span class="badge bg-warning">-{{ log.RecordsDeleted }}</span></td>
+                            <td><span class="badge bg-secondary">⊘{{ log.RecordsSkipped }}</span></td>
+                            <td>
+                                {% if log.Status == 'COMPLETED' %}
+                                <span class="badge bg-success">完成</span>
+                                {% elif log.Status == 'RUNNING' %}
+                                <span class="badge bg-primary">运行中</span>
+                                {% elif log.Status == 'FAILED' %}
+                                <span class="badge bg-danger">失败</span>
+                                {% elif log.Status == 'PARTIAL' %}
+                                <span class="badge bg-warning">部分成功</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ log.Status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.Duration %}
+                                {{ log.Duration }} 秒
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewSync({{ log.SyncID }})">
+                                    <i class="bi bi-eye"></i> 详情
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> 暂无同步记录
+    </div>
+    {% endif %}
+</div>
+
+<!-- 同步详情模态框 -->
+<div class="modal fade" id="syncDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">同步详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="syncDetailContent">
+                <!-- 动态加载内容 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewSync(syncId) {
+    fetch(`/backup/api/sync/${syncId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const sync = data.sync;
+                let html = `
+                    <table class="table">
+                        <tr><th>同步ID:</th><td>${sync.sync_id}</td></tr>
+                        <tr><th>同步时间:</th><td>${sync.sync_time}</td></tr>
+                        <tr><th>同步类型:</th><td>${sync.sync_type}</td></tr>
+                        <tr><th>新增记录:</th><td><span class="badge bg-success">${sync.records_added}</span></td></tr>
+                        <tr><th>更新记录:</th><td><span class="badge bg-info">${sync.records_updated}</span></td></tr>
+                        <tr><th>删除记录:</th><td><span class="badge bg-warning">${sync.records_deleted}</span></td></tr>
+                        <tr><th>跳过记录:</th><td><span class="badge bg-secondary">${sync.records_skipped}</span></td></tr>
+                        <tr><th>状态:</th><td><span class="badge bg-success">${sync.status}</span></td></tr>
+                        <tr><th>耗时:</th><td>${sync.duration} 秒</td></tr>
+                `;
+                
+                if (sync.details) {
+                    try {
+                        const details = JSON.parse(sync.details);
+                        html += `<tr><th>详细信息:</th><td><pre class="bg-light p-2">${JSON.stringify(details, null, 2)}</pre></td></tr>`;
+                    } catch (e) {
+                        html += `<tr><th>详细信息:</th><td>${sync.details}</td></tr>`;
+                    }
+                }
+                
+                html += `</table>`;
+                
+                document.getElementById('syncDetailContent').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('syncDetailModal')).show();
+            } else {
+                alert('获取同步详情失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('获取同步详情失败: ' + error);
+        });
+}
+</script>
+{% endblock %}
+

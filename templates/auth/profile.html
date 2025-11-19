@@ -1,0 +1,97 @@
+{% extends 'base_industrial.html' %}
+
+{% block title %}个人信息 - 预试车管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid px-0">
+        <div class="d-flex justify-content-between align-items-end">
+            <div>
+                <h1><i class="bi bi-person-square"></i> 个人信息</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">首页</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">个人信息</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="info-tag">
+                <i class="bi bi-person-badge"></i>
+                {{ profile.Username if profile else '' }}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if info_success %}
+<div class="alert alert-success"><i class="bi bi-check-circle"></i> {{ info_success }}</div>
+{% elif info_error %}
+<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> {{ info_error }}</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card-industrial">
+            <div class="card-industrial-header">
+                <i class="bi bi-person-lines-fill"></i>
+                <h5>基本信息</h5>
+            </div>
+            <div class="card-industrial-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-control" value="{{ profile.Username }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">姓名</label>
+                        <input type="text" class="form-control" name="full_name" value="{{ profile.FullName or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" class="form-control" name="email" value="{{ profile.Email or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">电话</label>
+                        <input type="text" class="form-control" name="phone" value="{{ profile.Phone or '' }}">
+                    </div>
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> 保存信息</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card-industrial">
+            <div class="card-industrial-header">
+                <i class="bi bi-lock-fill"></i>
+                <h5>修改密码</h5>
+            </div>
+            <div class="card-industrial-body">
+                <form method="post" action="/profile/password">
+                    <div class="mb-3">
+                        <label class="form-label required">当前密码</label>
+                        <input type="password" class="form-control" name="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">新密码</label>
+                        <input type="password" class="form-control" name="new_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">确认新密码</label>
+                        <input type="password" class="form-control" name="confirm_password" required>
+                    </div>
+                    <button class="btn btn-warning" type="submit"><i class="bi bi-key-fill"></i> 更新密码</button>
+                </form>
+                {% if success %}
+                    <div class="alert alert-success mt-3"><i class="bi bi-check-circle"></i> {{ success }}</div>
+                {% elif error %}
+                    <div class="alert alert-danger mt-3"><i class="bi bi-exclamation-triangle"></i> {{ error }}</div>
+                {% endif %}
+                <div class="text-muted small mt-3">
+                    建议密码长度至少 12 位，包含大小写字母、数字和特殊字符，定期更新保障账户安全。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

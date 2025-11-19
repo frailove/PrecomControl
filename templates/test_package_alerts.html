@@ -1,0 +1,100 @@
+﻿{% extends "base_industrial.html" %}
+
+{% block title %}试压包编制提醒 - 预试车管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-end">
+    <div>
+        <h1>
+            <i class="bi bi-activity"></i>
+            试压包编制提醒
+        </h1>
+        <p class="text-muted mb-0">系统完成率 ≥ {{ (pipeline_alert_threshold * 100)|round(0) }}%，且管线 100% 完成</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="get" action="/test_packages/alerts/export">
+            <input type="hidden" name="status" value="{{ current_alert_status }}">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-download"></i> 导出 Excel
+            </button>
+        </form>
+        <a href="/test_packages" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回试压包管理
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if alerts %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">系统编码</th>
+                        <th style="width: 180px;">管线号</th>
+                        <th style="width: 140px;">管线完成率</th>
+                        <th style="width: 140px;">系统完成占比</th>
+                        <th style="width: 200px;">DIN（完成 / 总量）</th>
+                        <th style="width: 180px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in alerts %}
+                    <tr>
+                        <td><strong>{{ alert.SystemCode }}</strong></td>
+                        <td>{{ alert.PipelineNumber }}</td>
+                        <td>{{ (alert.CompletionRate * 100)|round(1) }}%</td>
+                        <td>{{ (alert.SystemDINShare * 100)|round(1) }}%</td>
+                        <td>{{ '%.1f' % alert.CompletedDIN }} / {{ '%.1f' % alert.TotalDIN }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-success pipeline-alert-action" data-alert-id="{{ alert.AlertID }}" data-action="ACKED">
+                                <i class="bi bi-check2-circle"></i> 确认处理
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary pipeline-alert-action" data-alert-id="{{ alert.AlertID }}" data-action="IGNORED">
+                                <i class="bi bi-x-circle"></i> 忽略
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+            <p class="mt-3 mb-0">当前没有需要处理的编制提醒</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    $('.pipeline-alert-action').on('click', function() {
+        const button = $(this);
+        const alertId = button.data('alertId');
+        const action = button.data('action');
+        button.prop('disabled', true);
+        fetch(`/test_packages/alerts/${alertId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        }).then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || '操作失败');
+                button.prop('disabled', false);
+            }
+        }).catch(err => {
+            alert('操作失败: ' + err);
+            button.prop('disabled', false);
+        });
+    });
+});
+</script>
+{% endblock %}

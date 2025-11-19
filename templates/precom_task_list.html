@@ -1,0 +1,187 @@
+{% extends "base_industrial.html" %}
+
+{% block title %}{{ page_title or '预试车任务 - 预试车管理系统' }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-end">
+    <div>
+        <h1>
+            <i class="bi bi-clipboard-check"></i>
+            {{ page_title or '预试车任务管理' }}
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
+                <li class="breadcrumb-item active">预试车任务管理</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ new_task_url }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 新建任务
+        </a>
+        <a href="{{ url_for('precom.precom_export_tasks', task_type=filter_task_type) }}" class="btn btn-outline-success">
+            <i class="bi bi-download"></i> 导出任务清单
+        </a>
+        <form class="d-inline-block" method="post" enctype="multipart/form-data"
+              action="{{ url_for('precom.precom_import_tasks', task_type=filter_task_type) }}">
+            <label class="btn btn-outline-secondary mb-0">
+                <i class="bi bi-upload"></i> 导入清单
+                <input type="file" name="file" accept=".xlsx,.xls" style="display:none" onchange="this.form.submit();">
+            </label>
+        </form>
+    </div>
+</div>
+
+<!-- 筛选区 -->
+<div class="filter-section mb-3">
+    <form method="get" action="{{ url_for('precom.precom_task_list') }}">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <select class="form-select" name="task_type">
+                    <option value="">全部任务类型</option>
+                    {% set types = [
+                        ('Manhole', '人孔检查'),
+                        ('MotorSolo', '电机单试'),
+                        ('SkidInstall', '仪表台件安装'),
+                        ('LoopTest', '回路测试'),
+                        ('Alignment', '动设备最终对中'),
+                        ('MRT', 'MRT机械联动测试'),
+                        ('FunctionTest', 'Function Test')
+                    ] %}
+                    {% for code, label in types %}
+                    <option value="{{ code }}" {% if filter_task_type == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="system_code">
+                    <option value="">全部系统</option>
+                    {% for system in systems %}
+                    <option value="{{ system.SystemCode }}" {% if system.SystemCode == filter_system %}selected{% endif %}>
+                        {{ system.SystemCode }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="subsystem_code">
+                    <option value="">全部子系统</option>
+                    {% for subsystem in subsystems %}
+                    <option value="{{ subsystem.SubSystemCode }}" {% if subsystem.SubSystemCode == filter_subsystem %}selected{% endif %}>
+                        {{ subsystem.SubSystemCode }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="block" placeholder="Block / 区域"
+                       value="{{ filter_block }}">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="status">
+                    <option value="">全部状态</option>
+                    <option value="未开始" {% if filter_status == '未开始' %}selected{% endif %}>未开始</option>
+                    <option value="进行中" {% if filter_status == '进行中' %}selected{% endif %}>进行中</option>
+                    <option value="已完成" {% if filter_status == '已完成' %}selected{% endif %}>已完成</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search"></i> 搜索
+                    </button>
+                    <a href="{{ url_for('precom.precom_task_list') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> 重置
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">任务ID</th>
+                        <th style="width: 140px;">任务类型</th>
+                        <th style="width: 120px;">系统</th>
+                        <th style="width: 140px;">子系统</th>
+                        <th style="width: 150px;">图纸号</th>
+                        <th style="width: 150px;">Tag / 点位</th>
+                        <th style="width: 120px;">区域 Block</th>
+                        <th style="width: 120px;" class="text-center">数量</th>
+                        <th style="width: 140px;">计划时间</th>
+                        <th style="width: 140px;">实际时间</th>
+                        <th style="width: 100px;">状态</th>
+                        <th style="width: 120px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if tasks %}
+                    {% for t in tasks %}
+                    <tr>
+                        <td>{{ t.TaskID }}</td>
+                        <td>
+                            {% if t.TaskType == 'Manhole' %}人孔检查
+                            {% elif t.TaskType == 'MotorSolo' %}电机单试
+                            {% elif t.TaskType == 'SkidInstall' %}仪表台件安装
+                            {% elif t.TaskType == 'LoopTest' %}回路测试
+                            {% elif t.TaskType == 'Alignment' %}动设备最终对中
+                            {% elif t.TaskType == 'MRT' %}MRT机械联动测试
+                            {% elif t.TaskType == 'FunctionTest' %}Function Test
+                            {% else %}{{ t.TaskType }}
+                            {% endif %}
+                        </td>
+                        <td>{{ t.SystemCode or '-' }}</td>
+                        <td>{{ t.SubSystemCode }}</td>
+                        <td>{{ t.DrawingNumber or '-' }}</td>
+                        <td>
+                            {% if t.PointTag %}
+                                {{ t.TagNumber or '-' }} / {{ t.PointTag }}
+                            {% else %}
+                                {{ t.TagNumber or '-' }}
+                            {% endif %}
+                        </td>
+                        <td>{{ t.PositionBlock or '-' }}</td>
+                        <td class="text-center">
+                            {{ t.QuantityDone }}/{{ t.QuantityTotal }}
+                        </td>
+                        <td>{{ t.PlannedDate or '-' }}</td>
+                        <td>{{ t.ActualDate or '-' }}</td>
+                        <td>
+                            {% if t.Status == '已完成' %}
+                            <span class="badge bg-success">{{ t.Status }}</span>
+                            {% elif t.Status == '进行中' %}
+                            <span class="badge bg-warning text-dark">{{ t.Status }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ t.Status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('precom.precom_task_edit', task_id=t.TaskID) }}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> 编辑
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="12" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox"></i> 暂无任务记录
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+

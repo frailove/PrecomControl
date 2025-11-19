@@ -1,0 +1,252 @@
+﻿{% extends "base_industrial.html" %}
+
+{% block title %}备份列表 - 预试车管理系统{% endblock %}
+
+{% block extra_styles %}
+.backup-table thead {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    background: rgba(15,23,42,0.03);
+}
+.backup-table th,
+.backup-table td {
+    vertical-align: middle;
+    border-color: rgba(15,23,42,0.08) !important;
+}
+.empty-state {
+    border: 1px dashed rgba(15,23,42,0.2);
+    border-radius: 12px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid px-0">
+        <div class="d-flex justify-content-between flex-wrap gap-3 align-items-end">
+            <div>
+                <p class="text-uppercase text-muted fw-bold mb-1">Backup Ledger</p>
+                <h1 class="display-6 fw-bolder mb-0">备份历史记录</h1>
+                <p class="text-muted mb-0">追踪所有自动/手动备份及其健康状态。</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('backup.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回控制台
+                </a>
+                <button class="btn btn-primary" onclick="createBackup()">
+                    <i class="bi bi-save"></i> 立即创建备份
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="industrial-panel mt-3">
+    {% if backups %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle backup-table">
+            <thead>
+                <tr>
+                    <th>备份ID</th>
+                    <th>时间</th>
+                    <th>类型</th>
+                    <th>触发</th>
+                    <th>执行者</th>
+                    <th>数据量</th>
+                    <th>大小</th>
+                    <th>状态</th>
+                    <th class="text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for backup in backups %}
+                <tr>
+                    <td class="fw-bold">{{ backup.BackupID }}</td>
+                    <td>{{ backup.BackupTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>
+                        {% if backup.BackupType == 'FULL' %}
+                        <span class="badge bg-primary">全量</span>
+                        {% elif backup.BackupType == 'INCREMENTAL' %}
+                        <span class="badge bg-info text-dark">增量</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ backup.BackupType }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if backup.BackupTrigger == 'PRE_IMPORT' %}
+                        <span class="badge bg-warning text-dark">导入前</span>
+                        {% elif backup.BackupTrigger == 'SCHEDULED' %}
+                        <span class="badge bg-info text-dark">定时</span>
+                        {% elif backup.BackupTrigger == 'MANUAL' %}
+                        <span class="badge bg-primary">手动</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ backup.BackupTrigger }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ backup.BackupBy }}</td>
+                    <td>
+                        <small class="text-muted">
+                            焊接: {{ backup.WeldingListCount }}<br>
+                            试压包: {{ backup.TestPackageCount }}<br>
+                            系统: {{ backup.SystemCount }}
+                        </small>
+                    </td>
+                    <td>
+                        {% if backup.BackupSize %}
+                        {{ '%.2f' | format(backup.BackupSize / 1024 / 1024) }} MB
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>
+                        {% if backup.Status == 'COMPLETED' %}
+                        <span class="badge bg-success">完成</span>
+                        {% elif backup.Status == 'RUNNING' %}
+                        <span class="badge bg-primary">运行中</span>
+                        {% elif backup.Status == 'FAILED' %}
+                        <span class="badge bg-danger">失败</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ backup.Status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if backup.Status == 'COMPLETED' %}
+                        <button class="btn btn-sm btn-outline-info me-2" onclick="viewBackup({{ backup.BackupID }})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="restoreBackup({{ backup.BackupID }})">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-inbox text-muted" style="font-size: 2.5rem;"></i>
+        <p class="mt-3 mb-0">暂无备份记录，点击“立即创建备份”生成第一份安全快照。</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 备份详情模态框 -->
+<div class="modal fade" id="backupDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">备份详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="backupDetailContent"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function createBackup() {
+    if (!confirm('确定要创建备份吗？这可能需要几分钟时间。')) {
+        return;
+    }
+    const description = prompt('请输入备份描述（可选）:', '手动备份 - ' + new Date().toLocaleString('zh-CN'));
+    if (description === null) return;
+    alert('正在创建备份，请稍候...');
+
+    fetch('/backup/api/create-backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('备份失败: ' + data.message);
+        }
+    })
+    .catch(error => alert('备份失败: ' + error));
+}
+
+function viewBackup(backupId) {
+    fetch(`/backup/api/backup/${backupId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const backup = data.backup;
+                const html = `
+                    <table class="table">
+                        <tr><th>备份ID:</th><td>${backup.backup_id}</td></tr>
+                        <tr><th>备份时间:</th><td>${backup.backup_time}</td></tr>
+                        <tr><th>备份类型:</th><td>${backup.backup_type}</td></tr>
+                        <tr><th>触发方式:</th><td>${backup.backup_trigger}</td></tr>
+                        <tr><th>执行者:</th><td>${backup.backup_by}</td></tr>
+                        <tr><th>WeldingList:</th><td>${backup.welding_count} 条</td></tr>
+                        <tr><th>HydroTestPackageList:</th><td>${backup.package_count} 条</td></tr>
+                        <tr><th>SystemList:</th><td>${backup.system_count} 条</td></tr>
+                        <tr><th>SubsystemList:</th><td>${backup.subsystem_count} 条</td></tr>
+                        <tr><th>备份大小:</th><td>${backup.backup_size ? (backup.backup_size / 1024 / 1024).toFixed(2) + ' MB' : '-'}</td></tr>
+                        <tr><th>状态:</th><td><span class="badge bg-success">${backup.status}</span></td></tr>
+                        ${backup.description ? `<tr><th>描述:</th><td>${backup.description}</td></tr>` : ''}
+                    </table>
+                `;
+                document.getElementById('backupDetailContent').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('backupDetailModal')).show();
+            } else {
+                alert('获取备份详情失败: ' + data.message);
+            }
+        })
+        .catch(error => alert('获取备份详情失败: ' + error));
+}
+
+function restoreBackup(backupId) {
+    if (!confirm('确定要从此备份恢复数据吗？\\n\\n警告：这将覆盖当前数据！')) {
+        return;
+    }
+
+    fetch(`/backup/api/restore/${backupId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preview: true })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.preview) {
+            const backup = data.backup;
+            const message = `将要恢复以下数据：\\n\\n` +
+                `WeldingList: ${backup.welding_count} 条\\n` +
+                `HydroTestPackageList: ${backup.package_count} 条\\n` +
+                `SystemList: ${backup.system_count} 条\\n` +
+                `SubsystemList: ${backup.subsystem_count} 条\\n\\n` +
+                `确定要继续吗？`;
+
+            if (confirm(message)) {
+                alert('正在恢复数据，请稍候...');
+                fetch(`/backup/api/restore/${backupId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ preview: false })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('恢复失败: ' + data.message);
+                    }
+                })
+                .catch(error => alert('恢复失败: ' + error));
+            }
+        }
+    })
+    .catch(error => alert('恢复失败: ' + error));
+}
+</script>
+{% endblock %}
