@@ -1,3 +1,4 @@
+import os
 from flask import Flask, session, redirect, url_for, request, g
 from config import FlaskConfig
 from routes.system_routes import system_bp
@@ -32,6 +33,7 @@ def create_app():
     import logging
     from logging.handlers import RotatingFileHandler
     if not app.debug:
+        os.makedirs('logs', exist_ok=True)
         file_handler = RotatingFileHandler(
             'logs/app.log', 
             maxBytes=10 * 1024 * 1024,  # 10MB

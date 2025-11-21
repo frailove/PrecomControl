@@ -1,3 +1,4 @@
+import os
 import mysql.connector
 from mysql.connector import Error, pooling
 from mysql.connector.pooling import MySQLConnectionPool
@@ -43,11 +44,13 @@ def init_connection_pool():
             return _connection_pool
         
         try:
-            # 连接池配置：支持50-80并发，设置池大小为100
+            # 连接池配置：MySQL 官方 MySQLConnectionPool 最大值为 32
+            requested_size = int(os.environ.get('DB_POOL_SIZE', '32'))
+            pool_size = max(1, min(requested_size, 32))
             pool_config = {
                 **DB_CONFIG,
                 'pool_name': 'precom_pool',
-                'pool_size': 100,  # 连接池大小，支持高并发
+                'pool_size': pool_size,
                 'pool_reset_session': True,  # 重置会话状态
                 'autocommit': False,  # 手动提交事务
                 'allow_local_infile': True
