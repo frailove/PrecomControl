@@ -45,3 +45,14 @@ uploads/*
 ~$*.xlsx
 ~$*.xls
 
+# 备份文件（不要提交到 Git）
+backups/
+*.json.backup
+
+# 大型数据文件（不要提交到 Git）
+nordinfo/
+
+# 日志文件
+logs/
+*.log
+
