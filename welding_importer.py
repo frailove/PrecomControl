@@ -9,6 +9,8 @@ from mysql.connector import Error
 import tempfile
 import csv
 import math
+import time
+import logging
 
 DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
@@ -199,14 +201,83 @@ class WeldingDataImporter:
         except Exception as log_error:
             print(f"[WARN] 写入 invalid_weld_dates.csv 失败: {log_error}")
     
+    def _retry_connection(self, max_retries=5, initial_delay=2, max_delay=60):
+        """
+        重试获取数据库连接
+        max_retries: 最大重试次数
+        initial_delay: 初始延迟（秒）
+        max_delay: 最大延迟（秒，指数退避上限）
+        """
+        delay = initial_delay
+        for attempt in range(max_retries):
+            try:
+                connection = create_connection()
+                if connection and connection.is_connected():
+                    if attempt > 0:
+                        print(f"✅ 连接成功（第 {attempt + 1} 次尝试）")
+                    return connection
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  连接失败（尝试 {attempt + 1}/{max_retries}）: {e}，{delay}秒后重试...")
+                    time.sleep(delay)
+                    delay = min(delay * 2, max_delay)  # 指数退避
+                else:
+                    print(f"❌ 连接失败（已重试 {max_retries} 次）: {e}")
+        return None
+    
+    def _retry_execute(self, connection, cursor, sql, max_retries=5, initial_delay=2, max_delay=60):
+        """
+        重试执行SQL语句
+        """
+        delay = initial_delay
+        for attempt in range(max_retries):
+            try:
+                # 检查连接是否有效
+                if not connection.is_connected():
+                    print(f"⚠️  连接已断开，尝试重新连接...")
+                    connection.close()
+                    connection = self._retry_connection()
+                    if not connection:
+                        raise Error("无法重新建立连接")
+                    cursor = connection.cursor()
+                
+                cursor.execute(sql)
+                return True, connection, cursor
+            except Error as e:
+                error_msg = str(e)
+                # 判断是否为可重试的错误
+                is_retryable = any(keyword in error_msg.lower() for keyword in [
+                    'lost connection', 'connection', 'timeout', 'gone away', 
+                    'server has gone away', 'broken pipe', 'network'
+                ])
+                
+                if is_retryable and attempt < max_retries - 1:
+                    print(f"⚠️  SQL执行失败（尝试 {attempt + 1}/{max_retries}）: {e}，{delay}秒后重试...")
+                    time.sleep(delay)
+                    delay = min(delay * 2, max_delay)  # 指数退避
+                    
+                    # 尝试重新连接
+                    try:
+                        connection.close()
+                    except:
+                        pass
+                    connection = self._retry_connection()
+                    if connection:
+                        cursor = connection.cursor()
+                else:
+                    raise
+        return False, connection, cursor
+    
     def import_to_database(self):
-        """将数据导入数据库"""
+        """将数据导入数据库（带重试机制）"""
         if self.df is None or self.df.empty:
             print("ERROR: No data to import")
             return False
         
-        connection = create_connection()
+        # 使用重试机制获取连接
+        connection = self._retry_connection()
         if not connection:
+            print("ERROR: 无法建立数据库连接，已重试多次")
             return False
         
         cursor = None
@@ -612,9 +683,59 @@ class WeldingDataImporter:
                     f"({columns_str}) "
                     "SET WeldDate = STR_TO_DATE(NULLIF(@tmp_WeldDate, ''), '%Y-%m-%d')"
                 )
-                cursor.execute(load_sql)
-                connection.commit()
-                total_loaded += len(chunk)
+                
+                # 使用重试机制执行LOAD DATA
+                chunk_retry_delay = 2
+                chunk_max_retries = 5
+                chunk_loaded = False
+                
+                for chunk_attempt in range(chunk_max_retries):
+                    try:
+                        # 检查连接是否有效
+                        if not connection.is_connected():
+                            print(f"⚠️  连接已断开，尝试重新连接（chunk {total_loaded // self.CHUNK_SIZE + 1}）...")
+                            try:
+                                cursor.close()
+                                connection.close()
+                            except:
+                                pass
+                            connection = self._retry_connection()
+                            if not connection:
+                                raise Error("无法重新建立连接")
+                            cursor = connection.cursor()
+                            # 重新设置会话参数
+                            try:
+                                cursor.execute("SET SESSION local_infile = 1")
+                                if checks_disabled:
+                                    cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+                                    cursor.execute("SET UNIQUE_CHECKS = 0")
+                            except:
+                                pass
+                        
+                        cursor.execute(load_sql)
+                        connection.commit()
+                        total_loaded += len(chunk)
+                        chunk_loaded = True
+                        if chunk_attempt > 0:
+                            print(f"✅ Chunk {total_loaded // self.CHUNK_SIZE} 导入成功（第 {chunk_attempt + 1} 次尝试）")
+                        break
+                    except Error as e:
+                        error_msg = str(e)
+                        is_retryable = any(keyword in error_msg.lower() for keyword in [
+                            'lost connection', 'connection', 'timeout', 'gone away',
+                            'server has gone away', 'broken pipe', 'network'
+                        ])
+                        
+                        if is_retryable and chunk_attempt < chunk_max_retries - 1:
+                            print(f"⚠️  Chunk导入失败（尝试 {chunk_attempt + 1}/{chunk_max_retries}）: {e}，{chunk_retry_delay}秒后重试...")
+                            time.sleep(chunk_retry_delay)
+                            chunk_retry_delay = min(chunk_retry_delay * 2, 60)  # 指数退避
+                        else:
+                            print(f"❌ Chunk导入失败（已重试 {chunk_max_retries} 次）: {e}")
+                            raise
+                
+                if not chunk_loaded:
+                    raise Error(f"Chunk导入失败，已重试 {chunk_max_retries} 次")
                 #try:
                 #    os.remove(temp_csv_path)
                 #except Exception:

@@ -16,6 +16,9 @@ from utils.sync_manager import SyncManager
 from utils.data_cleaner import DataCleaner
 from utils.restore_manager import RestoreManager
 from utils.auth_decorators import login_required, permission_required
+import os
+import sys
+from werkzeug.utils import secure_filename
 
 # 创建Blueprint
 backup_bp = Blueprint('backup', __name__, url_prefix='/backup')
@@ -146,7 +149,7 @@ def api_create_backup():
 @login_required
 @permission_required('backup.manage')
 def api_sync():
-    """API: 执行同步"""
+    """API: 执行同步（仅主数据同步）"""
     try:
         data = request.get_json() or {}
         backup_id = data.get('backup_id')
@@ -163,6 +166,81 @@ def api_sync():
         return jsonify({
             'success': False,
             'message': f'同步失败: {str(e)}'
+        }), 500
+
+
+@backup_bp.route('/api/run-pipeline', methods=['POST'])
+@login_required
+@permission_required('backup.manage')
+def api_run_pipeline():
+    """API: 运行完整的数据同步流水线"""
+    try:
+        # 导入数据同步流水线模块
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from maintenance.data_sync_pipeline import run_data_sync_pipeline
+        
+        # 获取参数
+        data = request.form.to_dict() if request.form else (request.get_json() or {})
+        
+        # 处理Excel文件上传
+        excel_path = None
+        if 'excel_file' in request.files:
+            file = request.files['excel_file']
+            if file and file.filename:
+                # 保存上传的文件
+                upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'uploads', 'temp')
+                os.makedirs(upload_dir, exist_ok=True)
+                filename = secure_filename(file.filename)
+                excel_path = os.path.join(upload_dir, filename)
+                file.save(excel_path)
+        else:
+            # 使用默认路径或参数中的路径（目录会自动查找所有 WeldingDB_*.xlsx 文件）
+            excel_path = data.get('excel_path', '').strip() if data.get('excel_path') else ''
+            if not excel_path:
+                # 如果为空，使用默认的 nordinfo 目录
+                project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                excel_path = os.path.join(project_root, 'nordinfo')
+            # 确保是字符串类型
+            excel_path = str(excel_path)
+        
+        # 获取其他参数
+        trigger = data.get('trigger', 'MANUAL')
+        description = data.get('description', f'Web界面触发 - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+        skip_backup = data.get('skip_backup', 'false').lower() == 'true'
+        skip_cleanup = data.get('skip_cleanup', 'false').lower() == 'true'
+        cleanup_keep_days = int(data.get('cleanup_keep_days', 90))
+        cleanup_permanent_delete = data.get('cleanup_permanent_delete', 'false').lower() == 'true'
+        verbose_import = data.get('verbose_import', 'false').lower() == 'true'
+        
+        # 运行流水线
+        summary = run_data_sync_pipeline(
+            excel_path=excel_path,
+            trigger=trigger,
+            description=description,
+            skip_backup=skip_backup,
+            skip_cleanup=skip_cleanup,
+            cleanup_keep_days=cleanup_keep_days,
+            cleanup_permanent_delete=cleanup_permanent_delete,
+            verbose_import=verbose_import
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': '数据同步流水线执行完成',
+            'summary': summary
+        })
+    except FileNotFoundError as e:
+        return jsonify({
+            'success': False,
+            'message': f'文件未找到: {str(e)}'
+        }), 400
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        return jsonify({
+            'success': False,
+            'message': f'流水线执行失败: {str(e)}',
+            'error_detail': error_detail
         }), 500
 
 

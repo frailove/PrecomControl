@@ -34,8 +34,20 @@ def run_data_sync_pipeline(
         'started_at': datetime.now().isoformat(timespec='seconds')
     }
     
+    # excel_path 可以是文件、目录或通配符，resolve_welding_files 会处理
+    # 如果为空，使用默认的 nordinfo 目录
+    if not excel_path:
+        # 获取项目根目录
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        excel_path = os.path.join(project_root, 'nordinfo')
+    
+    # 确保 excel_path 是字符串类型
+    excel_path = str(excel_path)
+    
+    # 这里只检查路径是否存在（文件或目录）
     if not os.path.exists(excel_path):
-        raise FileNotFoundError(f"找不到焊接数据源文件: {excel_path}")
+        raise FileNotFoundError(f"找不到焊接数据源路径: {excel_path}")
     
     print("\n" + "=" * 70)
     print("数据同步流水线启动")
@@ -91,8 +103,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="运行数据同步与备份流水线")
     parser.add_argument(
         '--excel',
-        default=r"C:\Projects\PrecomControl\nordinfo\WeldingDB_2.xlsx",
-        help='WeldingList 数据Excel路径'
+        default=r"C:\Projects\PrecomControl\nordinfo",
+        help='WeldingList 数据Excel路径或目录（目录会自动查找所有 WeldingDB_*.xlsx 文件）'
     )
     parser.add_argument('--trigger', default='SCHEDULED', help='备份触发来源描述')
     parser.add_argument('--description', help='备份描述')

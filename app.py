@@ -46,6 +46,12 @@ def create_app():
         app.logger.addHandler(file_handler)
         app.logger.setLevel(logging.INFO)
         app.logger.info('应用启动')
+        
+        # 配置数据库模块的日志记录器，使其也记录到同一个日志文件
+        db_logger = logging.getLogger('database')
+        db_logger.setLevel(logging.INFO)
+        db_logger.addHandler(file_handler)
+        db_logger.propagate = False  # 避免重复记录
     
     # 注册蓝图
     app.register_blueprint(auth_bp)

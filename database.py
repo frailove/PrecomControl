@@ -3,7 +3,11 @@ import mysql.connector
 from mysql.connector import Error, pooling
 from mysql.connector.pooling import MySQLConnectionPool
 import threading
+import logging
 from config import DB_CONFIG
+
+# 配置数据库模块的日志记录器
+db_logger = logging.getLogger('database')
 
 # 全局连接池
 _connection_pool = None
@@ -56,9 +60,11 @@ def init_connection_pool():
                 'allow_local_infile': True
             }
             _connection_pool = MySQLConnectionPool(**pool_config)
+            db_logger.info(f"连接池初始化成功，池大小: {pool_config['pool_size']}")
             print(f"[DB] 连接池初始化成功，池大小: {pool_config['pool_size']}")
             return _connection_pool
         except Error as e:
+            db_logger.error(f"连接池初始化失败: {e}", exc_info=True)
             print(f"[DB] 连接池初始化失败: {e}")
             return None
 
@@ -77,6 +83,7 @@ def create_connection(use_pool=True):
                 if connection.is_connected():
                     return connection
             except Error as e:
+                db_logger.error(f"从连接池获取连接失败: {e}", exc_info=True)
                 print(f"[DB] 从连接池获取连接失败: {e}")
                 # 连接池失败时回退到直接连接
                 pass
@@ -87,6 +94,7 @@ def create_connection(use_pool=True):
         if connection.is_connected():
             return connection
     except Error as e:
+        db_logger.error(f"直接连接失败: {e}", exc_info=True)
         print(f"[DB] 直接连接失败: {e}")
         return None
     
@@ -303,6 +311,21 @@ def create_welding_table():
             if col and isinstance(col[1], str) and 'varchar' in col[1].lower() and '512' not in col[1]:
                 cursor.execute("ALTER TABLE WeldingList MODIFY COLUMN TestPackageID VARCHAR(512)")
                 connection.commit()
+        except Error:
+            pass
+
+        # 兼容：确保 JointStatus 列存在且长度为 512
+        try:
+            cursor.execute("SHOW COLUMNS FROM WeldingList LIKE 'JointStatus'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute("ALTER TABLE WeldingList ADD COLUMN JointStatus VARCHAR(512) NULL COMMENT '焊口状态' AFTER Status")
+                connection.commit()
+            else:
+                col_type = col[1] if isinstance(col[1], str) else ''
+                if 'varchar' in col_type.lower() and '512' not in col_type:
+                    cursor.execute("ALTER TABLE WeldingList MODIFY COLUMN JointStatus VARCHAR(512) NULL COMMENT '焊口状态'")
+                    connection.commit()
         except Error:
             pass
 

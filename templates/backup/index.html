@@ -168,6 +168,13 @@
                     </div>
                 </div>
                 <div class="row g-3 mt-2">
+                    <div class="col-md-12">
+                        <button class="btn btn-lg btn-warning w-100" onclick="showPipelineModal()">
+                            <i class="bi bi-play-circle-fill me-2"></i>运行完整数据同步流水线
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
                     <div class="col-md-6">
                         <button class="btn btn-outline-secondary w-100" onclick="window.location.href='{{ url_for('backup.backup_list') }}'">
                             <i class="bi bi-hdd-stack me-2"></i>查看更多备份
@@ -206,9 +213,80 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- 完整流水线模态框 -->
+<div class="modal fade" id="pipelineModal" tabindex="-1" aria-labelledby="pipelineModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="pipelineModalLabel">
+                    <i class="bi bi-play-circle-fill me-2"></i>运行完整数据同步流水线
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>流水线步骤：</strong>备份 → 焊口导入 → 主数据同步 → 聚合刷新 → 数据清理
+                </div>
+                
+                <form id="pipelineForm">
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">
+                            <i class="bi bi-file-earmark-excel me-2"></i>Excel文件（可选）
+                        </label>
+                        <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx,.xls">
+                        <small class="form-text text-muted">
+                            如果不选择文件，将使用默认目录：<code>nordinfo/</code>（自动查找所有 <code>WeldingDB_*.xlsx</code> 文件）
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pipelineDescription" class="form-label">
+                            <i class="bi bi-card-text me-2"></i>备份描述（可选）
+                        </label>
+                        <input type="text" class="form-control" id="pipelineDescription" 
+                               name="description" placeholder="自动生成描述">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="skipBackup" name="skip_backup">
+                                <label class="form-check-label" for="skipBackup">
+                                    跳过备份步骤
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="skipCleanup" name="skip_cleanup">
+                                <label class="form-check-label" for="skipCleanup">
+                                    跳过清理步骤
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="pipelineProgress" class="d-none mt-3">
+                        <div class="progress mb-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 100%">执行中...</div>
+                        </div>
+                        <div id="pipelineStatus" class="text-muted small"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" onclick="runPipeline()">
+                    <i class="bi bi-play-fill me-2"></i>开始执行
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function confirmAction(message) {
     return confirm(message);
@@ -264,6 +342,74 @@ function runSync() {
 function cleanPreview() {
     if (!confirmAction('将跳转到统计页面并加载可清理数据，继续吗？')) return;
     window.location.href = '{{ url_for("backup.statistics") }}';
+}
+
+function showPipelineModal() {
+    const modal = new bootstrap.Modal(document.getElementById('pipelineModal'));
+    modal.show();
+}
+
+function runPipeline() {
+    if (!confirmAction('确定要运行完整的数据同步流水线吗？这可能需要较长时间。')) {
+        return;
+    }
+    
+    const form = document.getElementById('pipelineForm');
+    const formData = new FormData(form);
+    
+    // 添加复选框状态
+    formData.append('skip_backup', document.getElementById('skipBackup').checked);
+    formData.append('skip_cleanup', document.getElementById('skipCleanup').checked);
+    
+    // 显示进度
+    const progressDiv = document.getElementById('pipelineProgress');
+    const statusDiv = document.getElementById('pipelineStatus');
+    progressDiv.classList.remove('d-none');
+    statusDiv.textContent = '正在执行流水线，请稍候...';
+    
+    // 禁用按钮
+    const submitBtn = event.target;
+    submitBtn.disabled = true;
+    
+    fetch('/backup/api/run-pipeline', {
+        method: 'POST',
+        body: formData
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        progressDiv.classList.add('d-none');
+        submitBtn.disabled = false;
+        
+        if (data.success) {
+            let message = '流水线执行成功！\n\n';
+            if (data.summary) {
+                message += `备份ID: ${data.summary.backup_id || 'N/A'}\n`;
+                message += `同步ID: ${data.summary.sync_id || 'N/A'}\n`;
+                message += `导入行数: ${data.summary.imported_rows || 0}\n`;
+                message += `开始时间: ${data.summary.started_at}\n`;
+                message += `完成时间: ${data.summary.finished_at || 'N/A'}\n`;
+            }
+            alert(message);
+            
+            // 关闭模态框并刷新页面
+            const modal = bootstrap.Modal.getInstance(document.getElementById('pipelineModal'));
+            modal.hide();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            let errorMsg = '流水线执行失败：\n' + data.message;
+            if (data.error_detail) {
+                errorMsg += '\n\n详细错误信息已记录到服务器日志。';
+            }
+            alert(errorMsg);
+        }
+    })
+    .catch(error => {
+        progressDiv.classList.add('d-none');
+        submitBtn.disabled = false;
+        alert('请求失败: ' + error.message);
+    });
 }
 </script>
 {% endblock %}
