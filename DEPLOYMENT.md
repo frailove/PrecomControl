@@ -8,7 +8,7 @@
 |------|------|------|
 | 操作系统 | CentOS 7+/Ubuntu 20.04+/Windows Server 2019+ | Linux 更推荐 |
 | Python | 3.8 及以上 | 建议使用官方发行版 |
-| MySQL | 5.7+/8.0+ | 需调高 `max_connections` ≥150 |
+| MySQL | 5.7+/8.0+ | 需调高 `max_connections` ≥150（注意：这是 MySQL 服务器最大连接数，不是连接池大小） |
 | 网络 | 放行 5000 端口（或 HTTP/HTTPS 端口） | 可配合 Nginx 反向代理 |
 
 ### 1.1 创建部署目录
@@ -69,7 +69,7 @@ export DB_PASSWORD=yyy
 
 ## 4. 启动方式
 
-### 4.1 推荐（Linux）：Gunicorn
+### 4.1 推荐（Linux）：Gunicorn + Nginx
 
 ```bash
 bash start_production.sh
@@ -107,7 +107,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now precom.service
 ```
 
-### 4.2 推荐（Windows）：Waitress
+### 4.2 Windows：Waitress
 
 ```bash
 python start_production.bat
@@ -123,7 +123,36 @@ waitress-serve --listen=0.0.0.0:5000 --threads=8 wsgi:app
 
 > 若需后台服务，可使用 NSSM、任务计划程序等工具。
 
-### 4.3 开发调试模式（仅本地）
+### 4.3 配置 Nginx + HTTPS
+
+为避免暴露 IP、提供固定域名入口，建议使用 Nginx 反向代理 + Let’s Encrypt 证书。
+
+1. **准备域名**：在 DNS 控制台添加 A 记录，将 `cc7projectcontrols.com` 指到服务器公网 IP（主机记录填 `@` 或留空）。
+2. **安装 Nginx + Certbot**
+   ```bash
+   sudo apt install nginx certbot python3-certbot-nginx
+   ```
+3. **导入配置**
+   ```bash
+   sudo cp nginx/precomcontrol.conf /etc/nginx/sites-available/precomcontrol
+   sudo ln -s /etc/nginx/sites-available/precomcontrol /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+   - 配置中包含 HTTP → HTTPS 重定向、静态资源缓存、健康检查等。
+4. **申请 HTTPS 证书**
+   ```bash
+   sudo certbot --nginx -d cc7projectcontrols.com
+   ```
+   - Certbot 会自动续期证书。若暂时只需 HTTP，可先不执行此步。
+5. **或使用脚本**
+   ```bash
+   sudo bash setup_nginx.sh
+   ```
+   - 按提示输入域名、项目路径，一次性完成安装与证书配置。
+
+> 如果只是内部局域网使用，也可以通过 hosts 文件临时映射域名到服务器 IP，但正式环境建议走 DNS + Nginx。
+
+### 4.4 开发调试模式（仅本地）
 
 ```bash
 python app.py

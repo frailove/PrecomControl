@@ -45,18 +45,37 @@
     }
     
     .stat-card h3 {
-    font-size: 1.2rem;
+        font-size: 1.2rem;
         font-weight: 800;
         color: var(--primary-blue);
         margin: 0;
     }
     
     .stat-card p {
-    font-size: 0.7rem;
+        font-size: 0.7rem;
         color: var(--text-secondary);
-    margin: 0.15rem 0 0;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
+        margin: 0.15rem 0 0;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+    
+    .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.2rem;
+    }
+    
+    .progress-thin {
+        height: 6px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #e9ecef;
+    }
+    
+    .progress-thin .progress-bar {
+        height: 100%;
     }
     
 </style>
@@ -196,10 +215,9 @@
                 <th style="width: 200px;">试压包统计</th>
                 <th style="width: 110px;">DIN总量</th>
                 <th style="width: 110px;">DIN完成量</th>
-                <th style="width: 180px;">焊接进度</th>
-                <th style="width: 180px;">测试进度</th>
+                <th style="width: 200px;">焊接进度</th>
+                <th style="width: 200px;">测试进度</th>
                 <th style="width: 80px;">优先级</th>
-                <th>备注</th>
                 <th style="width: 180px;">操作</th>
             </tr>
         </thead>
@@ -234,27 +252,30 @@
                     <td>{{ '%.1f' % stats.total_din }}</td>
                     <td>{{ '%.1f' % stats.completed_din }}</td>
                     <td>
-                        <div class="progress" style="height: 18px;">
+                        {% set welding_pct = (stats.welding_progress * 100)|round(1) %}
+                        <div class="progress-meta">
+                            <span>DIN {{ stats.completed_din|round(1) }}/{{ stats.total_din|round(1) }}</span>
+                            <span>{{ welding_pct }}%</span>
+                        </div>
+                        <div class="progress progress-thin">
                             <div class="progress-bar bg-success" role="progressbar"
-                                 style="width: {{ (stats.welding_progress * 100)|round(1) }}%;"
-                                 aria-valuenow="{{ (stats.welding_progress * 100)|round(1) }}"
-                                 aria-valuemin="0" aria-valuemax="100">
-                                 {{ (stats.welding_progress * 100)|round(1) }}%
-                            </div>
+                                 style="width: {{ welding_pct }}%;"
+                                 aria-valuenow="{{ welding_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </td>
                     <td>
-                        <div class="progress" style="height: 18px;">
+                        {% set test_pct = (stats.test_progress * 100)|round(1) %}
+                        <div class="progress-meta">
+                            <span>试压包 {{ stats.tested_packages }}/{{ stats.total_packages }}</span>
+                            <span>{{ test_pct }}%</span>
+                        </div>
+                        <div class="progress progress-thin">
                             <div class="progress-bar bg-info" role="progressbar"
-                                 style="width: {{ (stats.test_progress * 100)|round(1) }}%;"
-                                 aria-valuenow="{{ (stats.test_progress * 100)|round(1) }}"
-                                 aria-valuemin="0" aria-valuemax="100">
-                                 {{ (stats.test_progress * 100)|round(1) }}%
-                            </div>
+                                 style="width: {{ test_pct }}%;"
+                                 aria-valuenow="{{ test_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </td>
                     <td class="text-center">{{ system.Priority or 0 }}</td>
-                    <td>{{ system.Remarks or '-' }}</td>
                     <td>
                         <div class="action-buttons">
                             <a class="btn btn-sm btn-primary" href="/systems/edit/{{ system.SystemCode }}">
@@ -269,7 +290,7 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
+                    <td colspan="10" class="text-center text-muted py-4">
                         <i class="bi bi-inbox"></i> 暂无数据
                     </td>
                 </tr>

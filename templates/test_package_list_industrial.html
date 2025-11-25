@@ -111,6 +111,22 @@
     .stage-badge.info { background: #bae6fd; color: #0c4a6e; }
     .stage-badge.warning { background: #fef3c7; color: #92400e; }
     .stage-badge.secondary { background: #e2e8f0; color: #475569; }
+    
+    .test-package-table tbody td {
+        padding: 0.5rem 0.65rem;
+        vertical-align: middle;
+    }
+    
+    .tp-action-buttons {
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: nowrap;
+    }
+    
+    .tp-action-buttons .btn-sm {
+        padding: 0.3rem 0.55rem;
+        font-size: 0.75rem;
+    }
 </style>
 {% endblock %}
 
@@ -294,7 +310,7 @@
 
 <!-- 表格 -->
 <div class="table-container">
-    <table class="table table-hover mb-0">
+    <table class="table table-hover mb-0 test-package-table">
         <thead>
             <tr>
                 <th style="width: 180px;">试压包ID</th>
@@ -368,7 +384,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <div class="action-buttons">
+                        <div class="tp-action-buttons">
                             <a href="/test_packages/edit/{{ package.TestPackageID|urlencode }}" class="btn btn-sm btn-primary">
                                 <i class="bi bi-pencil"></i> 编辑
                             </a>

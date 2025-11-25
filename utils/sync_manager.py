@@ -153,35 +153,60 @@ class SyncManager:
         stats = {'added': 0, 'updated': 0, 'deleted': 0, 'skipped': 0}
         now = datetime.now()
         
-        # 新增
-        cur.execute("""
-            INSERT INTO HydroTestPackageList (TestPackageID, SystemCode, SubSystemCode, Description, DataSource, LastSyncTime, IsDeleted, DeletedTime)
-            SELECT wl.TestPackageID,
-                   MAX(wl.SystemCode),
-                   MAX(wl.SubSystemCode),
-                   COALESCE(NULLIF(wl.TestPackageID, ''), 'AUTO_SYNC') AS Description,
-                   'WELDING_LIST' AS DataSource,
-                   %s AS LastSyncTime,
-                   FALSE AS IsDeleted,
-                   NULL AS DeletedTime
+        base_select = """
+            SELECT
+                TRIM(wl.TestPackageID) AS TestPackageID,
+                MAX(TRIM(wl.SystemCode)) AS SystemCode,
+                MAX(TRIM(wl.SubSystemCode)) AS SubSystemCode,
+                COALESCE(NULLIF(TRIM(wl.TestPackageID), ''), 'AUTO_SYNC') AS Description
             FROM WeldingList wl
             WHERE wl.TestPackageID IS NOT NULL
-              AND wl.TestPackageID <> ''
+              AND TRIM(wl.TestPackageID) <> ''
               AND wl.IsDeleted = FALSE
-            GROUP BY wl.TestPackageID
-            ON DUPLICATE KEY UPDATE
-                SystemCode = VALUES(SystemCode),
-                SubSystemCode = VALUES(SubSystemCode),
-                Description = VALUES(Description),
-                DataSource = 'WELDING_LIST',
-                LastSyncTime = VALUES(LastSyncTime),
-                IsDeleted = FALSE,
-                DeletedTime = NULL
-        """, (now,))
+            GROUP BY TRIM(wl.TestPackageID)
+        """
+
+        # 仅插入新增记录
+        insert_sql = f"""
+            INSERT INTO HydroTestPackageList
+                (TestPackageID, SystemCode, SubSystemCode, Description, DataSource, LastSyncTime, IsDeleted, DeletedTime)
+            SELECT
+                src.TestPackageID,
+                src.SystemCode,
+                src.SubSystemCode,
+                src.Description,
+                'WELDING_LIST' AS DataSource,
+                %s AS LastSyncTime,
+                FALSE AS IsDeleted,
+                NULL AS DeletedTime
+            FROM ({base_select}) src
+            WHERE NOT EXISTS (
+                SELECT 1 FROM HydroTestPackageList h WHERE h.TestPackageID = src.TestPackageID
+            )
+        """
+        cur.execute(insert_sql, (now,))
         conn.commit()
         stats['added'] = cur.rowcount or 0
         if stats['added']:
             print(f"  + 新增试压包: {stats['added']} 条")
+
+        # 更新已存在的记录
+        update_sql = f"""
+            UPDATE HydroTestPackageList h
+            JOIN ({base_select}) src ON src.TestPackageID = h.TestPackageID
+            SET h.SystemCode = src.SystemCode,
+                h.SubSystemCode = src.SubSystemCode,
+                h.Description = src.Description,
+                h.DataSource = 'WELDING_LIST',
+                h.LastSyncTime = %s,
+                h.IsDeleted = FALSE,
+                h.DeletedTime = NULL
+        """
+        cur.execute(update_sql, (now,))
+        conn.commit()
+        stats['updated'] = cur.rowcount or 0
+        if stats['updated']:
+            print(f"  ~ 更新试压包: {stats['updated']} 条")
         
         # 软删除
         cur.execute("""
@@ -362,7 +387,10 @@ class SyncManager:
                         conn.commit()
                         print(f"[DEBUG] SubsystemList.SystemCode 更新完成")
         except Error as e:
-            print(f"[ERROR] 更新 SubsystemList.SystemCode 失败: {e}")
+            if getattr(e, 'errno', None) == 1832:
+                print("[INFO] 跳过 SubsystemList.SystemCode 长度调整：该列存在外键约束（SubsystemList_ibfk_1），如需放宽请在数据库中手动处理。")
+            else:
+                print(f"[ERROR] 更新 SubsystemList.SystemCode 失败: {e}")
 
         # 注意：不再尝试修改 HydroTestPackageList 的列，因为：
         # 1. SystemCode 和 SubSystemCode 有外键约束，修改需要先删除外键
