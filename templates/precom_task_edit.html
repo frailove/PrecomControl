@@ -57,6 +57,7 @@
         </a>
         {% if task %}
         <form id="deleteTaskForm" method="post" action="{{ url_for('precom.precom_task_delete', task_id=task.TaskID) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <button type="button" class="btn btn-outline-danger" id="deleteTaskBtn">
                 <i class="bi bi-trash"></i> 删除任务
             </button>
@@ -73,6 +74,7 @@
             </div>
             <div class="card-body">
                 <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="task-form-section">
                         <div class="task-section-title">
                             <i class="bi bi-grid"></i> 基础属性
@@ -267,6 +269,7 @@
                     </a>
                     <form id="punchImportForm" method="post" enctype="multipart/form-data"
                           action="{{ url_for('precom.precom_import_punch', task_id=task.TaskID) }}" class="mb-0">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <label class="btn btn-sm btn-outline-primary mb-0">
                             <i class="bi bi-upload"></i> 导入
                             <input type="file" name="file" accept=".xlsx,.xls" style="display:none" onchange="this.form.submit();">

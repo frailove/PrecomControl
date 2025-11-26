@@ -20,6 +20,10 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(FlaskConfig)
     
+    # CSRF 保护（安全关键）
+    from flask_wtf.csrf import CSRFProtect
+    csrf = CSRFProtect(app)
+    
     # 初始化数据库连接池（生产环境）
     from database import init_connection_pool
     init_connection_pool()
@@ -128,6 +132,17 @@ def create_app():
             app.logger.error(f'健康检查失败: {e}')
             return {'status': 'unhealthy', 'error': str(e)}, 503
     
+    # 安全相关 HTTP 响应头（最佳实践）
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        # 仅在 HTTPS 场景下启用 HSTS，避免本地开发调试受影响
+        if request.is_secure:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
+
     # 首页（工业化风格）
     @app.route('/')
     def index():

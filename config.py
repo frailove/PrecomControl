@@ -1,18 +1,18 @@
-# 数据库配置
+# 数据库配置（通过环境变量读取，避免硬编码敏感信息）
+import os
+from datetime import timedelta
+
 DB_CONFIG = {
-    'host': '10.78.44.17',
-    'database': 'PRECOMCONTROL',
-    'user': 'root',
-    'password': 'Gcc$873209',
-    'port': 3306
+    # 为了兼容现有部署，host/database/user/port 提供默认值；密码必须从环境变量读取
+    'host': os.environ.get('DB_HOST', '10.78.44.17'),
+    'database': os.environ.get('DB_NAME', 'PRECOMCONTROL'),
+    'user': os.environ.get('DB_USER', 'root'),
+    # 严禁在代码中硬编码真实密码：生产/测试环境必须设置 DB_PASSWORD 环境变量
+    'password': os.environ.get('DB_PASSWORD'),
+    'port': int(os.environ.get('DB_PORT', 3306)),
 }
 
 # Flask配置
-from datetime import timedelta
-
-
-import os
-
 class FlaskConfig:
     # 安全：从环境变量读取密钥，如果没有则使用默认值（生产环境必须修改）
     SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key-change-this-in-production')

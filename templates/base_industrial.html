@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}预试车管理系统{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
@@ -547,6 +548,40 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- CSRF Token 支持 -->
+    <script>
+        // 获取 CSRF Token（用于 AJAX 请求）
+        function getCSRFToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
+        
+        // 为所有 fetch 请求自动添加 CSRF Token
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            // 只对同源 POST/PUT/DELETE/PATCH 请求添加 CSRF Token
+            if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+                if (!options.headers) {
+                    options.headers = {};
+                }
+                if (typeof options.headers === 'object' && !(options.headers instanceof Headers)) {
+                    options.headers['X-CSRFToken'] = getCSRFToken();
+                } else if (options.headers instanceof Headers) {
+                    options.headers.set('X-CSRFToken', getCSRFToken());
+                }
+            }
+            return originalFetch(url, options);
+        };
+        
+        // 为 jQuery AJAX 请求自动添加 CSRF Token
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+                }
+            }
+        });
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>

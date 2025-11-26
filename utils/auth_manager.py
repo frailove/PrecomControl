@@ -379,6 +379,10 @@ def create_user(username: str, password: str, full_name: Optional[str], email: O
     if not conn:
         raise RuntimeError("数据库连接失败")
     try:
+        ok, msg = validate_password_strength(password)
+        if not ok:
+            raise ValueError(msg)
+
         cur = conn.cursor()
         cur.execute(
             """
@@ -461,6 +465,31 @@ def update_profile(user_id: int, full_name: Optional[str], email: Optional[str],
         conn.close()
 
 
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """验证密码强度，返回 (是否通过, 错误消息)"""
+    if len(password or '') < 12:
+        return False, "密码长度至少 12 位"
+
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_special = any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?/" for c in password)
+
+    if not (has_upper and has_lower and has_digit and has_special):
+        return False, "密码必须包含大小写字母、数字和特殊字符"
+
+    weak_passwords = {
+        "Password123!",
+        "Admin@123",
+        "Qwer1234!",
+        "Test1234!",
+    }
+    if password in weak_passwords:
+        return False, "密码过于简单，请使用更复杂的密码"
+
+    return True, ""
+
+
 def change_password(user_id: int, current_password: str, new_password: str):
     conn = create_connection()
     if not conn:
@@ -471,8 +500,10 @@ def change_password(user_id: int, current_password: str, new_password: str):
         row = cur.fetchone()
         if not row or not check_password_hash(row['PasswordHash'], current_password):
             return False, '当前密码不正确'
-        if len(new_password) < 8:
-            return False, '新密码至少8位'
+
+        ok, msg = validate_password_strength(new_password)
+        if not ok:
+            return False, msg
         cur.execute(
             """
             UPDATE UserAccount
@@ -511,6 +542,10 @@ def reset_user_password(user_id: int, new_password: str, updated_by: str):
     if not conn:
         raise RuntimeError("数据库连接失败")
     try:
+        ok, msg = validate_password_strength(new_password)
+        if not ok:
+            raise ValueError(msg)
+
         cur = conn.cursor()
         cur.execute(
             """

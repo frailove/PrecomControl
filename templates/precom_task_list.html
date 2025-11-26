@@ -25,6 +25,7 @@
         </a>
         <form class="d-inline-block" method="post" enctype="multipart/form-data"
               action="{{ url_for('precom.precom_import_tasks', task_type=filter_task_type) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <label class="btn btn-outline-secondary mb-0">
                 <i class="bi bi-upload"></i> 导入清单
                 <input type="file" name="file" accept=".xlsx,.xls" style="display:none" onchange="this.form.submit();">

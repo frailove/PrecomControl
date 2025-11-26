@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>编辑试压包 - {{ test_package.TestPackageID }}</title>
     
     <!-- Bootstrap CSS -->
@@ -540,6 +541,7 @@
             <!-- 基础信息选项卡 -->
             <div class="tab-pane fade show active" id="basic" role="tabpanel">
                 <form method="POST" action="/test_packages/edit/{{ test_package.TestPackageID }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <!-- 三列横向布局 -->
                     <div class="row">
                         <!-- 左列：基本信息 -->
@@ -1018,6 +1020,43 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- CSRF Token 支持（与工业化主模板保持一致，用于本页的 fetch / AJAX 请求） -->
+    <script>
+        function getCSRFToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
+
+        // 为所有 fetch 请求自动添加 CSRF Token
+        (function () {
+            const originalFetch = window.fetch;
+            window.fetch = function (url, options = {}) {
+                if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+                    if (!options.headers) {
+                        options.headers = {};
+                    }
+                    if (typeof options.headers === 'object' && !(options.headers instanceof Headers)) {
+                        options.headers['X-CSRFToken'] = getCSRFToken();
+                    } else if (options.headers instanceof Headers) {
+                        options.headers.set('X-CSRFToken', getCSRFToken());
+                    }
+                }
+                return originalFetch(url, options);
+            };
+
+            // 为 jQuery AJAX 请求自动添加 CSRF Token
+            if (window.$ && $.ajaxSetup) {
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader('X-CSRFToken', getCSRFToken());
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+
     <script>
         const testPackageId = "{{ test_package.TestPackageID }}";
         const attachmentModules = {{ attachment_modules|tojson }};

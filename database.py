@@ -627,6 +627,13 @@ def ensure_precom_tables():
                 ActualDate DATETIME NULL COMMENT '测试实际时间',
                 PerformedBy VARCHAR(255) NULL COMMENT '执行人',
                 TestType VARCHAR(50) NULL COMMENT '测试类型（用于 Loop/MRT/FunctionTest 等）',
+                -- 施工进度信息（预留字段，供后续统计使用）
+                ProgressID VARCHAR(255) NULL COMMENT '施工进度 ID / 工作包 ID / WBS',
+                Discipline VARCHAR(255) NULL COMMENT '专业',
+                WorkPackage VARCHAR(255) NULL COMMENT '工作包名称',
+                KeyQuantityTotal INT NULL COMMENT '关键工程量总量',
+                KeyQuantityDone INT NULL COMMENT '关键工程量完成量',
+                KeyProgressPercent DECIMAL(5,2) NULL COMMENT '关键工程量完成比例（%）',
                 CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_precom_type (TaskType),
@@ -701,6 +708,73 @@ def ensure_precom_tables():
             if not col:
                 cursor.execute(
                     "ALTER TABLE PrecomTaskPunch ADD COLUMN RevNo VARCHAR(50) NULL AFTER SheetNo"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        # 兼容已有旧表：为 PrecomTask 表补充施工进度相关列
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTask LIKE 'ProgressID'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTask ADD COLUMN ProgressID VARCHAR(255) NULL AFTER TestType"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTask LIKE 'Discipline'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTask ADD COLUMN Discipline VARCHAR(255) NULL AFTER ProgressID"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTask LIKE 'WorkPackage'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTask ADD COLUMN WorkPackage VARCHAR(255) NULL AFTER Discipline"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTask LIKE 'KeyQuantityTotal'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTask ADD COLUMN KeyQuantityTotal INT NULL AFTER WorkPackage"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTask LIKE 'KeyQuantityDone'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTask ADD COLUMN KeyQuantityDone INT NULL AFTER KeyQuantityTotal"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTask LIKE 'KeyProgressPercent'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTask ADD COLUMN KeyProgressPercent DECIMAL(5,2) NULL AFTER KeyQuantityDone"
                 )
                 connection.commit()
         except Error:

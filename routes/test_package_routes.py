@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, jsonify, send_file, render_template
+from flask import Blueprint, request, redirect, jsonify, send_file, render_template, current_app
 from models.test_package import TestPackageModel
 from models.system import SystemModel
 from models.subsystem import SubsystemModel
@@ -46,6 +46,14 @@ REQUIRED_ATTACHMENT_MODULES = [
 
 UPLOAD_FOLDER = 'uploads/test_packages'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'dwg', 'dxf', 'xlsx', 'xls', 'doc', 'docx', 'zip'}
+
+from importlib import import_module
+
+try:
+    # 通过动态导入避免静态检查器对可选依赖报错
+    magic = import_module("magic")  # type: ignore[assignment]
+except ImportError:  # 安全但不强依赖，缺失时仅根据扩展名校验
+    magic = None
 
 PUNCH_HEADER_MAP = {
     'punchno': 'PunchNo',
@@ -335,6 +343,54 @@ def build_pagination_base_path(args, path='/test_packages'):
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def _validate_upload_file(file) -> tuple[bool, str | None]:
+    """验证上传文件的扩展名、MIME 类型和单个文件大小，返回 (是否通过, 错误消息)。"""
+    if not file or not file.filename:
+        return False, "未选择文件"
+
+    if not allowed_file(file.filename):
+        return False, "不允许的文件类型"
+
+    # 单个文件大小限制：50MB
+    max_size_bytes = 50 * 1024 * 1024
+    try:
+        pos = file.stream.tell()
+        file.stream.seek(0, os.SEEK_END)
+        size = file.stream.tell()
+        file.stream.seek(pos)
+    except Exception:
+        size = None
+    if size is not None and size > max_size_bytes:
+        return False, "单个文件大小不能超过 50MB"
+
+    # MIME 类型校验（在安装了 python-magic 的环境下启用）
+    if magic is not None:
+        try:
+            pos = file.stream.tell()
+            sample = file.stream.read(2048)
+            file.stream.seek(pos)
+            mime_type = magic.from_buffer(sample, mime=True)
+        except Exception:
+            mime_type = None
+
+        if mime_type:
+            allowed_mimes = {
+                'application/pdf',
+                'image/png',
+                'image/jpeg',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/zip',
+                'image/vnd.dwg',
+            }
+            if mime_type not in allowed_mimes:
+                return False, "文件内容与扩展名不匹配或类型不受支持"
+
+    return True, None
 
 
 def ensure_upload_folder(test_package_id: str, module_name: str) -> str:
@@ -1085,7 +1141,8 @@ def add_pid(test_package_id):
         return jsonify({'success': True, 'id': cur.lastrowid})
     except Exception as exc:
         conn.rollback()
-        return jsonify({'error': str(exc)}), 500
+        current_app.logger.error(f"添加 PID 失败: {exc}", exc_info=True)
+        return jsonify({'error': '服务器内部错误，请稍后重试'}), 500
     finally:
         conn.close()
 
@@ -1145,7 +1202,8 @@ def add_iso(test_package_id):
         return jsonify({'success': True, 'id': cur.lastrowid})
     except Exception as exc:
         conn.rollback()
-        return jsonify({'error': str(exc)}), 500
+        current_app.logger.error(f"添加 ISO 失败: {exc}", exc_info=True)
+        return jsonify({'error': '服务器内部错误，请稍后重试'}), 500
     finally:
         conn.close()
 
@@ -1226,7 +1284,8 @@ def add_punch(test_package_id):
         return jsonify({'success': True, 'id': cur.lastrowid})
     except Exception as exc:
         conn.rollback()
-        return jsonify({'error': str(exc)}), 500
+        current_app.logger.error(f"上传试压包附件失败: {exc}", exc_info=True)
+        return jsonify({'error': '服务器内部错误，请稍后重试'}), 500
     finally:
         conn.close()
 
@@ -1620,7 +1679,10 @@ def upload_attachment(test_package_id, module_name):
         cur = conn.cursor()
         uploaded = []
         for file in files:
-            if not file or not allowed_file(file.filename):
+            ok, err = _validate_upload_file(file)
+            if not ok:
+                # 对于单个文件出错，跳过并记录一条错误信息
+                current_app.logger.warning(f"试压包附件校验失败: {err} (filename={file.filename})")
                 continue
             original = secure_filename(file.filename)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

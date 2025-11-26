@@ -67,6 +67,7 @@
 
                 {% if system %}
                 <form method="post" action="{{ url_for('system.add_system') if mode == 'create' else url_for('system.edit_system', system_code=system['SystemCode']) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3">
                         <label class="form-label">系统代码 *</label>
                         {% if mode == 'create' %}

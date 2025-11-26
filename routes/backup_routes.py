@@ -2,7 +2,7 @@
 备份与同步管理路由
 提供备份、同步、恢复的Web界面和API
 """
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, current_app
 from datetime import datetime
 import sys
 import os
@@ -139,9 +139,10 @@ def api_create_backup():
             'message': f'备份创建成功，备份ID: {backup_id}'
         })
     except Exception as e:
+        current_app.logger.error(f"创建备份失败: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'备份失败: {str(e)}'
+            'message': '备份失败，请稍后重试'
         }), 500
 
 
@@ -163,9 +164,10 @@ def api_sync():
             'message': f'同步完成，同步ID: {sync_id}'
         })
     except Exception as e:
+        current_app.logger.error(f"数据同步失败: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'同步失败: {str(e)}'
+            'message': '同步失败，请稍后重试'
         }), 500
 
 
@@ -230,17 +232,17 @@ def api_run_pipeline():
             'summary': summary
         })
     except FileNotFoundError as e:
+        current_app.logger.warning(f"流水线执行失败，文件未找到: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'文件未找到: {str(e)}'
+            'message': '文件未找到，请检查上传或配置的路径'
         }), 400
     except Exception as e:
         import traceback
-        error_detail = traceback.format_exc()
+        current_app.logger.error(f"数据同步流水线执行失败: {e}\n{traceback.format_exc()}", exc_info=False)
         return jsonify({
             'success': False,
-            'message': f'流水线执行失败: {str(e)}',
-            'error_detail': error_detail
+            'message': '流水线执行失败，请联系管理员查看服务器日志'
         }), 500
 
 
@@ -287,9 +289,10 @@ def api_restore(backup_id):
                     'message': '数据恢复失败'
                 }), 500
     except Exception as e:
+        current_app.logger.error(f"数据恢复失败: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'恢复失败: {str(e)}'
+            'message': '恢复失败，请稍后重试或联系管理员'
         }), 500
 
 
@@ -311,9 +314,10 @@ def api_clean_data():
             'message': '数据清理完成'
         })
     except Exception as e:
+        current_app.logger.error(f"数据清理失败: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'清理失败: {str(e)}'
+            'message': '清理失败，请稍后重试'
         }), 500
 
 
@@ -353,9 +357,10 @@ def api_backup_detail(backup_id):
             'backup': backup_data
         })
     except Exception as e:
+        current_app.logger.error(f"获取备份详情失败: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'获取备份详情失败: {str(e)}'
+            'message': '获取备份详情失败，请稍后重试'
         }), 500
 
 
@@ -402,8 +407,9 @@ def api_sync_detail(sync_id):
             'sync': sync_data
         })
     except Exception as e:
+        current_app.logger.error(f"获取同步详情失败: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'获取同步详情失败: {str(e)}'
+            'message': '获取同步详情失败，请稍后重试'
         }), 500
 
