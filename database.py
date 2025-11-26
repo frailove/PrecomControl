@@ -713,6 +713,30 @@ def ensure_precom_tables():
         except Error:
             pass
 
+        # 预试车任务施工活动表（关键工程量明细，可多条）
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS PrecomTaskActivity (
+                ID INT AUTO_INCREMENT PRIMARY KEY,
+                TaskID INT NOT NULL,
+                ActID VARCHAR(255) NULL COMMENT '施工任务 ID / ACT ID',
+                Block VARCHAR(255) NULL COMMENT '关联 Block',
+                ActDescription VARCHAR(512) NULL COMMENT '施工任务描述',
+                Scope VARCHAR(255) NULL COMMENT 'SCOPE / 范围',
+                Discipline VARCHAR(255) NULL COMMENT '专业',
+                WorkPackage VARCHAR(255) NULL COMMENT '工作包',
+                WeightFactor DECIMAL(10,2) NULL COMMENT '权重因子',
+                ManHours DECIMAL(10,2) NULL COMMENT '工时',
+                Subproject VARCHAR(255) NULL COMMENT '子项目',
+                CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_precom_activity_task (TaskID),
+                CONSTRAINT fk_precom_activity_task FOREIGN KEY (TaskID)
+                    REFERENCES PrecomTask(TaskID) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+        )
+
         # 兼容已有旧表：为 PrecomTask 表补充施工进度相关列
         try:
             cursor.execute("SHOW COLUMNS FROM PrecomTask LIKE 'ProgressID'")

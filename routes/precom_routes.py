@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from io import BytesIO
 import os
+import re
 import pandas as pd
 
 
@@ -217,18 +218,30 @@ def precom_task_new():
             'TaskType': task_type,
             'SystemCode': system_code,
             'SubSystemCode': subsystem_code,
-            'DrawingNumber': request.form.get('DrawingNumber') or None,
+            'DrawingNumber': _join_drawing_numbers_from_request(),
             'TagNumber': request.form.get('TagNumber') or None,
             'PointTag': request.form.get('PointTag') or None,
             'Description': request.form.get('Description') or None,
-            'PositionBlock': request.form.get('PositionBlock') or None,
+            'PositionBlock': _join_position_blocks_from_request(),
             'QuantityTotal': int(request.form.get('QuantityTotal') or 1),
             'QuantityDone': int(request.form.get('QuantityDone') or 0),
             'PlannedDate': request.form.get('PlannedDate') or None,
             'ActualDate': request.form.get('ActualDate') or None,
             'PerformedBy': request.form.get('PerformedBy') or None,
             'TestType': request.form.get('TestType') or None,
+            # 施工进度汇总字段（预留，可选）
+            'ProgressID': request.form.get('ProgressID') or None,
+            'Discipline': request.form.get('Discipline') or None,
+            'WorkPackage': request.form.get('WorkPackage') or None,
+            'KeyQuantityTotal': int(request.form.get('KeyQuantityTotal') or 0),
+            'KeyQuantityDone': int(request.form.get('KeyQuantityDone') or 0),
+            'KeyProgressPercent': (
+                float(request.form.get('KeyProgressPercent') or 0)
+                if request.form.get('KeyProgressPercent')
+                else None
+            ),
         }
+        activities = _parse_activity_rows_from_request()
         conn = create_connection()
         if not conn:
             return "数据库连接失败", 500
@@ -240,8 +253,10 @@ def precom_task_new():
                     TaskType, SystemCode, SubSystemCode, DrawingNumber,
                     TagNumber, PointTag, Description, PositionBlock,
                     QuantityTotal, QuantityDone, PlannedDate, ActualDate,
-                    PerformedBy, TestType
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    PerformedBy, TestType,
+                    ProgressID, Discipline, WorkPackage,
+                    KeyQuantityTotal, KeyQuantityDone, KeyProgressPercent
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     data['TaskType'],
@@ -258,10 +273,17 @@ def precom_task_new():
                     data['ActualDate'],
                     data['PerformedBy'],
                     data['TestType'],
+                    data['ProgressID'],
+                    data['Discipline'],
+                    data['WorkPackage'],
+                    data['KeyQuantityTotal'],
+                    data['KeyQuantityDone'],
+                    data['KeyProgressPercent'],
                 ),
             )
-            conn.commit()
             task_id = cur.lastrowid
+            _save_task_activities(conn, task_id, activities)
+            conn.commit()
             return redirect(url_for('precom.precom_task_edit', task_id=task_id))
         finally:
             conn.close()
@@ -276,6 +298,9 @@ def precom_task_new():
         task_type=task_type,
         systems=systems,
         subsystems=subsystems,
+        block_rows=_split_position_blocks(None),
+        drawing_rows=_split_drawing_numbers(None),
+        activities=[],
     )
 
 
@@ -298,18 +323,30 @@ def precom_task_edit(task_id: int):
             data = {
                 'SystemCode': request.form.get('SystemCode') or None,
                 'SubSystemCode': request.form.get('SubSystemCode') or None,
-                'DrawingNumber': request.form.get('DrawingNumber') or None,
+                'DrawingNumber': _join_drawing_numbers_from_request(),
                 'TagNumber': request.form.get('TagNumber') or None,
                 'PointTag': request.form.get('PointTag') or None,
                 'Description': request.form.get('Description') or None,
-                'PositionBlock': request.form.get('PositionBlock') or None,
+                'PositionBlock': _join_position_blocks_from_request(),
                 'QuantityTotal': int(request.form.get('QuantityTotal') or 1),
                 'QuantityDone': int(request.form.get('QuantityDone') or 0),
                 'PlannedDate': request.form.get('PlannedDate') or None,
                 'ActualDate': request.form.get('ActualDate') or None,
                 'PerformedBy': request.form.get('PerformedBy') or None,
                 'TestType': request.form.get('TestType') or None,
+                # 施工进度汇总字段（预留，可选）
+                'ProgressID': request.form.get('ProgressID') or None,
+                'Discipline': request.form.get('Discipline') or None,
+                'WorkPackage': request.form.get('WorkPackage') or None,
+                'KeyQuantityTotal': int(request.form.get('KeyQuantityTotal') or 0),
+                'KeyQuantityDone': int(request.form.get('KeyQuantityDone') or 0),
+                'KeyProgressPercent': (
+                    float(request.form.get('KeyProgressPercent') or 0)
+                    if request.form.get('KeyProgressPercent')
+                    else None
+                ),
             }
+            activities = _parse_activity_rows_from_request()
             cur_update = conn.cursor()
             cur_update.execute(
                 """
@@ -317,7 +354,9 @@ def precom_task_edit(task_id: int):
                 SET SystemCode=%s, SubSystemCode=%s, DrawingNumber=%s,
                     TagNumber=%s, PointTag=%s, Description=%s, PositionBlock=%s,
                     QuantityTotal=%s, QuantityDone=%s, PlannedDate=%s, ActualDate=%s,
-                    PerformedBy=%s, TestType=%s
+                    PerformedBy=%s, TestType=%s,
+                    ProgressID=%s, Discipline=%s, WorkPackage=%s,
+                    KeyQuantityTotal=%s, KeyQuantityDone=%s, KeyProgressPercent=%s
                 WHERE TaskID=%s
                 """,
                 (
@@ -334,9 +373,16 @@ def precom_task_edit(task_id: int):
                     data['ActualDate'],
                     data['PerformedBy'],
                     data['TestType'],
+                    data['ProgressID'],
+                    data['Discipline'],
+                    data['WorkPackage'],
+                    data['KeyQuantityTotal'],
+                    data['KeyQuantityDone'],
+                    data['KeyProgressPercent'],
                     task_id,
                 ),
             )
+            _save_task_activities(conn, task_id, activities)
             conn.commit()
             return redirect(url_for('precom.precom_task_edit', task_id=task_id))
 
@@ -364,6 +410,19 @@ def precom_task_edit(task_id: int):
         )
         punches = cur.fetchall()
 
+        # 加载施工活动明细
+        cur.execute(
+            """
+            SELECT ID, ActID, Block, ActDescription, Scope, Discipline,
+                   WorkPackage, WeightFactor, ManHours, Subproject
+            FROM PrecomTaskActivity
+            WHERE TaskID = %s
+            ORDER BY ID
+            """,
+            (task_id,),
+        )
+        activities = cur.fetchall()
+
         return render_template(
             'precom_task_edit.html',
             task=task,
@@ -372,6 +431,9 @@ def precom_task_edit(task_id: int):
             subsystems=subsystems,
             attachments=attachments,
             punches=punches,
+            activities=activities,
+            block_rows=_split_position_blocks(task.get('PositionBlock')),
+            drawing_rows=_split_drawing_numbers(task.get('DrawingNumber')),
         )
     finally:
         conn.close()
@@ -412,6 +474,29 @@ def precom_attachments(task_id: int):
             if row.get('UploadedAt'):
                 row['UploadedAt'] = row['UploadedAt'].strftime('%Y-%m-%d %H:%M:%S')
         return jsonify(rows)
+    finally:
+        conn.close()
+
+
+@precom_bp.route('/api/faclist/blocks')
+def api_faclist_blocks():
+    """返回 Faclist 中所有唯一 Block，用于预试车任务 Block 下拉多选。"""
+    conn = create_connection()
+    if not conn:
+        return jsonify([])
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT DISTINCT Block
+            FROM Faclist
+            WHERE Block IS NOT NULL AND Block <> ''
+            ORDER BY Block
+            """
+        )
+        rows = cur.fetchall()
+        blocks = [row[0] for row in rows if row and row[0]]
+        return jsonify(blocks)
     finally:
         conn.close()
 
@@ -638,6 +723,134 @@ def precom_import_punch(task_id: int):
         return jsonify({'success': False, 'message': f'导入失败: {exc}'}), 500
     finally:
         conn.close()
+
+
+def _parse_activity_rows_from_request():
+    """从表单中解析施工活动行数据，返回字典列表"""
+    act_ids = request.form.getlist('ActivityActID')
+    blocks = request.form.getlist('ActivityBlock')
+    descriptions = request.form.getlist('ActivityDescription')
+    scopes = request.form.getlist('ActivityScope')
+    disciplines = request.form.getlist('ActivityDiscipline')
+    work_packages = request.form.getlist('ActivityWorkPackage')
+    weight_factors = request.form.getlist('ActivityWeightFactor')
+    man_hours_list = request.form.getlist('ActivityManHours')
+    subprojects = request.form.getlist('ActivitySubproject')
+
+    activities = []
+    row_count = max(
+        len(act_ids),
+        len(blocks),
+        len(descriptions),
+        len(scopes),
+        len(disciplines),
+        len(work_packages),
+        len(weight_factors),
+        len(man_hours_list),
+        len(subprojects),
+    )
+    for idx in range(row_count):
+        act_id = (act_ids[idx].strip() if idx < len(act_ids) and act_ids[idx] else '')
+        block = (blocks[idx].strip() if idx < len(blocks) and blocks[idx] else '')
+        desc = (descriptions[idx].strip() if idx < len(descriptions) and descriptions[idx] else '')
+        scope = (scopes[idx].strip() if idx < len(scopes) and scopes[idx] else '')
+        disc = (disciplines[idx].strip() if idx < len(disciplines) and disciplines[idx] else '')
+        wp = (work_packages[idx].strip() if idx < len(work_packages) and work_packages[idx] else '')
+        wf_raw = weight_factors[idx].strip() if idx < len(weight_factors) and weight_factors[idx] else ''
+        mh_raw = man_hours_list[idx].strip() if idx < len(man_hours_list) and man_hours_list[idx] else ''
+        subprj = (subprojects[idx].strip() if idx < len(subprojects) and subprojects[idx] else '')
+
+        # 如果整行都是空，则跳过
+        if not any([act_id, block, desc, scope, disc, wp, wf_raw, mh_raw, subprj]):
+            continue
+
+        try:
+            wf = float(wf_raw) if wf_raw else None
+        except ValueError:
+            wf = None
+        try:
+            mh = float(mh_raw) if mh_raw else None
+        except ValueError:
+            mh = None
+
+        activities.append(
+            {
+                'ActID': act_id or None,
+                'Block': block or None,
+                'ActDescription': desc or None,
+                'Scope': scope or None,
+                'Discipline': disc or None,
+                'WorkPackage': wp or None,
+                'WeightFactor': wf,
+                'ManHours': mh,
+                'Subproject': subprj or None,
+            }
+        )
+    return activities
+
+
+def _save_task_activities(conn, task_id: int, activities):
+    """将施工活动明细保存到 PrecomTaskActivity 表，先清空后重新插入"""
+    cur = conn.cursor()
+    # 先删除原有记录
+    cur.execute("DELETE FROM PrecomTaskActivity WHERE TaskID = %s", (task_id,))
+    if not activities:
+        return
+    insert_sql = """
+        INSERT INTO PrecomTaskActivity (
+            TaskID, ActID, Block, ActDescription, Scope,
+            Discipline, WorkPackage, WeightFactor, ManHours, Subproject
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    values = [
+        (
+            task_id,
+            act['ActID'],
+            act['Block'],
+            act['ActDescription'],
+            act['Scope'],
+            act['Discipline'],
+            act['WorkPackage'],
+            act['WeightFactor'],
+            act['ManHours'],
+            act['Subproject'],
+        )
+        for act in activities
+    ]
+    cur.executemany(insert_sql, values)
+
+
+def _sanitize_list(values):
+    return [v.strip() for v in values if v and v.strip()]
+
+
+def _join_position_blocks_from_request():
+    blocks = _sanitize_list(request.form.getlist('PositionBlocks'))
+    return ';'.join(blocks) if blocks else None
+
+
+def _join_drawing_numbers_from_request():
+    numbers = _sanitize_list(request.form.getlist('DrawingNumbers'))
+    if numbers:
+        return '\n'.join(numbers)
+    fallback = request.form.get('DrawingNumber')
+    if fallback and fallback.strip():
+        return fallback.strip()
+    return None
+
+
+def _split_position_blocks(value):
+    if not value:
+        return ['']
+    parts = [p.strip() for p in re.split(r'[;\n,]', value) if p.strip()]
+    return parts or ['']
+
+
+def _split_drawing_numbers(value):
+    if not value:
+        return ['']
+    parts = [p.strip() for p in re.split(r'[\n;]+', value) if p.strip()]
+    return parts or ['']
 
 
 @precom_bp.route('/precom/tasks/export', methods=['GET'])

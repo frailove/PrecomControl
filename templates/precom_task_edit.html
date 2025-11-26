@@ -75,6 +75,122 @@
             <div class="card-body">
                 <form method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <!-- 施工进度模块 -->
+                    <div class="task-form-section">
+                        <div class="task-section-title">
+                            <i class="bi bi-bar-chart-line"></i> 施工进度
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 130px;">ACT ID</th>
+                                        <th style="width: 140px;">Block</th>
+                                        <th>Act Description</th>
+                                        <th style="width: 120px;">Scope</th>
+                                        <th style="width: 120px;">Discipline</th>
+                                        <th style="width: 150px;">Work Package</th>
+                                        <th style="width: 110px;">Weight</th>
+                                        <th style="width: 110px;">Man Hours</th>
+                                        <th style="width: 130px;">Subproject</th>
+                                        <th style="width: 60px;" class="text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityTableBody">
+                                    {% if activities %}
+                                        {% for a in activities %}
+                                        <tr>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivityActID" value="{{ a.ActID or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivityBlock" list="ActivityBlockList"
+                                                       value="{{ a.Block or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivityDescription" value="{{ a.ActDescription or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivityScope" value="{{ a.Scope or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivityDiscipline" value="{{ a.Discipline or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivityWorkPackage" value="{{ a.WorkPackage or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm"
+                                                       name="ActivityWeightFactor" value="{{ a.WeightFactor or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm"
+                                                       name="ActivityManHours" value="{{ a.ManHours or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivitySubproject" value="{{ a.Subproject or '' }}">
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-outline-danger activity-remove-row">
+                                                    -
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" name="ActivityActID">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       name="ActivityBlock" list="ActivityBlockList">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" name="ActivityDescription">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" name="ActivityScope">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" name="ActivityDiscipline">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" name="ActivityWorkPackage">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" name="ActivityWeightFactor">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" name="ActivityManHours">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" name="ActivitySubproject">
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-outline-danger activity-remove-row">
+                                                    -
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <datalist id="ActivityBlockList"></datalist>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="addActivityRowBtn">
+                                <i class="bi bi-plus-circle"></i> 新增关键工程量
+                            </button>
+                        </div>
+                    </div>
                     <div class="task-form-section">
                         <div class="task-section-title">
                             <i class="bi bi-grid"></i> 基础属性
@@ -102,32 +218,46 @@
                             </div>
                             <div class="col-md-3 col-sm-6">
                                 <label class="form-label fw-bold">系统 <span class="text-danger">*</span></label>
-                                <select class="form-select" name="SystemCode" id="SystemCode" required>
-                                    <option value="">请选择系统</option>
+                                <input type="text" class="form-control" name="SystemCode" id="SystemCode"
+                                       list="SystemCodeList" required
+                                       value="{{ task.SystemCode if task else '' }}"
+                                       placeholder="可手填系统编码，支持下拉自动补齐">
+                                <datalist id="SystemCodeList">
                                     {% for system in systems %}
-                                    {% set selected = (task.SystemCode if task else None) %}
-                                    <option value="{{ system.SystemCode }}" {% if system.SystemCode == selected %}selected{% endif %}>
-                                        {{ system.SystemCode }}
-                                    </option>
+                                    <option value="{{ system.SystemCode }}">{{ system.SystemCode }} - {{ system.SystemDescriptionENG }}</option>
                                     {% endfor %}
-                                </select>
+                                </datalist>
+                                <small class="text-muted" id="SystemDescriptionHint"></small>
                             </div>
                             <div class="col-md-3 col-sm-6">
                                 <label class="form-label fw-bold">子系统 <span class="text-danger">*</span></label>
-                                <select class="form-select" name="SubSystemCode" id="SubSystemCode" required>
-                                    <option value="">请选择子系统</option>
+                                <input type="text" class="form-control" name="SubSystemCode" id="SubSystemCode"
+                                       list="SubSystemCodeList" required
+                                       value="{{ task.SubSystemCode if task else '' }}"
+                                       placeholder="可手填子系统编码，支持下拉自动补齐">
+                                <datalist id="SubSystemCodeList">
                                     {% for subsystem in subsystems %}
-                                    {% set selected_sub = (task.SubSystemCode if task else None) %}
-                                    <option value="{{ subsystem.SubSystemCode }}" {% if subsystem.SubSystemCode == selected_sub %}selected{% endif %}>
-                                        {{ subsystem.SubSystemCode }}
-                                    </option>
+                                    <option value="{{ subsystem.SubSystemCode }}">{{ subsystem.SubSystemCode }} - {{ subsystem.SubSystemDescriptionENG }}</option>
                                     {% endfor %}
-                                </select>
+                                </datalist>
+                                <small class="text-muted" id="SubSystemDescriptionHint"></small>
                             </div>
                             <div class="col-md-3 col-sm-6">
                                 <label class="form-label fw-bold">区域 Block</label>
-                                <input type="text" class="form-control" name="PositionBlock"
-                                       value="{{ task.PositionBlock if task else '' }}">
+                                <div id="blockRows">
+                                    {% for b in block_rows %}
+                                    <div class="input-group block-row mb-2">
+                                        <input type="text" class="form-control" name="PositionBlocks"
+                                               list="BlockOptions" value="{{ b }}">
+                                        <button type="button" class="btn btn-outline-danger block-remove-row">-</button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-1" id="addBlockRowBtn">
+                                    <i class="bi bi-plus-circle"></i> 新增 Block
+                                </button>
+                                <small class="text-muted d-block mt-1">从 Faclist.Block 选择或手动输入，可添加多行。</small>
+                                <datalist id="BlockOptions"></datalist>
                             </div>
                         </div>
                     </div>
@@ -139,19 +269,33 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">图纸号 / Vendor Print</label>
-                                <input type="text" class="form-control" name="DrawingNumber"
-                                       value="{{ task.DrawingNumber if task else '' }}">
+                                <div id="drawingRows">
+                                    {% for d in drawing_rows %}
+                                    <div class="input-group drawing-row mb-2">
+                                        <input type="text" class="form-control" name="DrawingNumbers"
+                                               value="{{ d }}" placeholder="请输入图纸号">
+                                        <button type="button" class="btn btn-outline-danger drawing-remove-row">-</button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-1" id="addDrawingRowBtn">
+                                    <i class="bi bi-plus-circle"></i> 新增图纸号
+                                </button>
+                                <small class="text-muted d-block mt-1">每行一条图纸号，可根据需要添加多条。</small>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">TagNumber / 设备位号</label>
                                 <input type="text" class="form-control" name="TagNumber"
                                        value="{{ task.TagNumber if task else '' }}">
                             </div>
+                            {% set current_type = task.TaskType if task else task_type %}
+                            {% if current_type == 'LoopTest' %}
                             <div class="col-md-4">
-                                <label class="form-label fw-bold">仪表点位 / PointTag</label>
+                                <label class="form-label fw-bold">仪表点位 / PointTag（仅回路测试）</label>
                                 <input type="text" class="form-control" name="PointTag"
-                                       value="{{ task.PointTag if task else '' }}" placeholder="回路测试用">
+                                       value="{{ task.PointTag if task else '' }}" placeholder="仅 LoopTest 需要填写">
                             </div>
+                            {% endif %}
                             <div class="col-12">
                                 <label class="form-label fw-bold">任务描述</label>
                                 <input type="text" class="form-control" name="Description"
@@ -390,31 +534,252 @@
 (function () {
     const taskId = {{ task.TaskID if task else 'null' }};
 
-    // 系统-子系统级联
-    const systemSelect = document.getElementById('SystemCode');
-    const subsystemSelect = document.getElementById('SubSystemCode');
-    if (systemSelect && subsystemSelect) {
-        systemSelect.addEventListener('change', function () {
-            const code = this.value;
-            subsystemSelect.innerHTML = '<option value=\"\">请选择子系统</option>';
-            if (!code) {
-                return;
-            }
-            fetch('/api/subsystems/' + encodeURIComponent(code))
-                .then(res => res.json())
-                .then(data => {
-                    data.forEach(function (sub) {
-                        const opt = document.createElement('option');
-                        opt.value = sub.SubSystemCode;
-                        opt.textContent = sub.SubSystemCode;
-                        subsystemSelect.appendChild(opt);
-                    });
-                })
-                .catch(() => {
-                    alert('加载子系统失败，请稍后重试。');
-                });
+    // 系统/子系统描述提示与级联
+    const allSystems = {{ systems|tojson }};
+    let currentSubsystems = {{ subsystems|tojson }};
+
+    const systemInput = document.getElementById('SystemCode');
+    const systemDescHint = document.getElementById('SystemDescriptionHint');
+    const subsystemInput = document.getElementById('SubSystemCode');
+    const subsystemDescHint = document.getElementById('SubSystemDescriptionHint');
+
+    function findSystemByCode(code) {
+        if (!code) return null;
+        return allSystems.find(s => s.SystemCode === code) || null;
+    }
+
+    function findSubsystemByCode(code) {
+        if (!code) return null;
+        return currentSubsystems.find(s => s.SubSystemCode === code) || null;
+    }
+
+    function refreshSubsystemDatalist(list) {
+        const dl = document.getElementById('SubSystemCodeList');
+        if (!dl) return;
+        dl.innerHTML = '';
+        (list || []).forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub.SubSystemCode;
+            opt.textContent = `${sub.SubSystemCode} - ${sub.SubSystemDescriptionENG || ''}`;
+            dl.appendChild(opt);
         });
     }
+
+    function loadSubsystemsForSystem(systemCode) {
+        if (!systemCode) {
+            currentSubsystems = [];
+            refreshSubsystemDatalist(currentSubsystems);
+            if (subsystemDescHint) subsystemDescHint.textContent = '';
+            return;
+        }
+        fetch('/api/subsystems/' + encodeURIComponent(systemCode))
+            .then(res => res.json())
+            .then(data => {
+                currentSubsystems = data || [];
+                refreshSubsystemDatalist(currentSubsystems);
+                const sub = findSubsystemByCode(subsystemInput?.value || '');
+                if (sub && subsystemDescHint) {
+                    subsystemDescHint.textContent = sub.SubSystemDescriptionENG || '';
+                }
+            })
+            .catch(() => {
+                alert('加载子系统失败，请稍后重试。');
+            });
+    }
+
+    if (systemInput) {
+        systemInput.addEventListener('change', function () {
+            const code = this.value.trim();
+            const sys = findSystemByCode(code);
+            if (systemDescHint) {
+                systemDescHint.textContent = sys ? (sys.SystemDescriptionENG || '') : '';
+            }
+            loadSubsystemsForSystem(code);
+        });
+
+        // 初始加载时根据已有值刷新描述和子系统列表
+        if (systemInput.value) {
+            const sys = findSystemByCode(systemInput.value.trim());
+            if (systemDescHint) {
+                systemDescHint.textContent = sys ? (sys.SystemDescriptionENG || '') : '';
+            }
+            loadSubsystemsForSystem(systemInput.value.trim());
+        }
+    }
+
+    if (subsystemInput) {
+        subsystemInput.addEventListener('change', function () {
+            const code = this.value.trim();
+            const sub = findSubsystemByCode(code);
+            if (subsystemDescHint) {
+                subsystemDescHint.textContent = sub ? (sub.SubSystemDescriptionENG || '') : '';
+            }
+        });
+
+        // 初始描述填充
+        const sub = findSubsystemByCode(subsystemInput.value.trim());
+        if (sub && subsystemDescHint) {
+            subsystemDescHint.textContent = sub.SubSystemDescriptionENG || '';
+        }
+    }
+
+    // Block 多行输入（+/-）
+    const blockRowsContainer = document.getElementById('blockRows');
+    const addBlockRowBtn = document.getElementById('addBlockRowBtn');
+    const blockOptionsList = document.getElementById('BlockOptions');
+
+    function bindBlockRowButtons() {
+        if (!blockRowsContainer) return;
+        blockRowsContainer.querySelectorAll('.block-remove-row').forEach(btn => {
+            btn.onclick = function () {
+                const row = this.closest('.block-row');
+                if (!row) return;
+                const totalRows = blockRowsContainer.querySelectorAll('.block-row').length;
+                if (totalRows <= 1) {
+                    row.querySelectorAll('input').forEach(inp => inp.value = '');
+                } else {
+                    row.remove();
+                }
+            };
+        });
+    }
+
+    function addBlockRow(value = '') {
+        if (!blockRowsContainer) return;
+        const div = document.createElement('div');
+        div.className = 'input-group block-row mb-2';
+        div.innerHTML = `
+            <input type="text" class="form-control" name="PositionBlocks" list="BlockOptions" value="${value}">
+            <button type="button" class="btn btn-outline-danger block-remove-row">-</button>
+        `;
+        blockRowsContainer.appendChild(div);
+        bindBlockRowButtons();
+    }
+
+    if (blockRowsContainer && blockRowsContainer.children.length === 0) {
+        addBlockRow();
+    }
+
+    if (addBlockRowBtn) {
+        addBlockRowBtn.addEventListener('click', () => addBlockRow());
+    }
+
+    function initBlockOptions() {
+        fetch('/api/faclist/blocks')
+            .then(res => res.json())
+            .then(blocks => {
+                if (blockOptionsList) {
+                    blockOptionsList.innerHTML = '';
+                }
+                const activityBlockList = document.getElementById('ActivityBlockList');
+                if (activityBlockList) {
+                    activityBlockList.innerHTML = '';
+                }
+                (blocks || []).forEach(b => {
+                    const label = String(b);
+                    if (blockOptionsList) {
+                        const opt = document.createElement('option');
+                        opt.value = label;
+                        blockOptionsList.appendChild(opt);
+                    }
+                    if (activityBlockList) {
+                        const opt2 = document.createElement('option');
+                        opt2.value = label;
+                        activityBlockList.appendChild(opt2);
+                    }
+                });
+            });
+    }
+
+    initBlockOptions();
+    bindBlockRowButtons();
+
+    // 图纸号多行输入（+/-）
+    const drawingRowsContainer = document.getElementById('drawingRows');
+    const addDrawingRowBtn = document.getElementById('addDrawingRowBtn');
+
+    function bindDrawingRowButtons() {
+        if (!drawingRowsContainer) return;
+        drawingRowsContainer.querySelectorAll('.drawing-remove-row').forEach(btn => {
+            btn.onclick = function () {
+                const row = this.closest('.drawing-row');
+                if (!row) return;
+                const totalRows = drawingRowsContainer.querySelectorAll('.drawing-row').length;
+                if (totalRows <= 1) {
+                    row.querySelectorAll('input').forEach(inp => inp.value = '');
+                } else {
+                    row.remove();
+                }
+            };
+        });
+    }
+
+    function addDrawingRow(value = '') {
+        if (!drawingRowsContainer) return;
+        const div = document.createElement('div');
+        div.className = 'input-group drawing-row mb-2';
+        div.innerHTML = `
+            <input type="text" class="form-control" name="DrawingNumbers" value="${value}">
+            <button type="button" class="btn btn-outline-danger drawing-remove-row">-</button>
+        `;
+        drawingRowsContainer.appendChild(div);
+        bindDrawingRowButtons();
+    }
+
+    if (drawingRowsContainer && drawingRowsContainer.children.length === 0) {
+        addDrawingRow();
+    }
+    if (addDrawingRowBtn) {
+        addDrawingRowBtn.addEventListener('click', () => addDrawingRow());
+    }
+    bindDrawingRowButtons();
+
+    // 关键工程量明细行：新增 / 删除
+    const activityTableBody = document.getElementById('activityTableBody');
+    const addActivityRowBtn = document.getElementById('addActivityRowBtn');
+
+    function bindActivityRemoveButtons() {
+        if (!activityTableBody) return;
+        activityTableBody.querySelectorAll('.activity-remove-row').forEach(btn => {
+            btn.onclick = function () {
+                const tr = this.closest('tr');
+                if (!tr) return;
+                const totalRows = activityTableBody.querySelectorAll('tr').length;
+                if (totalRows <= 1) {
+                    // 保留至少一行，清空而不是删除
+                    tr.querySelectorAll('input').forEach(inp => inp.value = '');
+                } else {
+                    tr.remove();
+                }
+            };
+        });
+    }
+
+    function addEmptyActivityRow() {
+        if (!activityTableBody) return;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="form-control form-control-sm" name="ActivityActID"></td>
+            <td><input type="text" class="form-control form-control-sm" name="ActivityBlock" list="ActivityBlockList"></td>
+            <td><input type="text" class="form-control form-control-sm" name="ActivityDescription"></td>
+            <td><input type="text" class="form-control form-control-sm" name="ActivityScope"></td>
+            <td><input type="text" class="form-control form-control-sm" name="ActivityDiscipline"></td>
+            <td><input type="text" class="form-control form-control-sm" name="ActivityWorkPackage"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm" name="ActivityWeightFactor"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm" name="ActivityManHours"></td>
+            <td><input type="text" class="form-control form-control-sm" name="ActivitySubproject"></td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger activity-remove-row">-</button>
+            </td>
+        `;
+        activityTableBody.appendChild(tr);
+        bindActivityRemoveButtons();
+    }
+
+    if (addActivityRowBtn) {
+        addActivityRowBtn.addEventListener('click', addEmptyActivityRow);
+    }
+    bindActivityRemoveButtons();
 
     if (!taskId) {
         // 新建任务时，不需要附件和 Punch 的加载与删除逻辑
