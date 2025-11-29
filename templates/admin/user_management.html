@@ -647,37 +647,87 @@ document.getElementById('userForm')?.addEventListener('submit', async (e) => {
     const url = userId ? `/api/admin/users/${userId}` : '/api/admin/users';
     const method = userId ? 'PUT' : 'POST';
     
-    // 先保存用户基本信息
-    const userRes = await fetch(url, {
-        method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    });
-    const userData = await userRes.json();
-    
-    if (userData.success) {
-        // 保存模块权限（如果有用户ID）
-        const finalUserId = userId || userData.user_id;
-        if (finalUserId) {
-            const moduleIds = Array.from(document.querySelectorAll('#moduleCheckboxGroup input:checked')).map(el => Number(el.value));
-            const moduleRes = await fetch(`/api/admin/users/${finalUserId}/modules`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ module_ids: moduleIds })
-            });
-            const moduleData = await moduleRes.json();
-            if (!moduleData.success) {
-                console.warn('保存模块权限失败:', moduleData.message);
+    try {
+        // 先保存用户基本信息
+        const userRes = await fetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        
+        // 检查响应状态
+        if (!userRes.ok) {
+            const errorText = await userRes.text();
+            console.error('保存用户失败:', userRes.status, errorText);
+            let errorMsg = `操作失败 (HTTP ${userRes.status})`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMsg = errorJson.message || errorMsg;
+            } catch (e) {
+                if (errorText.includes('CSRF') || errorText.includes('csrf')) {
+                    errorMsg = 'CSRF 验证失败，请刷新页面后重试';
+                } else if (errorText) {
+                    errorMsg = errorText.substring(0, 200);
+                }
             }
+            alert(errorMsg);
+            return;
         }
         
-        if (userData.temp_password) {
-            alert(`用户创建成功，初始密码：${userData.temp_password}`);
+        const userData = await userRes.json();
+        
+        if (userData.success) {
+            // 保存模块权限（如果有用户ID）
+            const finalUserId = userId || userData.user_id;
+            if (finalUserId) {
+                const moduleIds = Array.from(document.querySelectorAll('#moduleCheckboxGroup input:checked')).map(el => Number(el.value));
+                try {
+                    const moduleRes = await fetch(`/api/admin/users/${finalUserId}/modules`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ module_ids: moduleIds })
+                    });
+                    
+                    if (!moduleRes.ok) {
+                        const errorText = await moduleRes.text();
+                        console.error('保存模块权限失败:', moduleRes.status, errorText);
+                        let errorMsg = '保存模块权限失败';
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            errorMsg = errorJson.message || errorMsg;
+                        } catch (e) {
+                            if (errorText.includes('CSRF') || errorText.includes('csrf')) {
+                                errorMsg = 'CSRF 验证失败，请刷新页面后重试';
+                            }
+                        }
+                        alert(errorMsg);
+                        return;
+                    }
+                    
+                    const moduleData = await moduleRes.json();
+                    if (!moduleData.success) {
+                        console.warn('保存模块权限失败:', moduleData.message);
+                        alert('保存模块权限失败: ' + (moduleData.message || '未知错误'));
+                        return;
+                    }
+                } catch (err) {
+                    console.error('保存模块权限异常:', err);
+                    alert('保存模块权限时发生错误: ' + err.message);
+                    return;
+                }
+            }
+            
+            if (userData.temp_password) {
+                alert(`用户创建成功，初始密码：${userData.temp_password}`);
+            }
+            userModal.hide();
+            reloadUsers();
+        } else {
+            alert(userData.message || '操作失败');
         }
-        userModal.hide();
-        reloadUsers();
-    } else {
-        alert(userData.message || '操作失败');
+    } catch (err) {
+        console.error('保存用户异常:', err);
+        alert('保存用户时发生错误: ' + err.message);
     }
 });
 
@@ -692,37 +742,87 @@ document.getElementById('roleForm')?.addEventListener('submit', async (e) => {
     const url = roleId ? `/api/admin/roles/${roleId}` : '/api/admin/roles';
     const method = roleId ? 'PUT' : 'POST';
     
-    // 先保存角色基本信息
-    const roleRes = await fetch(url, {
-        method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    });
-    const roleData = await roleRes.json();
-    
-    if (roleData.success) {
-        // 保存模块权限（如果有角色ID）
-        const finalRoleId = roleId || roleData.role_id;
-        if (finalRoleId) {
-            const moduleIds = Array.from(document.querySelectorAll('#roleModuleCheckboxGroup input:checked')).map(el => Number(el.value));
-            const moduleRes = await fetch(`/api/admin/roles/${finalRoleId}/modules`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ module_ids: moduleIds })
-            });
-            const moduleData = await moduleRes.json();
-            if (!moduleData.success) {
-                console.warn('保存角色模块权限失败:', moduleData.message);
+    try {
+        // 先保存角色基本信息
+        const roleRes = await fetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        
+        // 检查响应状态
+        if (!roleRes.ok) {
+            const errorText = await roleRes.text();
+            console.error('保存角色失败:', roleRes.status, errorText);
+            let errorMsg = `操作失败 (HTTP ${roleRes.status})`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMsg = errorJson.message || errorMsg;
+            } catch (e) {
+                if (errorText.includes('CSRF') || errorText.includes('csrf')) {
+                    errorMsg = 'CSRF 验证失败，请刷新页面后重试';
+                } else if (errorText) {
+                    errorMsg = errorText.substring(0, 200);
+                }
             }
+            alert(errorMsg);
+            return;
         }
         
-        if (roleData.role_id) {
-            alert('角色创建成功');
+        const roleData = await roleRes.json();
+        
+        if (roleData.success) {
+            // 保存模块权限（如果有角色ID）
+            const finalRoleId = roleId || roleData.role_id;
+            if (finalRoleId) {
+                const moduleIds = Array.from(document.querySelectorAll('#roleModuleCheckboxGroup input:checked')).map(el => Number(el.value));
+                try {
+                    const moduleRes = await fetch(`/api/admin/roles/${finalRoleId}/modules`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ module_ids: moduleIds })
+                    });
+                    
+                    if (!moduleRes.ok) {
+                        const errorText = await moduleRes.text();
+                        console.error('保存角色模块权限失败:', moduleRes.status, errorText);
+                        let errorMsg = '保存模块权限失败';
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            errorMsg = errorJson.message || errorMsg;
+                        } catch (e) {
+                            if (errorText.includes('CSRF') || errorText.includes('csrf')) {
+                                errorMsg = 'CSRF 验证失败，请刷新页面后重试';
+                            }
+                        }
+                        alert(errorMsg);
+                        return;
+                    }
+                    
+                    const moduleData = await moduleRes.json();
+                    if (!moduleData.success) {
+                        console.warn('保存角色模块权限失败:', moduleData.message);
+                        alert('保存模块权限失败: ' + (moduleData.message || '未知错误'));
+                        return;
+                    }
+                } catch (err) {
+                    console.error('保存角色模块权限异常:', err);
+                    alert('保存模块权限时发生错误: ' + err.message);
+                    return;
+                }
+            }
+            
+            if (roleData.role_id) {
+                alert('角色创建成功');
+            }
+            roleModal.hide();
+            reloadRoles();
+        } else {
+            alert(roleData.message || '操作失败');
         }
-        roleModal.hide();
-        reloadRoles();
-    } else {
-        alert(roleData.message || '操作失败');
+    } catch (err) {
+        console.error('保存角色异常:', err);
+        alert('保存角色时发生错误: ' + err.message);
     }
 });
 

@@ -21,8 +21,13 @@ def create_app():
     app.config.from_object(FlaskConfig)
     
     # CSRF 保护（安全关键）
-    from flask_wtf.csrf import CSRFProtect
+    from flask_wtf.csrf import CSRFProtect, generate_csrf
     csrf = CSRFProtect(app)
+    
+    # 确保模板中可以访问 csrf_token 函数
+    @app.context_processor
+    def inject_csrf_token():
+        return {'csrf_token': generate_csrf}
     
     # 初始化数据库连接池（生产环境）
     from database import init_connection_pool
