@@ -27,8 +27,10 @@ class FlaskConfig:
     # 会话配置
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = 'Lax'  # 允许跨站点请求
     SESSION_COOKIE_SECURE = os.environ.get('FLASK_HTTPS', 'False').lower() == 'true'  # HTTPS时启用
+    # 允许跨域访问（如果需要）
+    SESSION_COOKIE_DOMAIN = None  # 不限制域名，允许跨IP访问
     
     # 性能优化
     JSONIFY_PRETTYPRINT_REGULAR = False  # 生产环境不需要美化JSON输出

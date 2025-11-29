@@ -232,7 +232,12 @@ def api_update_user(user_id):
             # 审计日志失败不影响主流程
         
         logger.info(f'[API] 更新用户 {user_id}: 完成')
-        return jsonify({'success': True})
+        
+        # 确保响应正确发送，避免连接重置
+        response = jsonify({'success': True})
+        response.headers['Connection'] = 'close'  # 明确关闭连接
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response
         
     except Exception as exc:
         logger.error(f'[API] 更新用户 {user_id} 失败: {exc}')
@@ -382,7 +387,11 @@ def api_set_user_modules(user_id):
             logger.warning(f'[API] 记录审计日志失败: {e}')
             # 审计日志失败不影响主流程
         
-        return jsonify({'success': True})
+        # 确保响应正确发送，避免连接重置
+        response = jsonify({'success': True})
+        response.headers['Connection'] = 'close'  # 明确关闭连接
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response
         
     except Exception as exc:
         logger.error(f'[API] 设置用户 {user_id} 模块权限失败: {exc}')

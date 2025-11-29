@@ -124,6 +124,19 @@ def create_app():
             'has_permission': has_permission
         }
     
+    # 添加响应头，确保跨网络请求正常工作
+    @app.after_request
+    def after_request(response):
+        # 对于 API 请求，添加必要的响应头
+        if request.path.startswith('/api/'):
+            # 确保响应完整传输
+            if 'Content-Length' not in response.headers:
+                response.headers['Content-Length'] = str(len(response.get_data()))
+            # 对于 PUT/POST/DELETE 请求，明确关闭连接
+            if request.method in ['PUT', 'POST', 'DELETE', 'PATCH']:
+                response.headers['Connection'] = 'close'
+        return response
+    
     # 错误处理（生产环境）
     @app.errorhandler(404)
     def not_found(error):
