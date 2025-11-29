@@ -21,13 +21,27 @@ def create_app():
     app.config.from_object(FlaskConfig)
     
     # CSRF 保护（安全关键）
-    from flask_wtf.csrf import CSRFProtect, generate_csrf
+    from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
     csrf = CSRFProtect(app)
     
     # 确保模板中可以访问 csrf_token 函数
     @app.context_processor
     def inject_csrf_token():
         return {'csrf_token': generate_csrf}
+    
+    # 添加 CSRF 错误处理
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f'[CSRF] CSRF 验证失败: {e.description}, 路径: {request.path}, 方法: {request.method}')
+        from flask import jsonify
+        # 如果是 API 请求，返回 JSON 错误
+        if request.path.startswith('/api/'):
+            return jsonify({'success': False, 'message': 'CSRF 验证失败，请刷新页面后重试'}), 400
+        # 否则返回 HTML 错误页面
+        from flask import render_template
+        return render_template('errors/400_csrf.html', error=e), 400
     
     # 初始化数据库连接池（生产环境）
     from database import init_connection_pool

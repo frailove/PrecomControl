@@ -189,8 +189,13 @@ def api_create_user():
 @login_required
 @permission_required('user.manage')
 def api_update_user(user_id):
-    data = request.get_json(silent=True) or {}
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        data = request.get_json(silent=True) or {}
+        logger.info(f'[API] 更新用户 {user_id}: 开始处理请求')
+        
         update_user(
             user_id=user_id,
             full_name=data.get('full_name'),
@@ -200,10 +205,20 @@ def api_update_user(user_id):
             is_super_admin=bool(data.get('is_super_admin', False)),
             updated_by=session['user']['username']
         )
+        logger.info(f'[API] 更新用户 {user_id}: 基本信息更新成功')
+        
         set_user_roles(user_id, data.get('role_ids') or [])
+        logger.info(f'[API] 更新用户 {user_id}: 角色设置成功')
+        
         record_audit('USER_UPDATE', '修改用户', session['user'], request, 'UserAccount', str(user_id))
+        logger.info(f'[API] 更新用户 {user_id}: 完成')
+        
         return jsonify({'success': True})
     except Exception as exc:
+        import traceback
+        logger.error(f'[API] 更新用户 {user_id} 失败: {exc}')
+        logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
+        
         # 安全：异常信息中可能包含敏感信息，只返回通用错误消息
         error_msg = str(exc)
         if any(keyword in error_msg.lower() for keyword in ['password', 'pwd', 'pass']):
@@ -313,13 +328,24 @@ def api_get_user_modules(user_id):
 @login_required
 @permission_required('user.manage')
 def api_set_user_modules(user_id):
-    data = request.get_json() or {}
-    module_ids = data.get('module_ids') or []
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        data = request.get_json() or {}
+        module_ids = data.get('module_ids') or []
+        logger.info(f'[API] 设置用户 {user_id} 模块权限: {module_ids}')
+        
         set_user_modules(user_id, [int(mid) for mid in module_ids])
+        logger.info(f'[API] 设置用户 {user_id} 模块权限: 成功')
+        
         record_audit('USER_UPDATE_MODULES', '设置用户模块权限', session['user'], request, 'UserAccount', str(user_id))
         return jsonify({'success': True})
     except Exception as exc:
+        import traceback
+        logger.error(f'[API] 设置用户 {user_id} 模块权限失败: {exc}')
+        logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
+        
         error_msg = str(exc)
         if any(keyword in error_msg.lower() for keyword in ['password', 'pwd', 'pass']):
             error_msg = '操作失败，请检查输入参数'
