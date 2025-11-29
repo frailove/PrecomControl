@@ -8,5 +8,6 @@ app = create_app()
 
 if __name__ == '__main__':
     # 开发环境直接运行
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    # 启用线程模式以支持并发请求，特别是跨网络请求
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
 
