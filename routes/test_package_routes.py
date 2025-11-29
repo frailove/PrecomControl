@@ -841,8 +841,19 @@ def edit_test_package(test_package_id):
                 'Remarks': request.form.get('Remarks') or '',
                 'last_updated_by': 'web'
             }
+            import logging
+            logger = logging.getLogger('routes.test_package_routes')
+            client_ip = request.remote_addr
+            logger.info(f'[API] 更新试压包请求: test_package_id={normalized_id}, 客户端IP: {client_ip}')
+            
             if TestPackageModel.update_test_package(normalized_id, update_data):
-                return redirect(f"/test_packages/edit/{normalized_id}?success=1")
+                logger.info(f'[API] 试压包更新成功: test_package_id={normalized_id}, 客户端IP: {client_ip}')
+                # 确保重定向响应正确发送
+                redirect_response = redirect(f"/test_packages/edit/{normalized_id}?success=1")
+                redirect_response.headers['Connection'] = 'close'
+                logger.info(f'[API] 准备返回重定向响应，客户端IP: {client_ip}')
+                return redirect_response
+            logger.error(f'[API] 试压包更新失败: test_package_id={normalized_id}, 客户端IP: {client_ip}')
             error_message = '保存失败，请检查输入。'
             for key, value in update_data.items():
                 if value is not None:
@@ -1090,8 +1101,17 @@ def export_test_packages():
 
 @test_package_bp.route('/test_packages/delete/<test_package_id>', methods=['POST'])
 def delete_test_package(test_package_id):
+    import logging
+    logger = logging.getLogger('routes.test_package_routes')
+    client_ip = request.remote_addr
+    logger.info(f'[API] 删除试压包请求: test_package_id={test_package_id}, 客户端IP: {client_ip}')
+    
     TestPackageModel.delete_test_package(test_package_id)
-    return redirect('/test_packages')
+    logger.info(f'[API] 试压包删除成功: test_package_id={test_package_id}, 客户端IP: {client_ip}')
+    
+    redirect_response = redirect('/test_packages')
+    redirect_response.headers['Connection'] = 'close'
+    return redirect_response
 
 
 @test_package_bp.route('/api/subsystems/<system_code>')
@@ -1149,16 +1169,33 @@ def add_pid(test_package_id):
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/pid_list/<int:pid_id>', methods=['DELETE'])
 def delete_pid(test_package_id, pid_id):
+    import logging
+    logger = logging.getLogger('routes.test_package_routes')
+    client_ip = request.remote_addr
+    logger.info(f'[API] 删除PID请求: test_package_id={test_package_id}, pid_id={pid_id}, 客户端IP: {client_ip}')
+    
     conn = create_connection()
     if not conn:
-        return jsonify({'error': '数据库连接失败'}), 500
+        logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
+        response = jsonify({'error': '数据库连接失败'})
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response, 500
     try:
         cur = conn.cursor()
         cur.execute("DELETE FROM PIDList WHERE ID = %s AND TestPackageID = %s", (pid_id, test_package_id))
         conn.commit()
-        return jsonify({'success': True})
+        logger.info(f'[API] PID删除成功: pid_id={pid_id}, 客户端IP: {client_ip}')
+        
+        response = jsonify({'success': True})
+        response_data = response.get_data()
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/iso_list', methods=['GET'])
@@ -1210,16 +1247,33 @@ def add_iso(test_package_id):
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/iso_list/<int:iso_id>', methods=['DELETE'])
 def delete_iso(test_package_id, iso_id):
+    import logging
+    logger = logging.getLogger('routes.test_package_routes')
+    client_ip = request.remote_addr
+    logger.info(f'[API] 删除ISO请求: test_package_id={test_package_id}, iso_id={iso_id}, 客户端IP: {client_ip}')
+    
     conn = create_connection()
     if not conn:
-        return jsonify({'error': '数据库连接失败'}), 500
+        logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
+        response = jsonify({'error': '数据库连接失败'})
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response, 500
     try:
         cur = conn.cursor()
         cur.execute("DELETE FROM ISODrawingList WHERE ID = %s AND TestPackageID = %s", (iso_id, test_package_id))
         conn.commit()
-        return jsonify({'success': True})
+        logger.info(f'[API] ISO删除成功: iso_id={iso_id}, 客户端IP: {client_ip}')
+        
+        response = jsonify({'success': True})
+        response_data = response.get_data()
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/punch_list', methods=['GET'])
@@ -1292,16 +1346,33 @@ def add_punch(test_package_id):
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/punch_list/<int:punch_id>', methods=['DELETE'])
 def delete_punch(test_package_id, punch_id):
+    import logging
+    logger = logging.getLogger('routes.test_package_routes')
+    client_ip = request.remote_addr
+    logger.info(f'[API] 删除Punch请求: test_package_id={test_package_id}, punch_id={punch_id}, 客户端IP: {client_ip}')
+    
     conn = create_connection()
     if not conn:
-        return jsonify({'error': '数据库连接失败'}), 500
+        logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
+        response = jsonify({'error': '数据库连接失败'})
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response, 500
     try:
         cur = conn.cursor()
         cur.execute("DELETE FROM PunchList WHERE ID = %s AND TestPackageID = %s", (punch_id, test_package_id))
         conn.commit()
-        return jsonify({'success': True})
+        logger.info(f'[API] Punch删除成功: punch_id={punch_id}, 客户端IP: {client_ip}')
+        
+        response = jsonify({'success': True})
+        response_data = response.get_data()
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @test_package_bp.route('/test_packages/<test_package_id>/punch/import/template')
@@ -1665,15 +1736,28 @@ def get_attachments(test_package_id, module_name):
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/attachments/<module_name>', methods=['POST'])
 def upload_attachment(test_package_id, module_name):
+    import logging
+    logger = logging.getLogger('routes.test_package_routes')
+    client_ip = request.remote_addr
+    logger.info(f'[API] 上传附件请求: test_package_id={test_package_id}, module={module_name}, 客户端IP: {client_ip}')
+    
     if 'files' not in request.files:
-        return jsonify({'error': '未选择文件'}), 400
+        response = jsonify({'error': '未选择文件'})
+        response.headers['Connection'] = 'close'
+        return response, 400
     files = request.files.getlist('files')
     if not files:
-        return jsonify({'error': '未选择文件'}), 400
+        response = jsonify({'error': '未选择文件'})
+        response.headers['Connection'] = 'close'
+        return response, 400
 
     conn = create_connection()
     if not conn:
-        return jsonify({'error': '数据库连接失败'}), 500
+        logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
+        response = jsonify({'error': '数据库连接失败'})
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response, 500
     try:
         folder = ensure_upload_folder(test_package_id, module_name)
         cur = conn.cursor()
@@ -1699,12 +1783,26 @@ def upload_attachment(test_package_id, module_name):
             )
             uploaded.append({'id': cur.lastrowid, 'filename': original, 'size': file_size})
         conn.commit()
-        return jsonify({'success': True, 'files': uploaded})
+        logger.info(f'[API] 附件上传成功: test_package_id={test_package_id}, module={module_name}, 文件数={len(uploaded)}, 客户端IP: {client_ip}')
+        
+        response = jsonify({'success': True, 'files': uploaded})
+        response_data = response.get_data()
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
     except Exception as exc:
+        import traceback
+        logger.error(f'[API] 附件上传失败: {exc}, 客户端IP: {client_ip}')
+        logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
         conn.rollback()
-        return jsonify({'error': str(exc)}), 500
+        response = jsonify({'error': str(exc)})
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response, 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/attachments/<int:attachment_id>/download')
@@ -1728,9 +1826,18 @@ def download_attachment(test_package_id, attachment_id):
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/attachments/<int:attachment_id>', methods=['DELETE'])
 def delete_attachment(test_package_id, attachment_id):
+    import logging
+    logger = logging.getLogger('routes.test_package_routes')
+    client_ip = request.remote_addr
+    logger.info(f'[API] 删除附件请求: test_package_id={test_package_id}, attachment_id={attachment_id}, 客户端IP: {client_ip}')
+    
     conn = create_connection()
     if not conn:
-        return jsonify({'error': '数据库连接失败'}), 500
+        logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
+        response = jsonify({'error': '数据库连接失败'})
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response, 500
     try:
         cur = conn.cursor(dictionary=True)
         cur.execute(
@@ -1740,11 +1847,30 @@ def delete_attachment(test_package_id, attachment_id):
         row = cur.fetchone()
         if row and row.get('FilePath') and os.path.exists(row['FilePath']):
             os.remove(row['FilePath'])
+            logger.info(f'[API] 已删除文件: {row["FilePath"]}, 客户端IP: {client_ip}')
         cur.execute("DELETE FROM TestPackageAttachments WHERE ID = %s AND TestPackageID = %s", (attachment_id, test_package_id))
         conn.commit()
-        return jsonify({'success': True})
+        logger.info(f'[API] 附件删除成功: attachment_id={attachment_id}, 客户端IP: {client_ip}')
+        
+        # 确保响应正确发送，避免连接重置
+        response = jsonify({'success': True})
+        response_data = response.get_data()
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        logger.info(f'[API] 准备返回响应，大小: {len(response_data)} 字节，客户端IP: {client_ip}')
+        return response
+    except Exception as e:
+        import traceback
+        logger.error(f'[API] 删除附件失败: {e}, 客户端IP: {client_ip}')
+        logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
+        response = jsonify({'error': str(e)})
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response.get_data()))
+        return response, 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/joint_summary')

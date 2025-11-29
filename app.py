@@ -55,26 +55,55 @@ def create_app():
     # 配置日志（生产环境）
     import logging
     from logging.handlers import RotatingFileHandler
-    if not app.debug:
-        os.makedirs('logs', exist_ok=True)
-        file_handler = RotatingFileHandler(
-            'logs/app.log', 
-            maxBytes=10 * 1024 * 1024,  # 10MB
-            backupCount=10
-        )
-        file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-        ))
-        file_handler.setLevel(logging.INFO)
-        app.logger.addHandler(file_handler)
-        app.logger.setLevel(logging.INFO)
-        app.logger.info('应用启动')
-        
-        # 配置数据库模块的日志记录器，使其也记录到同一个日志文件
-        db_logger = logging.getLogger('database')
-        db_logger.setLevel(logging.INFO)
-        db_logger.addHandler(file_handler)
-        db_logger.propagate = False  # 避免重复记录
+    import sys
+    
+    # 确保 logs 目录存在
+    os.makedirs('logs', exist_ok=True)
+    
+    # 文件日志处理器
+    file_handler = RotatingFileHandler(
+        'logs/app.log', 
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=10,
+        encoding='utf-8'  # 支持中文
+    )
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(name)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
+    
+    # 控制台日志处理器（用于调试）
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+    ))
+    console_handler.setLevel(logging.INFO)
+    
+    # 配置根日志记录器
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    # 配置应用日志记录器
+    app.logger.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    app.logger.addHandler(console_handler)
+    app.logger.info('应用启动')
+    
+    # 配置数据库模块的日志记录器
+    db_logger = logging.getLogger('database')
+    db_logger.setLevel(logging.INFO)
+    db_logger.addHandler(file_handler)
+    db_logger.addHandler(console_handler)
+    db_logger.propagate = False  # 避免重复记录
+    
+    # 配置路由模块的日志记录器
+    routes_logger = logging.getLogger('routes')
+    routes_logger.setLevel(logging.INFO)
+    routes_logger.addHandler(file_handler)
+    routes_logger.addHandler(console_handler)
+    routes_logger.propagate = False
     
     # 注册蓝图
     app.register_blueprint(auth_bp)

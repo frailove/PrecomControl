@@ -191,8 +191,13 @@ def api_create_user():
 def api_update_user(user_id):
     import logging
     import traceback
-    from flask import jsonify
-    logger = logging.getLogger(__name__)
+    from flask import jsonify, request as flask_request
+    logger = logging.getLogger('routes.auth_routes')
+    
+    # 记录请求信息
+    client_ip = flask_request.remote_addr
+    user_agent = flask_request.headers.get('User-Agent', 'Unknown')
+    logger.info(f'[API] 收到更新用户 {user_id} 请求，客户端IP: {client_ip}, User-Agent: {user_agent[:50]}')
     
     try:
         data = request.get_json(silent=True) or {}
@@ -231,12 +236,15 @@ def api_update_user(user_id):
             logger.warning(f'[API] 记录审计日志失败: {e}')
             # 审计日志失败不影响主流程
         
-        logger.info(f'[API] 更新用户 {user_id}: 完成')
+        logger.info(f'[API] 更新用户 {user_id}: 完成，客户端IP: {client_ip}')
         
         # 确保响应正确发送，避免连接重置
         response = jsonify({'success': True})
+        response_data = response.get_data()
         response.headers['Connection'] = 'close'  # 明确关闭连接
-        response.headers['Content-Length'] = str(len(response.get_data()))
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        logger.info(f'[API] 准备返回响应，大小: {len(response_data)} 字节，客户端IP: {client_ip}')
         return response
         
     except Exception as exc:
@@ -370,8 +378,12 @@ def api_get_user_modules(user_id):
 def api_set_user_modules(user_id):
     import logging
     import traceback
-    from flask import jsonify, Response
-    logger = logging.getLogger(__name__)
+    from flask import jsonify, Response, request as flask_request
+    logger = logging.getLogger('routes.auth_routes')
+    
+    # 记录请求信息
+    client_ip = flask_request.remote_addr
+    logger.info(f'[API] 收到设置用户 {user_id} 模块权限请求，客户端IP: {client_ip}')
     
     try:
         data = request.get_json() or {}
@@ -389,8 +401,11 @@ def api_set_user_modules(user_id):
         
         # 确保响应正确发送，避免连接重置
         response = jsonify({'success': True})
+        response_data = response.get_data()
         response.headers['Connection'] = 'close'  # 明确关闭连接
-        response.headers['Content-Length'] = str(len(response.get_data()))
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        logger.info(f'[API] 准备返回响应，大小: {len(response_data)} 字节，客户端IP: {client_ip}')
         return response
         
     except Exception as exc:
