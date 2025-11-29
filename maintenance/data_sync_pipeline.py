@@ -5,7 +5,14 @@
 import argparse
 import json
 import os
+import sys
 from datetime import datetime
+
+# 确保可以从项目根目录导入 database / utils / welding_importer 等模块
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from database import create_welding_table
 from welding_importer import WeldingDataImporter
@@ -65,7 +72,9 @@ def run_data_sync_pipeline(
         summary['backup_id'] = backup_id
     
     print("\n[2/5] 导入最新 WeldingList 数据...")
+    # create_welding_table() 会确保 Block 字段存在（如果不存在则添加）
     create_welding_table()
+    # 导入时会自动从 DrawingNumber 提取 Block 字段并填充
     importer = WeldingDataImporter(excel_path, verbose=verbose_import)
     if not importer.import_to_database():
         raise RuntimeError("导入WeldingList失败，终止后续步骤。")
@@ -75,7 +84,7 @@ def run_data_sync_pipeline(
     sync_id = sync_after_import(backup_id=backup_id)
     summary['sync_id'] = sync_id
     
-    print("\n[4/5] 刷新所有聚合表（JointSummary / NDEPWHTStatus / ISODrawingList）...")
+    print("\n[4/5] 刷新所有聚合表（JointSummary / NDEPWHTStatus / ISODrawingList / SystemWeldingSummary / SubsystemWeldingSummary）...")
     agg_stats = refresh_all_packages_aggregated_data(verbose=True)
     summary['aggregation'] = agg_stats
     

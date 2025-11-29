@@ -380,116 +380,150 @@ $(document).ready(function() {
             bccquarter: $('select[name="bccquarter"]').val() || ''
         };
         
-        $.get('/api/faclist_options', params, function(data) {
-            // 更新项目（不更新自己）
-            if (changedField !== 'subproject_code') {
-                var select = $('select[name="subproject_code"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部项目</option>');
-                $.each(data.subproject_codes || [], function(i, code) {
-                    select.append('<option value="' + code + '">' + code + '</option>');
-                });
-                if (current) select.val(current);
-            }
-            
-            // 更新项目期
-            if (changedField !== 'train') {
-                var select = $('select[name="train"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部项目期</option>');
-                $.each(data.trains || [], function(i, train) {
-                    select.append('<option value="' + train + '">' + train + '</option>');
-                });
-                if (current) select.val(current);
-            }
-            
-            // 更新装置
-            if (changedField !== 'unit') {
-                var select = $('select[name="unit"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部装置</option>');
-                $.each(data.units || [], function(i, unit) {
-                    select.append('<option value="' + unit + '">' + unit + '</option>');
-                });
-                if (current) select.val(current);
-            }
-            
-            // 更新大主项
-            if (changedField !== 'simpleblk') {
-                var simpleSelect = $('select[name="simpleblk"]');
-                var currentSimple = simpleSelect.val();
-                simpleSelect.empty().append('<option value="">全部大主项</option>');
-                $.each(data.simpleblks || [], function(i, blk) {
-                    simpleSelect.append('<option value="' + blk + '">' + blk + '</option>');
-                });
-                if (currentSimple) simpleSelect.val(currentSimple);
-            }
-            
-            // 更新主项
-            if (changedField !== 'mainblock') {
-                var mainSelect = $('select[name="mainblock"]');
-                var currentMain = mainSelect.val();
-                mainSelect.empty().append('<option value="">全部主项</option>');
-                var currentSimpleblk = $('select[name="simpleblk"]').val();
-                if (currentSimpleblk && data.mainblocks && data.mainblocks[currentSimpleblk]) {
-                    $.each(data.mainblocks[currentSimpleblk].sort(), function(i, mb) {
+        $.get('/subsystems/api/faclist_options', params)
+            .done(function(data) {
+                console.log('Faclist 选项更新成功:', data);
+                // 更新项目（不更新自己）
+                if (changedField !== 'subproject_code') {
+                    var select = $('select[name="subproject_code"]');
+                    var current = select.val();
+                    select.empty().append('<option value="">全部项目</option>');
+                    $.each(data.subproject_codes || [], function(i, code) {
+                        select.append('<option value="' + code + '">' + code + '</option>');
+                    });
+                    if (current) select.val(current);
+                }
+                
+                // 更新项目期
+                if (changedField !== 'train') {
+                    var select = $('select[name="train"]');
+                    var current = select.val();
+                    select.empty().append('<option value="">全部项目期</option>');
+                    $.each(data.trains || [], function(i, train) {
+                        select.append('<option value="' + train + '">' + train + '</option>');
+                    });
+                    if (current) select.val(current);
+                }
+                
+                // 更新装置
+                if (changedField !== 'unit') {
+                    var select = $('select[name="unit"]');
+                    var current = select.val();
+                    select.empty().append('<option value="">全部装置</option>');
+                    $.each(data.units || [], function(i, unit) {
+                        select.append('<option value="' + unit + '">' + unit + '</option>');
+                    });
+                    if (current) select.val(current);
+                }
+                
+                // 更新大主项
+                if (changedField !== 'simpleblk') {
+                    var simpleSelect = $('select[name="simpleblk"]');
+                    var currentSimple = simpleSelect.val();
+                    simpleSelect.empty().append('<option value="">全部大主项</option>');
+                    $.each(data.simpleblks || [], function(i, blk) {
+                        simpleSelect.append('<option value="' + blk + '">' + blk + '</option>');
+                    });
+                    if (currentSimple) simpleSelect.val(currentSimple);
+                }
+                
+                // 更新主项
+                if (changedField !== 'mainblock') {
+                    var mainSelect = $('select[name="mainblock"]');
+                    var currentMain = mainSelect.val();
+                    mainSelect.empty().append('<option value="">全部主项</option>');
+                    var currentSimpleblk = $('select[name="simpleblk"]').val();
+                    var availableMainblocks = [];
+                    
+                    if (currentSimpleblk && data.mainblocks && data.mainblocks[currentSimpleblk] && data.mainblocks[currentSimpleblk].length > 0) {
+                        // 如果选择了 simpleblk，只显示该 simpleblk 下的 mainblocks
+                        availableMainblocks = data.mainblocks[currentSimpleblk].sort();
+                    } else {
+                        // 如果没有选择 simpleblk，显示所有 mainblocks
+                        var allMainblocks = [];
+                        $.each(data.mainblocks || {}, function(simpleblk, mbs) {
+                            $.each(mbs, function(i, mb) {
+                                if (allMainblocks.indexOf(mb) === -1) {
+                                    allMainblocks.push(mb);
+                                }
+                            });
+                        });
+                        availableMainblocks = allMainblocks.sort();
+                    }
+                    
+                    $.each(availableMainblocks, function(i, mb) {
                         mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
                     });
-                } else {
-                    var allMainblocks = [];
-                    $.each(data.mainblocks || {}, function(simpleblk, mbs) {
-                        $.each(mbs, function(i, mb) {
-                            if (allMainblocks.indexOf(mb) === -1) {
-                                allMainblocks.push(mb);
-                            }
-                        });
-                    });
-                    allMainblocks.sort();
-                    $.each(allMainblocks, function(i, mb) {
-                        mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
-                    });
+                    
+                    // 如果当前值不在新列表中，清空它
+                    if (currentMain && availableMainblocks.indexOf(currentMain) === -1) {
+                        mainSelect.val('');
+                        // 同时清空 block
+                        $('select[name="block"]').val('');
+                    } else if (currentMain) {
+                        mainSelect.val(currentMain);
+                    }
                 }
-                if (currentMain) mainSelect.val(currentMain);
-            }
-            
-            // 更新CIA主子项
-            if (changedField !== 'block') {
-                var blockSelect = $('select[name="block"]');
-                var currentBlock = blockSelect.val();
-                blockSelect.empty().append('<option value="">全部CIA主子项</option>');
-                var currentMainblock = $('select[name="mainblock"]').val();
-                if (currentMainblock && data.blocks && data.blocks[currentMainblock]) {
-                    $.each(data.blocks[currentMainblock].sort(), function(i, blk) {
+                
+                // 更新CIA主子项
+                if (changedField !== 'block') {
+                    var blockSelect = $('select[name="block"]');
+                    var currentBlock = blockSelect.val();
+                    blockSelect.empty().append('<option value="">全部CIA主子项</option>');
+                    var currentMainblock = $('select[name="mainblock"]').val();
+                    var availableBlocks = [];
+                    
+                    if (currentMainblock && data.blocks && data.blocks[currentMainblock] && data.blocks[currentMainblock].length > 0) {
+                        // 如果选择了 mainblock，只显示该 mainblock 下的 blocks
+                        availableBlocks = data.blocks[currentMainblock].sort();
+                    } else {
+                        // 如果没有选择 mainblock，显示所有 blocks
+                        var allBlocks = [];
+                        $.each(data.blocks || {}, function(mainblock, blks) {
+                            $.each(blks, function(i, blk) {
+                                if (allBlocks.indexOf(blk) === -1) {
+                                    allBlocks.push(blk);
+                                }
+                            });
+                        });
+                        availableBlocks = allBlocks.sort();
+                    }
+                    
+                    $.each(availableBlocks, function(i, blk) {
                         blockSelect.append('<option value="' + blk + '">' + blk + '</option>');
                     });
-                } else {
-                    var allBlocks = [];
-                    $.each(data.blocks || {}, function(mainblock, blks) {
-                        $.each(blks, function(i, blk) {
-                            if (allBlocks.indexOf(blk) === -1) {
-                                allBlocks.push(blk);
-                            }
-                        });
-                    });
-                    allBlocks.sort();
-                    $.each(allBlocks, function(i, blk) {
-                        blockSelect.append('<option value="' + blk + '">' + blk + '</option>');
-                    });
+                    
+                    // 如果当前值不在新列表中，清空它
+                    if (currentBlock && availableBlocks.indexOf(currentBlock) === -1) {
+                        blockSelect.val('');
+                    } else if (currentBlock) {
+                        blockSelect.val(currentBlock);
+                    }
                 }
-                if (currentBlock) blockSelect.val(currentBlock);
-            }
-            
-            // 更新片区
-            if (changedField !== 'bccquarter') {
-                var select = $('select[name="bccquarter"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部片区</option>');
-                $.each(data.bccquarters || [], function(i, quarter) {
-                    select.append('<option value="' + quarter + '">' + quarter + '</option>');
-                });
-                if (current) select.val(current);
-            }
-        });
+                
+                // 更新片区
+                if (changedField !== 'bccquarter') {
+                    var select = $('select[name="bccquarter"]');
+                    var current = select.val();
+                    select.empty().append('<option value="">全部片区</option>');
+                    var availableQuarters = data.bccquarters || [];
+                    $.each(availableQuarters, function(i, quarter) {
+                        select.append('<option value="' + quarter + '">' + quarter + '</option>');
+                    });
+                    // 如果当前值不在新列表中，清空它
+                    if (current && availableQuarters.indexOf(current) === -1) {
+                        select.val('');
+                    } else if (current) {
+                        select.val(current);
+                    }
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error('Faclist 选项加载失败:', status, error, xhr.responseText);
+                console.error('请求参数:', params);
+                console.error('请求URL:', '/api/faclist_options');
+                // 即使失败也不影响下拉框的正常展开
+            });
     }
     
     // 系统代码变化时，更新Faclist
@@ -516,6 +550,11 @@ $(document).ready(function() {
             updateFaclistOptions(changedField);
         }, 300);
     });
+    
+    // 页面加载时，如果 Faclist 筛选区域已展开，初始化选项
+    if ($('#faclistFilter').is(':visible')) {
+        updateFaclistOptions('init');
+    }
 });
 </script>
 {% endblock %}

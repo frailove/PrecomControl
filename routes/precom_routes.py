@@ -256,7 +256,7 @@ def precom_task_new():
                     PerformedBy, TestType,
                     ProgressID, Discipline, WorkPackage,
                     KeyQuantityTotal, KeyQuantityDone, KeyProgressPercent
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     data['TaskType'],
@@ -414,7 +414,8 @@ def precom_task_edit(task_id: int):
         cur.execute(
             """
             SELECT ID, ActID, Block, ActDescription, Scope, Discipline,
-                   WorkPackage, WeightFactor, ManHours, Subproject
+                   WorkPackage, TotalQuantity, CompletedQuantity, CompletedPercent,
+                   WeightFactor, ManHours, Subproject
             FROM PrecomTaskActivity
             WHERE TaskID = %s
             ORDER BY ID
@@ -733,6 +734,9 @@ def _parse_activity_rows_from_request():
     scopes = request.form.getlist('ActivityScope')
     disciplines = request.form.getlist('ActivityDiscipline')
     work_packages = request.form.getlist('ActivityWorkPackage')
+    total_quantities = request.form.getlist('ActivityTotalQuantity')
+    completed_quantities = request.form.getlist('ActivityCompletedQuantity')
+    completed_percents = request.form.getlist('ActivityCompletedPercent')
     weight_factors = request.form.getlist('ActivityWeightFactor')
     man_hours_list = request.form.getlist('ActivityManHours')
     subprojects = request.form.getlist('ActivitySubproject')
@@ -745,6 +749,9 @@ def _parse_activity_rows_from_request():
         len(scopes),
         len(disciplines),
         len(work_packages),
+        len(total_quantities),
+        len(completed_quantities),
+        len(completed_percents),
         len(weight_factors),
         len(man_hours_list),
         len(subprojects),
@@ -756,14 +763,29 @@ def _parse_activity_rows_from_request():
         scope = (scopes[idx].strip() if idx < len(scopes) and scopes[idx] else '')
         disc = (disciplines[idx].strip() if idx < len(disciplines) and disciplines[idx] else '')
         wp = (work_packages[idx].strip() if idx < len(work_packages) and work_packages[idx] else '')
+        total_raw = total_quantities[idx].strip() if idx < len(total_quantities) and total_quantities[idx] else ''
+        completed_raw = completed_quantities[idx].strip() if idx < len(completed_quantities) and completed_quantities[idx] else ''
+        percent_raw = completed_percents[idx].strip() if idx < len(completed_percents) and completed_percents[idx] else ''
         wf_raw = weight_factors[idx].strip() if idx < len(weight_factors) and weight_factors[idx] else ''
         mh_raw = man_hours_list[idx].strip() if idx < len(man_hours_list) and man_hours_list[idx] else ''
         subprj = (subprojects[idx].strip() if idx < len(subprojects) and subprojects[idx] else '')
 
         # 如果整行都是空，则跳过
-        if not any([act_id, block, desc, scope, disc, wp, wf_raw, mh_raw, subprj]):
+        if not any([act_id, block, desc, scope, disc, wp, total_raw, completed_raw, percent_raw, wf_raw, mh_raw, subprj]):
             continue
 
+        try:
+            total_qty = float(total_raw) if total_raw else None
+        except ValueError:
+            total_qty = None
+        try:
+            completed_qty = float(completed_raw) if completed_raw else None
+        except ValueError:
+            completed_qty = None
+        try:
+            completed_percent = float(percent_raw) if percent_raw else None
+        except ValueError:
+            completed_percent = None
         try:
             wf = float(wf_raw) if wf_raw else None
         except ValueError:
@@ -781,6 +803,9 @@ def _parse_activity_rows_from_request():
                 'Scope': scope or None,
                 'Discipline': disc or None,
                 'WorkPackage': wp or None,
+                'TotalQuantity': total_qty,
+                'CompletedQuantity': completed_qty,
+                'CompletedPercent': completed_percent,
                 'WeightFactor': wf,
                 'ManHours': mh,
                 'Subproject': subprj or None,
@@ -799,8 +824,9 @@ def _save_task_activities(conn, task_id: int, activities):
     insert_sql = """
         INSERT INTO PrecomTaskActivity (
             TaskID, ActID, Block, ActDescription, Scope,
-            Discipline, WorkPackage, WeightFactor, ManHours, Subproject
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            Discipline, WorkPackage, TotalQuantity, CompletedQuantity, CompletedPercent,
+            WeightFactor, ManHours, Subproject
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     values = [
         (
@@ -811,6 +837,9 @@ def _save_task_activities(conn, task_id: int, activities):
             act['Scope'],
             act['Discipline'],
             act['WorkPackage'],
+            act['TotalQuantity'],
+            act['CompletedQuantity'],
+            act['CompletedPercent'],
             act['WeightFactor'],
             act['ManHours'],
             act['Subproject'],

@@ -406,11 +406,13 @@ $(document).ready(function() {
                 var currentMain = mainSelect.val();
                 mainSelect.empty().append('<option value="">全部主项</option>');
                 var currentSimpleblk = $('select[name="simpleblk"]').val();
-                if (currentSimpleblk && data.mainblocks && data.mainblocks[currentSimpleblk]) {
-                    $.each(data.mainblocks[currentSimpleblk].sort(), function(i, mb) {
-                        mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
-                    });
+                var availableMainblocks = [];
+                
+                if (currentSimpleblk && data.mainblocks && data.mainblocks[currentSimpleblk] && data.mainblocks[currentSimpleblk].length > 0) {
+                    // 如果选择了 simpleblk，只显示该 simpleblk 下的 mainblocks
+                    availableMainblocks = data.mainblocks[currentSimpleblk].sort();
                 } else {
+                    // 如果没有选择 simpleblk，显示所有 mainblocks
                     var allMainblocks = [];
                     $.each(data.mainblocks || {}, function(simpleblk, mbs) {
                         $.each(mbs, function(i, mb) {
@@ -419,12 +421,21 @@ $(document).ready(function() {
                             }
                         });
                     });
-                    allMainblocks.sort();
-                    $.each(allMainblocks, function(i, mb) {
-                        mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
-                    });
+                    availableMainblocks = allMainblocks.sort();
                 }
-                if (currentMain) mainSelect.val(currentMain);
+                
+                $.each(availableMainblocks, function(i, mb) {
+                    mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
+                });
+                
+                // 如果当前值不在新列表中，清空它
+                if (currentMain && availableMainblocks.indexOf(currentMain) === -1) {
+                    mainSelect.val('');
+                    // 同时清空 block
+                    $('select[name="block"]').val('');
+                } else if (currentMain) {
+                    mainSelect.val(currentMain);
+                }
             }
             
             // 更新 CIA 主子项
@@ -459,10 +470,16 @@ $(document).ready(function() {
                 var select = $('select[name="bccquarter"]');
                 var current = select.val();
                 select.empty().append('<option value="">全部片区</option>');
-                $.each(data.bccquarters || [], function(i, quarter) {
+                var availableQuarters = data.bccquarters || [];
+                $.each(availableQuarters, function(i, quarter) {
                     select.append('<option value="' + quarter + '">' + quarter + '</option>');
                 });
-                if (current) select.val(current);
+                // 如果当前值不在新列表中，清空它
+                if (current && availableQuarters.indexOf(current) === -1) {
+                    select.val('');
+                } else if (current) {
+                    select.val(current);
+                }
             }
         });
     }

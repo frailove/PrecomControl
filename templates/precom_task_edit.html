@@ -27,15 +27,29 @@
     .task-section-title i {
         color: var(--industrial-orange, #f97316);
     }
-    .task-attachments, .task-punch {
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-    }
-    .form-label {
-        text-transform: uppercase;
-        font-size: .8rem;
-        letter-spacing: .05em;
-        color: var(--steel-gray, #475569);
-    }
+.task-attachments, .task-punch {
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+.form-label {
+    text-transform: uppercase;
+    font-size: .8rem;
+    letter-spacing: .05em;
+    color: var(--steel-gray, #475569);
+}
+.activity-progress-table {
+    font-size: .78rem;
+    table-layout: auto;
+}
+.activity-progress-table th,
+.activity-progress-table td {
+    white-space: nowrap;
+    vertical-align: middle;
+    padding: .3rem .4rem;
+}
+.activity-progress-table input.form-control-sm {
+    font-size: .78rem;
+    padding: .15rem .35rem;
+}
 </style>
 <div class="page-header d-flex justify-content-between align-items-end">
     <div>
@@ -81,7 +95,7 @@
                             <i class="bi bi-bar-chart-line"></i> 施工进度
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-sm align-middle">
+                            <table class="table table-sm align-middle activity-progress-table">
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width: 130px;">ACT ID</th>
@@ -90,6 +104,9 @@
                                         <th style="width: 120px;">Scope</th>
                                         <th style="width: 120px;">Discipline</th>
                                         <th style="width: 150px;">Work Package</th>
+                                        <th style="width: 115px;">Total Qty</th>
+                                        <th style="width: 125px;">Completed Qty</th>
+                                        <th style="width: 120px;">Completed %</th>
                                         <th style="width: 110px;">Weight</th>
                                         <th style="width: 110px;">Man Hours</th>
                                         <th style="width: 130px;">Subproject</th>
@@ -124,6 +141,18 @@
                                             <td>
                                                 <input type="text" class="form-control form-control-sm"
                                                        name="ActivityWorkPackage" value="{{ a.WorkPackage or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm"
+                                                       name="ActivityTotalQuantity" value="{{ a.TotalQuantity or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm"
+                                                       name="ActivityCompletedQuantity" value="{{ a.CompletedQuantity or '' }}">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm"
+                                                       name="ActivityCompletedPercent" value="{{ a.CompletedPercent or '' }}">
                                             </td>
                                             <td>
                                                 <input type="number" step="0.01" class="form-control form-control-sm"
@@ -164,6 +193,15 @@
                                             </td>
                                             <td>
                                                 <input type="text" class="form-control form-control-sm" name="ActivityWorkPackage">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" name="ActivityTotalQuantity">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" name="ActivityCompletedQuantity">
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" name="ActivityCompletedPercent">
                                             </td>
                                             <td>
                                                 <input type="number" step="0.01" class="form-control form-control-sm" name="ActivityWeightFactor">
@@ -765,6 +803,9 @@
             <td><input type="text" class="form-control form-control-sm" name="ActivityScope"></td>
             <td><input type="text" class="form-control form-control-sm" name="ActivityDiscipline"></td>
             <td><input type="text" class="form-control form-control-sm" name="ActivityWorkPackage"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm" name="ActivityTotalQuantity"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm" name="ActivityCompletedQuantity"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm" name="ActivityCompletedPercent"></td>
             <td><input type="number" step="0.01" class="form-control form-control-sm" name="ActivityWeightFactor"></td>
             <td><input type="number" step="0.01" class="form-control form-control-sm" name="ActivityManHours"></td>
             <td><input type="text" class="form-control form-control-sm" name="ActivitySubproject"></td>
@@ -774,12 +815,94 @@
         `;
         activityTableBody.appendChild(tr);
         bindActivityRemoveButtons();
+        return tr;
     }
 
     if (addActivityRowBtn) {
         addActivityRowBtn.addEventListener('click', addEmptyActivityRow);
     }
     bindActivityRemoveButtons();
+
+    const activityFieldsOrder = [
+        'ActivityActID',
+        'ActivityBlock',
+        'ActivityDescription',
+        'ActivityScope',
+        'ActivityDiscipline',
+        'ActivityWorkPackage',
+        'ActivityTotalQuantity',
+        'ActivityCompletedQuantity',
+        'ActivityCompletedPercent',
+        'ActivityWeightFactor',
+        'ActivityManHours',
+        'ActivitySubproject'
+    ];
+
+    function ensureActivityRowCount(minCount) {
+        if (!activityTableBody) return;
+        while (activityTableBody.querySelectorAll('tr').length < minCount) {
+            addEmptyActivityRow();
+        }
+    }
+
+    if (activityTableBody) {
+        activityTableBody.addEventListener('paste', function (event) {
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement)) {
+                return;
+            }
+            const fieldName = target.name;
+            const startCol = activityFieldsOrder.indexOf(fieldName);
+            if (startCol === -1) {
+                return;
+            }
+            const clipboard = event.clipboardData || window.clipboardData;
+            if (!clipboard) {
+                return;
+            }
+            const text = clipboard.getData('text');
+            if (!text || (!text.includes('\t') && !text.includes('\n'))) {
+                return;
+            }
+            event.preventDefault();
+            const rows = text
+                .replace(/\r/g, '\n')
+                .split('\n')
+                .map(row => row.trimEnd())
+                .filter(row => row.length);
+            if (!rows.length) {
+                return;
+            }
+
+            const tr = target.closest('tr');
+            if (!tr) {
+                return;
+            }
+            const allRows = Array.from(activityTableBody.querySelectorAll('tr'));
+            const startRowIndex = allRows.indexOf(tr);
+            if (startRowIndex === -1) {
+                return;
+            }
+
+            rows.forEach((rowText, rowOffset) => {
+                const values = rowText.split('\t');
+                const rowIndex = startRowIndex + rowOffset;
+                ensureActivityRowCount(rowIndex + 1);
+                const targetRow = activityTableBody.querySelectorAll('tr')[rowIndex];
+                values.forEach((cellValue, colOffset) => {
+                    const fieldIndex = startCol + colOffset;
+                    if (fieldIndex >= activityFieldsOrder.length) {
+                        return;
+                    }
+                    const targetField = activityFieldsOrder[fieldIndex];
+                    const input = targetRow.querySelector(`input[name="${targetField}"]`);
+                    if (input) {
+                        input.value = cellValue.trim();
+                    }
+                });
+            });
+        });
+    }
 
     if (!taskId) {
         // 新建任务时，不需要附件和 Punch 的加载与删除逻辑

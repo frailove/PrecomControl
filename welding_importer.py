@@ -296,7 +296,7 @@ class WeldingDataImporter:
             target_columns = [
                 # 基础信息
                 'WeldID', 'ConstContractor', 'SystemCode', 'SubSystemCode', 'WeldJoint', 'JointTypeFS',
-                'DrawingNumber', 'PageNumber', 'RevNo', 'PID', 'PIDDrawingNumber',
+                'DrawingNumber', 'Block', 'PageNumber', 'RevNo', 'PID', 'PIDDrawingNumber',
                 # 管道材料信息
                 'PipingMaterialClass', 'PressureClass', 'MediumLevel', 'SpoolNo', 'NDTDesignRatio',
                 'Material1', 'Material2', 'OuterDiameter1', 'OuterDiameter2', 'SCH1', 'SCH2',
@@ -378,6 +378,45 @@ class WeldingDataImporter:
                 return "UNDEFINED"
 
             df['SubSystemCode'] = df.apply(ensure_subsystem, axis=1)
+            
+            # ============================================================
+            # 性能优化：从 DrawingNumber 中提取 Block 信息并存储
+            # 这是日常运维的标准流程，在导入时自动提取 Block
+            # 格式与 Faclist 中的 Block 格式一致，可直接用于等值查询（利用索引）
+            # ============================================================
+            def extract_block_from_drawing(drawing_number):
+                """
+                从 DrawingNumber 中提取 Block 模式，格式与 Faclist 中的 Block 格式完全一致（A-B-C）。
+                例如：'GCC-ASP-DDD-00051-00-5100-TKM-ISO-00004' -> '5100-00051-00'
+                规则：提取前三个数字部分，按 Faclist 格式排列 [parts[2], parts[0], parts[1]]
+                这样存储的 Block 可以直接与 Faclist 中的 Block 进行等值匹配，无需任何转换
+                """
+                if not drawing_number or pd.isna(drawing_number):
+                    return None
+                drawing_str = str(drawing_number).strip()
+                if not drawing_str:
+                    return None
+                # 提取所有数字部分
+                parts = re.findall(r'\d+', drawing_str)
+                if len(parts) >= 3:
+                    # 例如：'GCC-ASP-DDD-00051-00-5100-TKM-ISO-00004' 
+                    # parts = ['00051', '00', '5100', ...]
+                    # 应该存储为：'5100-00051-00' (第三部分-第一部分-第二部分，即 A-B-C 格式)
+                    # 与 Faclist 中的 Block 格式完全一致，可直接等值匹配
+                    return f"{parts[2]}-{parts[0]}-{parts[1]}"
+                elif len(parts) == 2:
+                    # 两个部分：按原始顺序
+                    return '-'.join(parts)
+                elif len(parts) == 1:
+                    return parts[0]
+                return None
+            
+            # 在导入时自动提取 Block 字段（日常运维标准流程）
+            # Block 字段已包含在 target_columns 中，会随数据一起导入数据库
+            if 'DrawingNumber' in df.columns:
+                df['Block'] = df['DrawingNumber'].apply(extract_block_from_drawing)
+            else:
+                df['Block'] = None
 
             # 先根据Excel数据填充系统/子系统/试压包主数据（如不存在则插入，占位描述后续维护）
             try:

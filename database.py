@@ -249,6 +249,17 @@ def create_welding_table():
                 connection.commit()
         except Error:
             pass
+        
+        # 性能优化：添加 Block 字段（从 DrawingNumber 中提取，用于快速过滤）
+        try:
+            cursor.execute("SHOW COLUMNS FROM WeldingList LIKE 'Block'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute("ALTER TABLE WeldingList ADD COLUMN Block VARCHAR(255) AFTER DrawingNumber")
+                connection.commit()
+                print("SUCCESS: Added Block column to WeldingList")
+        except Error as e:
+            print(f"WARNING: Failed to add Block column: {e}")
             
         # 兼容已存在的旧表：放宽 WeldID 长度到 255
         try:
@@ -363,6 +374,13 @@ def create_welding_table():
             result = cursor.fetchone()
             if not result:
                 cursor.execute("CREATE INDEX idx_drawingnumber ON WeldingList(DrawingNumber)")
+                connection.commit()
+            
+            # Block 索引（性能优化：用于快速过滤，替代 LIKE 查询）
+            cursor.execute("SHOW INDEX FROM WeldingList WHERE Key_name = 'idx_block'")
+            result = cursor.fetchone()
+            if not result:
+                cursor.execute("CREATE INDEX idx_block ON WeldingList(Block)")
                 connection.commit()
             
             # SystemCode 和 SubSystemCode 索引（用于筛选）
@@ -725,6 +743,9 @@ def ensure_precom_tables():
                 Scope VARCHAR(255) NULL COMMENT 'SCOPE / 范围',
                 Discipline VARCHAR(255) NULL COMMENT '专业',
                 WorkPackage VARCHAR(255) NULL COMMENT '工作包',
+                TotalQuantity DECIMAL(12,2) NULL COMMENT '总数量',
+                CompletedQuantity DECIMAL(12,2) NULL COMMENT '完成数量',
+                CompletedPercent DECIMAL(7,3) NULL COMMENT '完成百分比',
                 WeightFactor DECIMAL(10,2) NULL COMMENT '权重因子',
                 ManHours DECIMAL(10,2) NULL COMMENT '工时',
                 Subproject VARCHAR(255) NULL COMMENT '子项目',
@@ -736,6 +757,39 @@ def ensure_precom_tables():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """
         )
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTaskActivity LIKE 'TotalQuantity'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTaskActivity ADD COLUMN TotalQuantity DECIMAL(12,2) NULL AFTER WorkPackage"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTaskActivity LIKE 'CompletedQuantity'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTaskActivity ADD COLUMN CompletedQuantity DECIMAL(12,2) NULL AFTER TotalQuantity"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTaskActivity LIKE 'CompletedPercent'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTaskActivity ADD COLUMN CompletedPercent DECIMAL(7,3) NULL AFTER CompletedQuantity"
+                )
+                connection.commit()
+        except Error:
+            pass
 
         # 兼容已有旧表：为 PrecomTask 表补充施工进度相关列
         try:
@@ -809,6 +863,107 @@ def ensure_precom_tables():
         return True
     except Error as e:
         print(f"[DB] ensure_precom_tables failed: {e}")
+        return False
+    finally:
+        if connection:
+            connection.close()
+
+
+def ensure_welding_summary_tables():
+    """
+    创建 / 更新系统级、子系统级焊接 & 试压聚合统计表，用于快速展示列表页统计信息。
+    - SystemWeldingSummary: 按 SystemCode 聚合
+    - SubsystemWeldingSummary: 按 (SystemCode, SubSystemCode) 聚合
+    - BlockSystemSummary: 按 (Block, SystemCode) 聚合（用于 Faclist 过滤）
+    - BlockSubsystemSummary: 按 (Block, SystemCode, SubSystemCode) 聚合（用于 Faclist 过滤）
+    """
+    connection = create_connection()
+    if not connection:
+        return False
+
+    try:
+        cursor = connection.cursor()
+
+        # 系统级汇总表
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS SystemWeldingSummary (
+                SystemCode VARCHAR(512) PRIMARY KEY,
+                TotalDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                CompletedDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                TotalPackages INT NOT NULL DEFAULT 0,
+                TestedPackages INT NOT NULL DEFAULT 0,
+                UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_sys_summary_system (SystemCode)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+        )
+
+        # 子系统级汇总表
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS SubsystemWeldingSummary (
+                SystemCode VARCHAR(512) NOT NULL,
+                SubSystemCode VARCHAR(512) NOT NULL,
+                TotalDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                CompletedDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                TotalPackages INT NOT NULL DEFAULT 0,
+                TestedPackages INT NOT NULL DEFAULT 0,
+                UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (SubSystemCode),
+                INDEX idx_subsys_summary_system (SystemCode),
+                INDEX idx_subsys_summary_subsystem (SubSystemCode)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+        )
+
+        # Block + System 级汇总表（用于 Faclist 过滤）
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS BlockSystemSummary (
+                Block VARCHAR(255) NOT NULL,
+                SystemCode VARCHAR(512) NOT NULL,
+                TotalDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                CompletedDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                TotalPackages INT NOT NULL DEFAULT 0,
+                TestedPackages INT NOT NULL DEFAULT 0,
+                UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (Block, SystemCode),
+                INDEX idx_bss_block (Block),
+                INDEX idx_bss_system (SystemCode)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+        )
+
+        # Block + SubSystem 级汇总表（用于 Faclist 过滤）
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS BlockSubsystemSummary (
+                Block VARCHAR(255) NOT NULL,
+                SystemCode VARCHAR(512) NOT NULL,
+                SubSystemCode VARCHAR(512) NOT NULL,
+                TotalDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                CompletedDIN DECIMAL(18, 4) NOT NULL DEFAULT 0,
+                TotalPackages INT NOT NULL DEFAULT 0,
+                TestedPackages INT NOT NULL DEFAULT 0,
+                UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (Block, SubSystemCode),
+                INDEX idx_bsub_block (Block),
+                INDEX idx_bsub_system (SystemCode),
+                INDEX idx_bsub_subsystem (SubSystemCode)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+        )
+
+        connection.commit()
+        print("[DB] Welding summary tables ensured successfully")
+        return True
+    except Error as e:
+        print(f"[DB] ensure_welding_summary_tables failed: {e}")
         return False
     finally:
         if connection:

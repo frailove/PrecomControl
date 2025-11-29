@@ -430,8 +430,8 @@ def match_faclist_drawings(filters) -> set | None:
             tuple(params)
         )
         blocks = [row['Block'] for row in cur.fetchall() if row.get('Block')]
-        patterns = {normalize_block_for_matching(block) for block in blocks}
-        patterns.discard(None)
+        # Block 格式已与 Faclist 一致，直接使用
+        patterns = {b.strip() for b in blocks if b and b.strip()}
         return fetch_drawings_by_block_patterns(cur, list(patterns))
     finally:
         conn.close()

@@ -154,11 +154,11 @@ class SyncManager:
         now = datetime.now()
         
         base_select = """
-            SELECT
+            SELECT 
                 TRIM(wl.TestPackageID) AS TestPackageID,
                 MAX(TRIM(wl.SystemCode)) AS SystemCode,
                 MAX(TRIM(wl.SubSystemCode)) AS SubSystemCode,
-                COALESCE(NULLIF(TRIM(wl.TestPackageID), ''), 'AUTO_SYNC') AS Description
+                MAX(COALESCE(NULLIF(TRIM(wl.TestPackageID), ''), 'AUTO_SYNC')) AS Description
             FROM WeldingList wl
             WHERE wl.TestPackageID IS NOT NULL
               AND TRIM(wl.TestPackageID) <> ''

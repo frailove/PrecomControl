@@ -9,7 +9,7 @@ from decimal import Decimal
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database import create_connection
+from database import create_connection, ensure_welding_summary_tables
 from utils.ndt_compliance_checker import parse_nde_grade
 
 PIPELINE_SYSTEM_SHARE_THRESHOLD = float(os.getenv("PIPELINE_SYSTEM_SHARE_THRESHOLD", 0.5))
@@ -306,24 +306,272 @@ def refresh_all_packages_aggregated_data(test_package_ids=None, verbose=True):
                 failed += 1
             if verbose and total:
                 print(f"  -> [{idx}/{total}] 刷新试压包 {tp_id} {'成功' if result else '失败'}")
+        # 同步刷新系统 / 子系统汇总（增量模式简单起见，直接全表重建）
+        refresh_system_and_subsystem_summaries(verbose=verbose)
         return {'mode': 'partial', 'total': total, 'success': success, 'failed': failed}
     
     joint_rows = refresh_joint_summary_bulk()
     nde_rows = refresh_nde_pwht_status_bulk()
     iso_rows = refresh_iso_drawing_list_bulk()
     alert_rows = refresh_test_package_preparation_alerts()
+    sys_rows, subsys_rows = refresh_system_and_subsystem_summaries(verbose=verbose)
+    block_sys_rows, block_subsys_rows = refresh_block_summaries(verbose=verbose)
     if verbose:
         print(f"JointSummary refreshed rows: {joint_rows}")
         print(f"NDEPWHTStatus refreshed rows: {nde_rows}")
         print(f"ISODrawingList refreshed rows: {iso_rows}")
         print(f"Preparation alerts refreshed rows: {alert_rows}")
+        print(f"SystemWeldingSummary refreshed rows: {sys_rows}")
+        print(f"SubsystemWeldingSummary refreshed rows: {subsys_rows}")
+        print(f"BlockSystemSummary refreshed rows: {block_sys_rows}")
+        print(f"BlockSubsystemSummary refreshed rows: {block_subsys_rows}")
     return {
         'mode': 'full',
         'joint_rows': joint_rows,
         'nde_rows': nde_rows,
         'iso_rows': iso_rows,
-        'alert_rows': alert_rows
+        'alert_rows': alert_rows,
+        'system_rows': sys_rows,
+        'subsystem_rows': subsys_rows,
+        'block_system_rows': block_sys_rows,
+        'block_subsystem_rows': block_subsys_rows
     }
+
+
+def refresh_block_summaries(verbose=True):
+    """
+    基于 WeldingList / HydroTestPackageList，按 Block 预聚合系统 / 子系统级统计，
+    用于 Faclist 过滤时的高速查询：
+    - BlockSystemSummary:  (Block, SystemCode)
+    - BlockSubsystemSummary: (Block, SystemCode, SubSystemCode)
+    """
+    # 复用 ensure_welding_summary_tables 中的建表逻辑
+    ensure_welding_summary_tables()
+    conn = create_connection()
+    if not conn:
+        return 0, 0
+
+    try:
+        cur = conn.cursor()
+
+        # ---------- BlockSystemSummary ----------
+        cur.execute("TRUNCATE TABLE BlockSystemSummary")
+        cur.execute(
+            """
+            INSERT INTO BlockSystemSummary (
+                Block,
+                SystemCode,
+                TotalDIN,
+                CompletedDIN,
+                TotalPackages,
+                TestedPackages
+            )
+            SELECT
+                CASE
+                    -- 如果 Block 格式是 B-C-A（例如：00051-00-5100），转换为 A-B-C（例如：5100-00051-00）
+                    WHEN (LENGTH(wl.Block) - LENGTH(REPLACE(wl.Block, '-', ''))) = 2 THEN
+                        CONCAT(
+                            SUBSTRING_INDEX(wl.Block, '-', -1),  -- A: 最后一段
+                            '-',
+                            SUBSTRING_INDEX(wl.Block, '-', 1),    -- B: 第一段
+                            '-',
+                            SUBSTRING_INDEX(SUBSTRING_INDEX(wl.Block, '-', 2), '-', -1)  -- C: 第二段
+                        )
+                    ELSE
+                        wl.Block  -- 如果格式不是 B-C-A，保持原样
+                END AS Block,
+                wl.SystemCode,
+                COALESCE(SUM(wl.Size), 0) AS TotalDIN,
+                COALESCE(SUM(CASE WHEN wl.WeldDate IS NOT NULL THEN wl.Size ELSE 0 END), 0) AS CompletedDIN,
+                COUNT(DISTINCT wl.TestPackageID) AS TotalPackages,
+                COUNT(
+                    DISTINCT CASE
+                        WHEN h.ActualDate IS NOT NULL THEN wl.TestPackageID
+                        ELSE NULL
+                    END
+                ) AS TestedPackages
+            FROM WeldingList wl
+            LEFT JOIN HydroTestPackageList h
+                ON wl.TestPackageID = h.TestPackageID
+            WHERE wl.Block IS NOT NULL
+              AND TRIM(wl.Block) <> ''
+              AND wl.SystemCode IS NOT NULL
+              AND TRIM(wl.SystemCode) <> ''
+            GROUP BY Block, wl.SystemCode
+            """
+        )
+        block_sys_rows = cur.rowcount or 0
+
+        # ---------- BlockSubsystemSummary ----------
+        cur.execute("TRUNCATE TABLE BlockSubsystemSummary")
+        cur.execute(
+            """
+            INSERT INTO BlockSubsystemSummary (
+                Block,
+                SystemCode,
+                SubSystemCode,
+                TotalDIN,
+                CompletedDIN,
+                TotalPackages,
+                TestedPackages
+            )
+            SELECT
+                CASE
+                    -- 如果 Block 格式是 B-C-A（例如：00051-00-5100），转换为 A-B-C（例如：5100-00051-00）
+                    WHEN (LENGTH(wl.Block) - LENGTH(REPLACE(wl.Block, '-', ''))) = 2 THEN
+                        CONCAT(
+                            SUBSTRING_INDEX(wl.Block, '-', -1),  -- A: 最后一段
+                            '-',
+                            SUBSTRING_INDEX(wl.Block, '-', 1),    -- B: 第一段
+                            '-',
+                            SUBSTRING_INDEX(SUBSTRING_INDEX(wl.Block, '-', 2), '-', -1)  -- C: 第二段
+                        )
+                    ELSE
+                        wl.Block  -- 如果格式不是 B-C-A，保持原样
+                END AS Block,
+                wl.SystemCode,
+                wl.SubSystemCode,
+                COALESCE(SUM(wl.Size), 0) AS TotalDIN,
+                COALESCE(SUM(CASE WHEN wl.WeldDate IS NOT NULL THEN wl.Size ELSE 0 END), 0) AS CompletedDIN,
+                COUNT(DISTINCT wl.TestPackageID) AS TotalPackages,
+                COUNT(
+                    DISTINCT CASE
+                        WHEN h.ActualDate IS NOT NULL THEN wl.TestPackageID
+                        ELSE NULL
+                    END
+                ) AS TestedPackages
+            FROM WeldingList wl
+            LEFT JOIN HydroTestPackageList h
+                ON wl.TestPackageID = h.TestPackageID
+            WHERE wl.Block IS NOT NULL
+              AND TRIM(wl.Block) <> ''
+              AND wl.SubSystemCode IS NOT NULL
+              AND TRIM(wl.SubSystemCode) <> ''
+            GROUP BY Block, wl.SystemCode, wl.SubSystemCode
+            """
+        )
+        block_subsys_rows = cur.rowcount or 0
+
+        conn.commit()
+        if verbose:
+            print(f"[AGG] BlockSystemSummary refreshed: {block_sys_rows} rows")
+            print(f"[AGG] BlockSubsystemSummary refreshed: {block_subsys_rows} rows")
+        return block_sys_rows, block_subsys_rows
+    except Exception as exc:
+        print(f"刷新 BlockSystem/BlockSubsystem 汇总失败: {exc}")
+        conn.rollback()
+        return 0, 0
+    finally:
+        conn.close()
+
+
+def refresh_system_and_subsystem_summaries(verbose=True):
+    """
+    从 WeldingList / HydroTestPackageList 生成系统 / 子系统级别的汇总表：
+    - TotalDIN / CompletedDIN
+    - TotalPackages / TestedPackages
+    """
+    ensure_welding_summary_tables()
+    conn = create_connection()
+    if not conn:
+        return 0, 0
+
+    try:
+        cur = conn.cursor()
+
+        # ---------- SystemWeldingSummary ----------
+        cur.execute("TRUNCATE TABLE SystemWeldingSummary")
+        cur.execute(
+            """
+            INSERT INTO SystemWeldingSummary (
+                SystemCode,
+                TotalDIN,
+                CompletedDIN,
+                TotalPackages,
+                TestedPackages
+            )
+            SELECT
+                s.SystemCode,
+                COALESCE(w.total_din, 0) AS TotalDIN,
+                COALESCE(w.completed_din, 0) AS CompletedDIN,
+                COALESCE(p.total_packages, 0) AS TotalPackages,
+                COALESCE(p.tested_packages, 0) AS TestedPackages
+            FROM SystemList s
+            LEFT JOIN (
+                SELECT
+                    SystemCode,
+                    COALESCE(SUM(Size), 0) AS total_din,
+                    COALESCE(SUM(CASE WHEN WeldDate IS NOT NULL THEN Size ELSE 0 END), 0) AS completed_din
+                FROM WeldingList
+                WHERE SystemCode IS NOT NULL AND TRIM(SystemCode) <> ''
+                GROUP BY SystemCode
+            ) w ON w.SystemCode = s.SystemCode
+            LEFT JOIN (
+                SELECT
+                    SystemCode,
+                    COUNT(DISTINCT TestPackageID) AS total_packages,
+                    COUNT(DISTINCT CASE WHEN ActualDate IS NOT NULL THEN TestPackageID END) AS tested_packages
+                FROM HydroTestPackageList
+                WHERE SystemCode IS NOT NULL AND TRIM(SystemCode) <> ''
+                GROUP BY SystemCode
+            ) p ON p.SystemCode = s.SystemCode
+            """
+        )
+        sys_rows = cur.rowcount or 0
+
+        # ---------- SubsystemWeldingSummary ----------
+        cur.execute("TRUNCATE TABLE SubsystemWeldingSummary")
+        cur.execute(
+            """
+            INSERT INTO SubsystemWeldingSummary (
+                SystemCode,
+                SubSystemCode,
+                TotalDIN,
+                CompletedDIN,
+                TotalPackages,
+                TestedPackages
+            )
+            SELECT
+                sub.SystemCode,
+                sub.SubSystemCode,
+                COALESCE(w.total_din, 0) AS TotalDIN,
+                COALESCE(w.completed_din, 0) AS CompletedDIN,
+                COALESCE(p.total_packages, 0) AS TotalPackages,
+                COALESCE(p.tested_packages, 0) AS TestedPackages
+            FROM SubsystemList sub
+            LEFT JOIN (
+                SELECT
+                    SubSystemCode,
+                    COALESCE(SUM(Size), 0) AS total_din,
+                    COALESCE(SUM(CASE WHEN WeldDate IS NOT NULL THEN Size ELSE 0 END), 0) AS completed_din
+                FROM WeldingList
+                WHERE SubSystemCode IS NOT NULL AND TRIM(SubSystemCode) <> ''
+                GROUP BY SubSystemCode
+            ) w ON w.SubSystemCode = sub.SubSystemCode
+            LEFT JOIN (
+                SELECT
+                    SubSystemCode,
+                    COUNT(DISTINCT TestPackageID) AS total_packages,
+                    COUNT(DISTINCT CASE WHEN ActualDate IS NOT NULL THEN TestPackageID END) AS tested_packages
+                FROM HydroTestPackageList
+                WHERE SubSystemCode IS NOT NULL AND TRIM(SubSystemCode) <> ''
+                GROUP BY SubSystemCode
+            ) p ON p.SubSystemCode = sub.SubSystemCode
+            """
+        )
+        subsys_rows = cur.rowcount or 0
+
+        conn.commit()
+        if verbose:
+            print(f"[AGG] SystemWeldingSummary refreshed: {sys_rows} rows")
+            print(f"[AGG] SubsystemWeldingSummary refreshed: {subsys_rows} rows")
+        return sys_rows, subsys_rows
+    except Exception as exc:
+        print(f"刷新 System/Subsystem 汇总失败: {exc}")
+        conn.rollback()
+        return 0, 0
+    finally:
+        conn.close()
 
 
 def refresh_joint_summary_bulk():
