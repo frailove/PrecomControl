@@ -648,11 +648,25 @@ document.getElementById('userForm')?.addEventListener('submit', async (e) => {
     const method = userId ? 'PUT' : 'POST';
     
     try {
+        // 获取 CSRF Token
+        const csrfToken = getCSRFToken();
+        if (!csrfToken) {
+            console.error('CSRF Token 未找到，请刷新页面');
+            alert('CSRF Token 未找到，请刷新页面后重试');
+            return;
+        }
+        
+        console.log('准备保存用户:', { url, method, userId, csrfToken: csrfToken.substring(0, 10) + '...' });
+        
         // 先保存用户基本信息
         const userRes = await fetch(url, {
             method,
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload),
+            credentials: 'same-origin'  // 确保发送 cookies
         });
         
         // 检查响应状态
@@ -684,8 +698,12 @@ document.getElementById('userForm')?.addEventListener('submit', async (e) => {
                 try {
                     const moduleRes = await fetch(`/api/admin/users/${finalUserId}/modules`, {
                         method: 'PUT',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ module_ids: moduleIds })
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFToken()
+                        },
+                        body: JSON.stringify({ module_ids: moduleIds }),
+                        credentials: 'same-origin'
                     });
                     
                     if (!moduleRes.ok) {
@@ -727,7 +745,19 @@ document.getElementById('userForm')?.addEventListener('submit', async (e) => {
         }
     } catch (err) {
         console.error('保存用户异常:', err);
-        alert('保存用户时发生错误: ' + err.message);
+        console.error('错误详情:', {
+            name: err.name,
+            message: err.message,
+            stack: err.stack,
+            url: url,
+            method: method
+        });
+        
+        let errorMsg = '保存用户时发生错误: ' + err.message;
+        if (err.message === 'Failed to fetch') {
+            errorMsg = '网络请求失败，请检查：\n1. 网络连接是否正常\n2. 服务器是否运行\n3. 浏览器控制台是否有更多错误信息';
+        }
+        alert(errorMsg);
     }
 });
 
@@ -743,11 +773,25 @@ document.getElementById('roleForm')?.addEventListener('submit', async (e) => {
     const method = roleId ? 'PUT' : 'POST';
     
     try {
+        // 获取 CSRF Token
+        const csrfToken = getCSRFToken();
+        if (!csrfToken) {
+            console.error('CSRF Token 未找到，请刷新页面');
+            alert('CSRF Token 未找到，请刷新页面后重试');
+            return;
+        }
+        
+        console.log('准备保存角色:', { url, method, roleId, csrfToken: csrfToken.substring(0, 10) + '...' });
+        
         // 先保存角色基本信息
         const roleRes = await fetch(url, {
             method,
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload),
+            credentials: 'same-origin'  // 确保发送 cookies
         });
         
         // 检查响应状态
@@ -779,8 +823,12 @@ document.getElementById('roleForm')?.addEventListener('submit', async (e) => {
                 try {
                     const moduleRes = await fetch(`/api/admin/roles/${finalRoleId}/modules`, {
                         method: 'PUT',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ module_ids: moduleIds })
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFToken()
+                        },
+                        body: JSON.stringify({ module_ids: moduleIds }),
+                        credentials: 'same-origin'
                     });
                     
                     if (!moduleRes.ok) {
@@ -822,7 +870,19 @@ document.getElementById('roleForm')?.addEventListener('submit', async (e) => {
         }
     } catch (err) {
         console.error('保存角色异常:', err);
-        alert('保存角色时发生错误: ' + err.message);
+        console.error('错误详情:', {
+            name: err.name,
+            message: err.message,
+            stack: err.stack,
+            url: url,
+            method: method
+        });
+        
+        let errorMsg = '保存角色时发生错误: ' + err.message;
+        if (err.message === 'Failed to fetch') {
+            errorMsg = '网络请求失败，请检查：\n1. 网络连接是否正常\n2. 服务器是否运行\n3. 浏览器控制台是否有更多错误信息';
+        }
+        alert(errorMsg);
     }
 });
 

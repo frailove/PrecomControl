@@ -553,34 +553,52 @@
     <script>
         // 获取 CSRF Token（用于 AJAX 请求）
         function getCSRFToken() {
-            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            const token = meta ? meta.getAttribute('content') : '';
+            if (!token) {
+                console.warn('CSRF Token 未找到，请检查页面是否正确加载');
+            }
+            return token;
         }
+        
+        // 确保 getCSRFToken 在全局作用域可用
+        window.getCSRFToken = getCSRFToken;
         
         // 为所有 fetch 请求自动添加 CSRF Token
         const originalFetch = window.fetch;
         window.fetch = function(url, options = {}) {
             // 只对同源 POST/PUT/DELETE/PATCH 请求添加 CSRF Token
             if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+                const token = getCSRFToken();
                 if (!options.headers) {
                     options.headers = {};
                 }
                 if (typeof options.headers === 'object' && !(options.headers instanceof Headers)) {
-                    options.headers['X-CSRFToken'] = getCSRFToken();
+                    options.headers['X-CSRFToken'] = token;
                 } else if (options.headers instanceof Headers) {
-                    options.headers.set('X-CSRFToken', getCSRFToken());
+                    options.headers.set('X-CSRFToken', token);
+                }
+                // 确保发送 cookies（用于 session）
+                if (!options.credentials) {
+                    options.credentials = 'same-origin';
                 }
             }
-            return originalFetch(url, options);
+            return originalFetch(url, options).catch(err => {
+                console.error('Fetch 请求失败:', { url, method: options.method, error: err });
+                throw err;
+            });
         };
         
         // 为 jQuery AJAX 请求自动添加 CSRF Token
-        $.ajaxSetup({
-            beforeSend: function(xhr, settings) {
-                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                    xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+        if (typeof $ !== 'undefined') {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+                    }
                 }
-            }
-        });
+            });
+        }
     </script>
     
     {% block scripts %}{% endblock %}
