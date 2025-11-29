@@ -410,10 +410,12 @@ def create_user(username: str, password: str, full_name: Optional[str], email: O
 
 def update_user(user_id: int, full_name: Optional[str], email: Optional[str], phone: Optional[str],
                 is_active: bool, is_super_admin: bool, updated_by: str):
-    conn = create_connection()
-    if not conn:
-        raise RuntimeError("数据库连接失败")
+    conn = None
     try:
+        conn = create_connection()
+        if not conn:
+            raise RuntimeError("数据库连接失败")
+        
         cur = conn.cursor()
         cur.execute(
             """
@@ -439,8 +441,19 @@ def update_user(user_id: int, full_name: Optional[str], email: Optional[str], ph
             )
         )
         conn.commit()
+    except Exception as e:
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        raise
     finally:
-        conn.close()
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
 
 
 def update_profile(user_id: int, full_name: Optional[str], email: Optional[str], phone: Optional[str]):
@@ -520,10 +533,12 @@ def change_password(user_id: int, current_password: str, new_password: str):
 
 
 def set_user_roles(user_id: int, role_ids: List[int]):
-    conn = create_connection()
-    if not conn:
-        raise RuntimeError("数据库连接失败")
+    conn = None
     try:
+        conn = create_connection()
+        if not conn:
+            raise RuntimeError("数据库连接失败")
+        
         cur = conn.cursor()
         cur.execute("DELETE FROM UserRole WHERE UserID = %s", (user_id,))
         values = [(user_id, rid) for rid in role_ids]
@@ -533,8 +548,19 @@ def set_user_roles(user_id: int, role_ids: List[int]):
                 values
             )
         conn.commit()
+    except Exception as e:
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        raise
     finally:
-        conn.close()
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
 
 
 def reset_user_password(user_id: int, new_password: str, updated_by: str):
@@ -827,10 +853,12 @@ def get_role_modules(role_id: int):
 
 def set_user_modules(user_id: int, module_ids: List[int]):
     """设置用户的模块权限"""
-    conn = create_connection()
-    if not conn:
-        raise RuntimeError("数据库连接失败")
+    conn = None
     try:
+        conn = create_connection()
+        if not conn:
+            raise RuntimeError("数据库连接失败")
+        
         cur = conn.cursor()
         cur.execute("DELETE FROM UserModulePermission WHERE UserID = %s", (user_id,))
         values = [(user_id, mid) for mid in module_ids]
@@ -840,8 +868,19 @@ def set_user_modules(user_id: int, module_ids: List[int]):
                 values
             )
         conn.commit()
+    except Exception as e:
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        raise
     finally:
-        conn.close()
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
 
 
 def set_role_modules(role_id: int, module_ids: List[int]):

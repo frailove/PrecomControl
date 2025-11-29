@@ -190,32 +190,51 @@ def api_create_user():
 @permission_required('user.manage')
 def api_update_user(user_id):
     import logging
+    import traceback
+    from flask import jsonify
     logger = logging.getLogger(__name__)
     
     try:
         data = request.get_json(silent=True) or {}
-        logger.info(f'[API] 更新用户 {user_id}: 开始处理请求')
+        logger.info(f'[API] 更新用户 {user_id}: 开始处理请求, 数据: {list(data.keys())}')
         
-        update_user(
-            user_id=user_id,
-            full_name=data.get('full_name'),
-            email=data.get('email'),
-            phone=data.get('phone'),
-            is_active=bool(data.get('is_active', True)),
-            is_super_admin=bool(data.get('is_super_admin', False)),
-            updated_by=session['user']['username']
-        )
-        logger.info(f'[API] 更新用户 {user_id}: 基本信息更新成功')
+        # 先更新用户基本信息
+        try:
+            update_user(
+                user_id=user_id,
+                full_name=data.get('full_name'),
+                email=data.get('email'),
+                phone=data.get('phone'),
+                is_active=bool(data.get('is_active', True)),
+                is_super_admin=bool(data.get('is_super_admin', False)),
+                updated_by=session['user']['username']
+            )
+            logger.info(f'[API] 更新用户 {user_id}: 基本信息更新成功')
+        except Exception as e:
+            logger.error(f'[API] 更新用户 {user_id} 基本信息失败: {e}')
+            logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
+            raise
         
-        set_user_roles(user_id, data.get('role_ids') or [])
-        logger.info(f'[API] 更新用户 {user_id}: 角色设置成功')
+        # 再设置角色
+        try:
+            set_user_roles(user_id, data.get('role_ids') or [])
+            logger.info(f'[API] 更新用户 {user_id}: 角色设置成功')
+        except Exception as e:
+            logger.error(f'[API] 设置用户 {user_id} 角色失败: {e}')
+            logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
+            raise
         
-        record_audit('USER_UPDATE', '修改用户', session['user'], request, 'UserAccount', str(user_id))
+        # 记录审计日志
+        try:
+            record_audit('USER_UPDATE', '修改用户', session['user'], request, 'UserAccount', str(user_id))
+        except Exception as e:
+            logger.warning(f'[API] 记录审计日志失败: {e}')
+            # 审计日志失败不影响主流程
+        
         logger.info(f'[API] 更新用户 {user_id}: 完成')
-        
         return jsonify({'success': True})
+        
     except Exception as exc:
-        import traceback
         logger.error(f'[API] 更新用户 {user_id} 失败: {exc}')
         logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
         
@@ -223,7 +242,23 @@ def api_update_user(user_id):
         error_msg = str(exc)
         if any(keyword in error_msg.lower() for keyword in ['password', 'pwd', 'pass']):
             error_msg = '操作失败，请检查输入参数'
-        return jsonify({'success': False, 'message': error_msg}), 500
+        elif '数据库连接失败' in error_msg or 'connection' in error_msg.lower():
+            error_msg = '数据库连接失败，请稍后重试'
+        elif 'timeout' in error_msg.lower():
+            error_msg = '请求超时，请稍后重试'
+        
+        # 确保返回 JSON 响应，避免连接被重置
+        try:
+            return jsonify({'success': False, 'message': error_msg}), 500
+        except Exception as e:
+            logger.error(f'[API] 返回错误响应失败: {e}')
+            # 最后的保障：返回简单的文本响应
+            from flask import Response
+            return Response(
+                f'{{"success": false, "message": "{error_msg}"}}',
+                status=500,
+                mimetype='application/json'
+            )
 
 
 @auth_bp.route('/api/admin/users/<int:user_id>/reset_password', methods=['POST'])
@@ -329,6 +364,8 @@ def api_get_user_modules(user_id):
 @permission_required('user.manage')
 def api_set_user_modules(user_id):
     import logging
+    import traceback
+    from flask import jsonify, Response
     logger = logging.getLogger(__name__)
     
     try:
@@ -339,17 +376,37 @@ def api_set_user_modules(user_id):
         set_user_modules(user_id, [int(mid) for mid in module_ids])
         logger.info(f'[API] 设置用户 {user_id} 模块权限: 成功')
         
-        record_audit('USER_UPDATE_MODULES', '设置用户模块权限', session['user'], request, 'UserAccount', str(user_id))
+        try:
+            record_audit('USER_UPDATE_MODULES', '设置用户模块权限', session['user'], request, 'UserAccount', str(user_id))
+        except Exception as e:
+            logger.warning(f'[API] 记录审计日志失败: {e}')
+            # 审计日志失败不影响主流程
+        
         return jsonify({'success': True})
+        
     except Exception as exc:
-        import traceback
         logger.error(f'[API] 设置用户 {user_id} 模块权限失败: {exc}')
         logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
         
         error_msg = str(exc)
         if any(keyword in error_msg.lower() for keyword in ['password', 'pwd', 'pass']):
             error_msg = '操作失败，请检查输入参数'
-        return jsonify({'success': False, 'message': error_msg}), 500
+        elif '数据库连接失败' in error_msg or 'connection' in error_msg.lower():
+            error_msg = '数据库连接失败，请稍后重试'
+        elif 'timeout' in error_msg.lower():
+            error_msg = '请求超时，请稍后重试'
+        
+        # 确保返回 JSON 响应，避免连接被重置
+        try:
+            return jsonify({'success': False, 'message': error_msg}), 500
+        except Exception as e:
+            logger.error(f'[API] 返回错误响应失败: {e}')
+            # 最后的保障：返回简单的文本响应
+            return Response(
+                f'{{"success": false, "message": "{error_msg}"}}',
+                status=500,
+                mimetype='application/json'
+            )
 
 
 @auth_bp.route('/api/admin/roles/<int:role_id>/modules', methods=['GET'])
