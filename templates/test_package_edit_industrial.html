@@ -596,7 +596,16 @@
                                 
                                 <div class="mb-3">
                                     <label for="PipeMaterial" class="form-label">管道材料</label>
-                                    <input type="text" class="form-control" id="PipeMaterial" name="PipeMaterial" value="{{ test_package.PipeMaterial or '' }}">
+                                    <select class="form-select" id="PipeMaterial" name="PipeMaterial">
+                                        <option value="">请选择</option>
+                                        <option value="PE" {% if test_package.PipeMaterial == 'PE' %}selected{% endif %}>PE（聚乙烯）</option>
+                                        <option value="CS" {% if test_package.PipeMaterial == 'CS' %}selected{% endif %}>CS（碳钢）</option>
+                                        <option value="SS" {% if test_package.PipeMaterial == 'SS' %}selected{% endif %}>SS（不锈钢）</option>
+                                        <option value="DUSS" {% if test_package.PipeMaterial == 'DUSS' %}selected{% endif %}>DUSS（双相不锈钢）</option>
+                                        <option value="LACS" {% if test_package.PipeMaterial == 'LACS' %}selected{% endif %}>LACS（合金钢）</option>
+                                        <option value="LTCS" {% if test_package.PipeMaterial == 'LTCS' %}selected{% endif %}>LTCS（低温碳钢）</option>
+                                        <option value="NIAS" {% if test_package.PipeMaterial == 'NIAS' %}selected{% endif %}>NIAS（镍合金）</option>
+                                    </select>
                                 </div>
                                 
                                 <div class="mb-3">
@@ -605,6 +614,7 @@
                                         <option value="">请选择</option>
                                         <option value="Hydrostatic" {% if test_package.TestType == 'Hydrostatic' %}selected{% endif %}>Hydrostatic（水压）</option>
                                         <option value="Pneumatic" {% if test_package.TestType == 'Pneumatic' %}selected{% endif %}>Pneumatic（气压）</option>
+                                        <option value="Observation" {% if test_package.TestType == 'Observation' %}selected{% endif %}>Observation（观察包）</option>
                                     </select>
                                 </div>
                                 
@@ -911,7 +921,7 @@
                     </div>
                     <p class="text-muted small mb-2">
                         跟踪尾项的整改与验证情况。可直接在此新增或删除 Punch 记录，或通过导入模板批量维护。
-                        <br>如需更新既有记录（例如关闭 Punch），请在模板中填写对应的 <strong>Punch No.</strong>
+                        <br><strong>注意：</strong>Punch No. 由系统自动生成。在Excel模板中，新增记录时PunchNo留空；更新或删除已有记录时，请填写对应的PunchNo。删除记录时，将Deleted字段设为Y（不计算在计数中）。
                     </p>
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                         <a class="btn btn-outline-secondary" target="_blank" href="/test_packages/{{ test_package.TestPackageID }}/punch/import/template">
@@ -924,10 +934,6 @@
                         <div class="text-muted small" id="punchImportStatus"></div>
                     </div>
                     <form id="punchForm" class="row g-2 align-items-end">
-                        <div class="col-lg-2 col-md-4">
-                            <label class="form-label">Punch No.</label>
-                            <input type="text" class="form-control" name="PunchNo" placeholder="唯一编号">
-                        </div>
                         <div class="col-lg-3 col-md-4">
                             <label class="form-label required">ISO / Tag</label>
                             <input type="text" class="form-control" name="ISODrawingNo" required>
@@ -1057,9 +1063,12 @@
         })();
     </script>
 
+    <!-- 附件模块数据 -->
+    <script type="application/json" id="attachment-modules-data">{{ attachment_modules|default([])|tojson }}</script>
+    
     <script>
         const testPackageId = "{{ test_package.TestPackageID }}";
-        const attachmentModules = {{ attachment_modules|tojson }};
+        const attachmentModules = JSON.parse(document.getElementById('attachment-modules-data').textContent);
 
         function loadSubsystems() {
             const systemCode = $("#SystemCode").val();
@@ -1378,7 +1387,6 @@
             if (event.target.id === 'punchForm') {
                 event.preventDefault();
                 const payload = {
-                    PunchNo: event.target.PunchNo.value.trim(),
                     ISODrawingNo: event.target.ISODrawingNo.value.trim(),
                     SheetNo: event.target.SheetNo.value.trim(),
                     RevNo: event.target.RevNo.value.trim(),

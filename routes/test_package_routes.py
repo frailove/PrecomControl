@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, jsonify, send_file, render_template, current_app
+from flask import Blueprint, request, redirect, jsonify, send_file, render_template, current_app  # type: ignore
 from models.test_package import TestPackageModel
 from models.system import SystemModel
 from models.subsystem import SubsystemModel
@@ -9,11 +9,11 @@ from utils.test_package_status import TestPackageStatus
 from utils.pipeline_alerts import get_pipeline_alerts, update_pipeline_alert
 from utils.refresh_aggregated_data import PIPELINE_SYSTEM_SHARE_THRESHOLD, refresh_nde_pwht_status
 from urllib.parse import urlencode, unquote
-from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename  # type: ignore
 from math import ceil
 from datetime import datetime
 from io import BytesIO
-import pandas as pd
+import pandas as pd  # type: ignore
 import os
 import re
 import html
@@ -72,6 +72,7 @@ PUNCH_HEADER_MAP = {
     'rectifieddate': 'RectifiedDate',
     'verified': 'Verified',
     'verifieddate': 'VerifiedDate',
+    'deleted': 'Deleted',
     'remarks': 'Remarks',
     'testpackageid': 'TestPackageID'
 }
@@ -113,6 +114,20 @@ def ensure_punch_list_schema():
         cur.execute("SHOW INDEX FROM PunchList WHERE Key_name = 'idx_punch_no'")
         if cur.fetchone() is None:
             cur.execute("ALTER TABLE PunchList ADD INDEX idx_punch_no (PunchNo)")
+        
+        # 添加Deleted字段，用于标记已删除的记录（不计算在计数中）
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+              AND table_name = 'PunchList'
+              AND column_name = 'Deleted'
+            """
+        )
+        if cur.fetchone()[0] == 0:
+            cur.execute("ALTER TABLE PunchList ADD COLUMN Deleted CHAR(1) DEFAULT 'N' AFTER VerifiedDate")
+            cur.execute("ALTER TABLE PunchList ADD INDEX idx_deleted (Deleted)")
     except Exception as exc:
         print(f"ensure_punch_list_schema failed: {exc}")
     finally:
@@ -831,6 +846,8 @@ def edit_test_package(test_package_id):
                 'SystemCode': request.form.get('SystemCode') or None,
                 'SubSystemCode': request.form.get('SubSystemCode') or None,
                 'Description': request.form.get('Description') or normalized_id,
+                # 新增：管道材料
+                'PipeMaterial': request.form.get('PipeMaterial') or None,
                 'TestType': request.form.get('TestType') or None,
                 'TestMedium': request.form.get('TestMedium') or None,
                 'DesignPressure': request.form.get('DesignPressure') or None,
@@ -1286,9 +1303,9 @@ def get_punch_list(test_package_id):
         cur.execute(
             """
             SELECT ID, PunchNo, ISODrawingNo, SheetNo, RevNo, Description, Category, Cause,
-                   IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, created_at, updated_at
+                   IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, Deleted, created_at, updated_at
             FROM PunchList
-            WHERE TestPackageID = %s
+            WHERE TestPackageID = %s AND (Deleted IS NULL OR Deleted != 'Y')
             ORDER BY ID
             """,
             (test_package_id,)
@@ -1311,16 +1328,38 @@ def add_punch(test_package_id):
         return jsonify({'error': '数据库连接失败'}), 500
     try:
         cur = conn.cursor()
+        
+        # 自动生成唯一的PunchNo
+        # 格式：{TestPackageID}-P{序号}，例如 "TP001-P001"
+        normalized_id = unquote(test_package_id)
+        cur.execute(
+            """
+            SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(PunchNo, '-P', -1) AS UNSIGNED)), 0) as max_num
+            FROM PunchList
+            WHERE TestPackageID = %s AND PunchNo LIKE %s
+            """,
+            (normalized_id, normalized_id + "-P%")
+        )
+        result = cur.fetchone()
+        max_num = result[0] if result else 0
+        # 确保为整数再进行格式化，避免数据库返回的类型异常导致格式错误
+        try:
+            next_num_int = int(max_num) + 1
+        except (TypeError, ValueError):
+            next_num_int = 1
+        # 使用字符串拼接生成 PunchNo（形如 TPID-P001）
+        punch_no = normalized_id + "-P" + "{:03d}".format(next_num_int)
+        
         cur.execute(
             """
             INSERT INTO PunchList (
                 PunchNo, TestPackageID, ISODrawingNo, SheetNo, RevNo, Description,
-                Category, Cause, IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                Category, Cause, IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, Deleted
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
-                data.get('PunchNo'),
-                test_package_id,
+                punch_no,
+                normalized_id,
                 data.get('ISODrawingNo'),
                 data.get('SheetNo'),
                 data.get('RevNo'),
@@ -1331,14 +1370,15 @@ def add_punch(test_package_id):
                 data.get('Rectified', 'N'),
                 parse_datetime(data.get('RectifiedDate')),
                 data.get('Verified', 'N'),
-                parse_datetime(data.get('VerifiedDate'))
+                parse_datetime(data.get('VerifiedDate')),
+                data.get('Deleted', 'N')
             )
         )
         conn.commit()
-        return jsonify({'success': True, 'id': cur.lastrowid})
+        return jsonify({'success': True, 'id': cur.lastrowid, 'punch_no': punch_no})
     except Exception as exc:
         conn.rollback()
-        current_app.logger.error(f"上传试压包附件失败: {exc}", exc_info=True)
+        current_app.logger.error(f"添加Punch记录失败: {exc}", exc_info=True)
         return jsonify({'error': '服务器内部错误，请稍后重试'}), 500
     finally:
         conn.close()
@@ -1377,6 +1417,9 @@ def delete_punch(test_package_id, punch_id):
 
 @test_package_bp.route('/test_packages/<test_package_id>/punch/import/template')
 def download_punch_template(test_package_id):
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side  # type: ignore
+    from openpyxl.worksheet.datavalidation import DataValidation  # type: ignore
+    
     ensure_punch_list_schema()
     normalized_id = unquote(test_package_id)
     system_code = ''
@@ -1406,16 +1449,137 @@ def download_punch_template(test_package_id):
         'SubSystemCode': subsystem_code,
         'GeneratedAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }])
+    # 包含PunchNo列（用于更新记录），但用户不能自定义，只能填写已有记录的PunchNo
     template_columns = [
         'PunchNo', 'ISODrawingNo', 'SheetNo', 'RevNo', 'Description',
         'Category', 'Cause', 'IssuedBy', 'Rectified', 'RectifiedDate',
-        'Verified', 'VerifiedDate'
+        'Verified', 'VerifiedDate', 'Deleted'
     ]
     template_df = pd.DataFrame(columns=template_columns)
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         info_df.to_excel(writer, sheet_name='Info', index=False)
         template_df.to_excel(writer, sheet_name='PunchList', index=False)
+        
+        # 获取工作表对象以应用样式
+        workbook = writer.book
+        ws_punch = workbook['PunchList']
+        
+        # 定义样式
+        header_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')  # 蓝色底纹
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        cell_font = Font(name='Arial', size=10)
+        cell_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        
+        # 边框样式
+        thin_border = Border(
+            left=Side(style='thin', color='000000'),
+            right=Side(style='thin', color='000000'),
+            top=Side(style='thin', color='000000'),
+            bottom=Side(style='thin', color='000000')
+        )
+        
+        # 设置列宽
+        column_widths = {
+            'A': 15,   # PunchNo（只读，用于更新）
+            'B': 18,   # ISODrawingNo
+            'C': 10,   # SheetNo
+            'D': 10,   # RevNo
+            'E': 40,   # Description
+            'F': 15,   # Category
+            'G': 15,   # Cause
+            'H': 12,   # IssuedBy
+            'I': 10,   # Rectified
+            'J': 15,   # RectifiedDate
+            'K': 10,   # Verified
+            'L': 15,   # VerifiedDate
+            'M': 10    # Deleted
+        }
+        for col, width in column_widths.items():
+            ws_punch.column_dimensions[col].width = width
+        
+        # 设置行高
+        ws_punch.row_dimensions[1].height = 25  # 表头行高
+        
+        # 应用表头样式（第1行）
+        for col_idx, col_name in enumerate(template_columns, start=1):
+            cell = ws_punch.cell(row=1, column=col_idx)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = thin_border
+        
+        # 为数据区域添加边框和数据验证（第2-100行，预留足够空间）
+        # 找到相关列的索引
+        punch_no_col = template_columns.index('PunchNo') + 1  # A列
+        rectified_col = template_columns.index('Rectified') + 1  # I列
+        verified_col = template_columns.index('Verified') + 1     # K列
+        deleted_col = template_columns.index('Deleted') + 1       # M列
+        
+        # 创建数据验证：Rectified、Verified和Deleted只能选择Y或N
+        rectified_validation = DataValidation(
+            type="list",
+            formula1='"Y,N"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能输入 Y 或 N"
+        )
+        verified_validation = DataValidation(
+            type="list",
+            formula1='"Y,N"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能输入 Y 或 N"
+        )
+        deleted_validation = DataValidation(
+            type="list",
+            formula1='"Y,N"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能输入 Y 或 N（Y表示已删除，不计算在计数中）"
+        )
+        
+        # 为PunchNo列添加注释说明
+        from openpyxl.comments import Comment  # type: ignore
+        punch_no_comment = Comment(
+            "PunchNo由系统自动生成，新增记录时留空。\n如需更新或删除已有记录，请填写对应的PunchNo。",
+            "系统提示"
+        )
+        
+        for row in range(2, 101):
+            for col in range(1, len(template_columns) + 1):
+                cell = ws_punch.cell(row=row, column=col)
+                cell.font = cell_font
+                cell.alignment = cell_alignment
+                cell.border = thin_border
+                
+                # 为PunchNo列添加注释（仅第一行数据作为示例）
+                if col == punch_no_col and row == 2:
+                    cell.comment = punch_no_comment
+                
+                # 为Rectified列添加数据验证
+                if col == rectified_col:
+                    rectified_validation.add(cell)
+                # 为Verified列添加数据验证
+                if col == verified_col:
+                    verified_validation.add(cell)
+                # 为Deleted列添加数据验证
+                if col == deleted_col:
+                    deleted_validation.add(cell)
+        
+        # 将数据验证添加到工作表
+        ws_punch.add_data_validation(rectified_validation)
+        ws_punch.add_data_validation(verified_validation)
+        ws_punch.add_data_validation(deleted_validation)
+        
+        # 冻结首行
+        ws_punch.freeze_panes = 'A2'
+        
     output.seek(0)
     filename = f"PunchListTemplate_{normalized_id}.xlsx"
     return send_file(
@@ -1436,7 +1600,7 @@ def import_punch_list_api(test_package_id):
     try:
         excel = pd.ExcelFile(BytesIO(file_bytes))
     except Exception as exc:
-        return jsonify({'success': False, 'message': f'读取文件失败: {exc}'}), 400
+        return jsonify({'success': False, 'message': '读取文件失败: {}'.format(str(exc))}), 400
 
     sheet_name = next((name for name in excel.sheet_names if 'punch' in name.lower()), excel.sheet_names[0])
     df = excel.parse(sheet_name)
@@ -1453,11 +1617,10 @@ def import_punch_list_api(test_package_id):
     required_columns = ['ISODrawingNo', 'Description']
     missing = [col for col in required_columns if col not in df.columns]
     if missing:
-        return jsonify({'success': False, 'message': f"缺少必要字段: {', '.join(missing)}"}), 400
+        return jsonify({'success': False, 'message': "缺少必要字段: {}".format(', '.join(missing))}), 400
 
     records = []
     errors = []
-    seen_punch = set()
 
     for idx, row in df.iterrows():
         line_no = idx + 2
@@ -1471,31 +1634,50 @@ def import_punch_list_api(test_package_id):
         punch_no = cell('PunchNo')
         iso_no = cell('ISODrawingNo')
         description = cell('Description')
-        if not iso_no:
-            errors.append(f"第 {line_no} 行：ISO 图号不能为空。")
-            continue
-        if not description:
-            errors.append(f"第 {line_no} 行：请填写 Description。")
-            continue
+        
+        # 如果有PunchNo，说明是更新已有记录；如果没有，说明是新增记录
         if punch_no:
-            if punch_no in seen_punch:
-                errors.append(f"第 {line_no} 行：Punch No {punch_no} 重复。")
+            # 更新记录：只需要PunchNo即可，其他字段可选
+            record = {
+                'PunchNo': punch_no,
+                'ISODrawingNo': iso_no or None,
+                'SheetNo': cell('SheetNo') or None,
+                'RevNo': cell('RevNo') or None,
+                'Description': description or None,
+                'Category': cell('Category') or None,
+                'Cause': cell('Cause') or None,
+                'IssuedBy': cell('IssuedBy') or None,
+                'Rectified': parse_flag(cell('Rectified')) or None,
+                'Verified': parse_flag(cell('Verified')) or None,
+                'RectifiedDate': parse_datetime(cell('RectifiedDate')),
+                'VerifiedDate': parse_datetime(cell('VerifiedDate')),
+                'Deleted': parse_flag(cell('Deleted')) or 'N',
+                'is_update': True
+            }
+        else:
+            # 新增记录：必须要有ISO和Description
+            if not iso_no:
+                errors.append("第 {} 行：新增记录时，ISO 图号不能为空。".format(line_no))
                 continue
-            seen_punch.add(punch_no)
-        record = {
-            'PunchNo': punch_no or None,
-            'ISODrawingNo': iso_no,
-            'SheetNo': cell('SheetNo') or None,
-            'RevNo': cell('RevNo') or None,
-            'Description': description,
-            'Category': cell('Category') or None,
-            'Cause': cell('Cause') or None,
-            'IssuedBy': cell('IssuedBy') or None,
-            'Rectified': parse_flag(cell('Rectified')) or 'N',
-            'Verified': parse_flag(cell('Verified')) or 'N',
-            'RectifiedDate': parse_datetime(cell('RectifiedDate')),
-            'VerifiedDate': parse_datetime(cell('VerifiedDate')),
-        }
+            if not description:
+                errors.append("第 {} 行：新增记录时，请填写 Description。".format(line_no))
+                continue
+            record = {
+                'PunchNo': None,  # 由系统自动生成
+                'ISODrawingNo': iso_no,
+                'SheetNo': cell('SheetNo') or None,
+                'RevNo': cell('RevNo') or None,
+                'Description': description,
+                'Category': cell('Category') or None,
+                'Cause': cell('Cause') or None,
+                'IssuedBy': cell('IssuedBy') or None,
+                'Rectified': parse_flag(cell('Rectified')) or 'N',
+                'Verified': parse_flag(cell('Verified')) or 'N',
+                'RectifiedDate': parse_datetime(cell('RectifiedDate')),
+                'VerifiedDate': parse_datetime(cell('VerifiedDate')),
+                'Deleted': parse_flag(cell('Deleted')) or 'N',
+                'is_update': False
+            }
         records.append(record)
 
     if errors:
@@ -1509,65 +1691,139 @@ def import_punch_list_api(test_package_id):
 
     inserted = 0
     updated = 0
+    normalized_id = unquote(test_package_id)
     try:
         cur = conn.cursor(dictionary=True)
-        punch_numbers = [r['PunchNo'] for r in records if r['PunchNo']]
-        existing_map = {}
-        if punch_numbers:
+        
+        # 分离新增和更新的记录
+        update_records = [r for r in records if r.get('is_update')]
+        insert_records = [r for r in records if not r.get('is_update')]
+        
+        # 处理更新记录：通过PunchNo匹配
+        if update_records:
+            punch_numbers = [r['PunchNo'] for r in update_records]
             placeholders = ','.join(['%s'] * len(punch_numbers))
-            cur.execute(
-                f"""
-                SELECT ID, PunchNo, Rectified, Verified, RectifiedDate, VerifiedDate
+            # 直接使用字符串拼接构建SQL，避免format可能的问题
+            query = """
+                SELECT ID, PunchNo, ISODrawingNo, SheetNo, RevNo, Description,
+                       Category, Cause, IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, Deleted
                 FROM PunchList
-                WHERE TestPackageID = %s AND PunchNo IN ({placeholders})
-                """,
-                tuple([test_package_id] + punch_numbers)
+                WHERE TestPackageID = %s AND PunchNo IN (""" + placeholders + """)"""
+            cur.execute(
+                query,
+                tuple([normalized_id] + punch_numbers)
             )
-            for row in cur.fetchall():
-                if row.get('PunchNo'):
-                    existing_map[row['PunchNo']] = row
-
-        for record in records:
-            if record['PunchNo'] and record['PunchNo'] in existing_map:
-                existing = existing_map[record['PunchNo']]
-                rectified_date = record['RectifiedDate'] or existing.get('RectifiedDate')
-                verified_date = record['VerifiedDate'] or existing.get('VerifiedDate')
-                if record['Rectified'] == 'Y' and rectified_date is None:
-                    rectified_date = datetime.now()
-                if record['Verified'] == 'Y' and verified_date is None:
-                    verified_date = datetime.now()
-                cur.execute(
-                    """
-                    UPDATE PunchList
-                    SET ISODrawingNo=%s, SheetNo=%s, RevNo=%s, Description=%s,
-                        Category=%s, Cause=%s, IssuedBy=%s, Rectified=%s, RectifiedDate=%s,
-                        Verified=%s, VerifiedDate=%s
-                    WHERE TestPackageID=%s AND ID=%s
-                    """,
-                    (
-                        record['ISODrawingNo'], record['SheetNo'], record['RevNo'], record['Description'],
-                        record['Category'], record['Cause'], record['IssuedBy'], record['Rectified'], rectified_date,
-                        record['Verified'], verified_date, test_package_id, existing['ID']
+            existing_map = {row['PunchNo']: row for row in cur.fetchall()}
+            
+            for record in update_records:
+                punch_no = record['PunchNo']
+                if punch_no not in existing_map:
+                    errors.append("PunchNo {} 不存在，无法更新。".format(punch_no))
+                    continue
+                
+                existing = existing_map[punch_no]
+                # 只更新提供的字段，未提供的字段保持原值
+                update_fields = []
+                update_values = []
+                
+                if record.get('ISODrawingNo'):
+                    update_fields.append('ISODrawingNo=%s')
+                    update_values.append(record['ISODrawingNo'])
+                if record.get('SheetNo') is not None:
+                    update_fields.append('SheetNo=%s')
+                    update_values.append(record['SheetNo'])
+                if record.get('RevNo') is not None:
+                    update_fields.append('RevNo=%s')
+                    update_values.append(record['RevNo'])
+                if record.get('Description'):
+                    update_fields.append('Description=%s')
+                    update_values.append(record['Description'])
+                if record.get('Category') is not None:
+                    update_fields.append('Category=%s')
+                    update_values.append(record['Category'])
+                if record.get('Cause') is not None:
+                    update_fields.append('Cause=%s')
+                    update_values.append(record['Cause'])
+                if record.get('IssuedBy') is not None:
+                    update_fields.append('IssuedBy=%s')
+                    update_values.append(record['IssuedBy'])
+                if record.get('Rectified') is not None:
+                    update_fields.append('Rectified=%s')
+                    update_values.append(record['Rectified'])
+                    if record['Rectified'] == 'Y' and not record.get('RectifiedDate'):
+                        update_fields.append('RectifiedDate=%s')
+                        update_values.append(datetime.now())
+                if record.get('Verified') is not None:
+                    update_fields.append('Verified=%s')
+                    update_values.append(record['Verified'])
+                    if record['Verified'] == 'Y' and not record.get('VerifiedDate'):
+                        update_fields.append('VerifiedDate=%s')
+                        update_values.append(datetime.now())
+                if record.get('RectifiedDate') is not None:
+                    update_fields.append('RectifiedDate=%s')
+                    update_values.append(record['RectifiedDate'])
+                if record.get('VerifiedDate') is not None:
+                    update_fields.append('VerifiedDate=%s')
+                    update_values.append(record['VerifiedDate'])
+                if record.get('Deleted') is not None:
+                    update_fields.append('Deleted=%s')
+                    update_values.append(record['Deleted'])
+                
+                if update_fields:
+                    update_values.extend([normalized_id, existing['ID']])
+                    # 使用字符串拼接而不是format，避免用户输入中的花括号导致格式错误
+                    fields_str = ', '.join(update_fields)
+                    # 直接使用字符串拼接构建SQL，避免format可能的问题
+                    query = "UPDATE PunchList SET " + fields_str + " WHERE TestPackageID=%s AND ID=%s"
+                    cur.execute(
+                        query,
+                        tuple(update_values)
                     )
-                )
-                updated += 1
-            else:
+                    updated += 1
+        
+        # 处理新增记录：自动生成PunchNo
+        if insert_records:
+            # 获取当前最大序号，用于生成新的PunchNo
+            cur.execute(
+                """
+                SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(PunchNo, '-P', -1) AS UNSIGNED)), 0) as max_num
+                FROM PunchList
+                WHERE TestPackageID = %s AND PunchNo LIKE %s
+                """,
+                (normalized_id, normalized_id + "-P%")
+            )
+            result = cur.fetchone()
+            max_num = result['max_num'] if result else 0
+            # 同样确保为整数，避免类型异常
+            try:
+                start_num = int(max_num)
+            except (TypeError, ValueError):
+                start_num = 0
+
+            for record in insert_records:
+                # 自动生成唯一的PunchNo
+                start_num += 1
+                punch_no = normalized_id + "-P" + "{:03d}".format(start_num)
+                
                 rectified_date = record['RectifiedDate'] or (datetime.now() if record['Rectified'] == 'Y' else None)
                 verified_date = record['VerifiedDate'] or (datetime.now() if record['Verified'] == 'Y' else None)
                 cur.execute(
                     """
                     INSERT INTO PunchList (
                         PunchNo, TestPackageID, ISODrawingNo, SheetNo, RevNo, Description,
-                        Category, Cause, IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        Category, Cause, IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, Deleted
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
-                        record['PunchNo'], test_package_id, record['ISODrawingNo'], record['SheetNo'], record['RevNo'],
+                        punch_no, normalized_id, record['ISODrawingNo'], record['SheetNo'], record['RevNo'],
                         record['Description'], record['Category'], record['Cause'], record['IssuedBy'],
-                        record['Rectified'], rectified_date, record['Verified'], verified_date
+                        record['Rectified'], rectified_date, record['Verified'], verified_date, record['Deleted']
                     )
                 )
                 inserted += 1
+        
+        if errors:
+            return jsonify({'success': False, 'message': '部分记录处理失败', 'errors': errors}), 400
 
         cur.execute(
             """
@@ -1576,20 +1832,24 @@ def import_punch_list_api(test_package_id):
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             """,
             (
-                test_package_id,
+                normalized_id,
                 upload.filename,
                 len(records),
                 inserted,
                 updated,
-                0,
-                '导入完成'
+                len(errors),
+                '导入完成' if not errors else '导入完成，但有 {} 个错误'.format(len(errors))
             )
         )
         conn.commit()
         return jsonify({'success': True, 'inserted': inserted, 'updated': updated})
     except Exception as exc:
         conn.rollback()
-        return jsonify({'success': False, 'message': f'导入失败: {exc}'}), 500
+        import traceback
+        error_detail = traceback.format_exc()
+        current_app.logger.error(f"导入Punch List失败: {exc}\n{error_detail}")
+        # 使用字符串拼接而不是format，避免异常信息中的花括号导致格式错误
+        return jsonify({'success': False, 'message': '导入失败: ' + str(exc)}), 500
     finally:
         conn.close()
 
@@ -1807,8 +2067,13 @@ def upload_attachment(test_package_id, module_name):
 
 @test_package_bp.route('/api/test_packages/<test_package_id>/attachments/<int:attachment_id>/download')
 def download_attachment(test_package_id, attachment_id):
+    import logging
+    logger = logging.getLogger('routes.test_package_routes')
+    client_ip = request.remote_addr
+    
     conn = create_connection()
     if not conn:
+        logger.error(f'[下载附件] 数据库连接失败，客户端IP: {client_ip}')
         return "数据库连接失败", 500
     try:
         cur = conn.cursor(dictionary=True)
@@ -1817,9 +2082,44 @@ def download_attachment(test_package_id, attachment_id):
             (attachment_id, test_package_id)
         )
         row = cur.fetchone()
-        if not row or not os.path.exists(row['FilePath']):
+        
+        if not row:
+            logger.warning(f'[下载附件] 数据库未找到记录: attachment_id={attachment_id}, test_package_id={test_package_id}, 客户端IP: {client_ip}')
             return "文件不存在", 404
-        return send_file(row['FilePath'], as_attachment=True, download_name=row['FileName'])
+        
+        file_path = row['FilePath']
+        file_name = row['FileName']
+        
+        # 如果路径是相对路径，转换为绝对路径（基于应用根目录）
+        if not os.path.isabs(file_path):
+            # 获取应用根目录（Flask 应用实例的根路径）
+            if current_app:
+                app_root = current_app.root_path
+            else:
+                # 如果 current_app 不可用，使用当前文件所在目录的父目录作为项目根目录
+                app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            file_path = os.path.join(app_root, file_path)
+        
+        # 规范化路径（统一路径分隔符，Windows 上会将正斜杠转换为反斜杠）
+        file_path = os.path.normpath(file_path)
+        
+        logger.info(f'[下载附件] 尝试下载: attachment_id={attachment_id}, test_package_id={test_package_id}, file_path={file_path}, 客户端IP: {client_ip}')
+        
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            logger.error(f'[下载附件] 文件不存在: file_path={file_path}, 客户端IP: {client_ip}')
+            return "文件不存在", 404
+        
+        # 检查是否是文件（而不是目录）
+        if not os.path.isfile(file_path):
+            logger.error(f'[下载附件] 路径不是文件: file_path={file_path}, 客户端IP: {client_ip}')
+            return "文件不存在", 404
+        
+        logger.info(f'[下载附件] 文件下载成功: attachment_id={attachment_id}, file_name={file_name}, 客户端IP: {client_ip}')
+        return send_file(file_path, as_attachment=True, download_name=file_name)
+    except Exception as exc:
+        logger.error(f'[下载附件] 下载异常: attachment_id={attachment_id}, test_package_id={test_package_id}, 错误={exc}, 客户端IP: {client_ip}', exc_info=True)
+        return f"下载失败: {str(exc)}", 500
     finally:
         conn.close()
 
@@ -1845,9 +2145,22 @@ def delete_attachment(test_package_id, attachment_id):
             (attachment_id, test_package_id)
         )
         row = cur.fetchone()
-        if row and row.get('FilePath') and os.path.exists(row['FilePath']):
-            os.remove(row['FilePath'])
-            logger.info(f'[API] 已删除文件: {row["FilePath"]}, 客户端IP: {client_ip}')
+        if row and row.get('FilePath'):
+            file_path = row['FilePath']
+            # 如果路径是相对路径，转换为绝对路径（基于应用根目录）
+            if not os.path.isabs(file_path):
+                if current_app:
+                    app_root = current_app.root_path
+                else:
+                    app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                file_path = os.path.join(app_root, file_path)
+            
+            # 规范化路径（统一路径分隔符，Windows 上会将正斜杠转换为反斜杠）
+            file_path = os.path.normpath(file_path)
+            
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                os.remove(file_path)
+                logger.info(f'[API] 已删除文件: {file_path}, 客户端IP: {client_ip}')
         cur.execute("DELETE FROM TestPackageAttachments WHERE ID = %s AND TestPackageID = %s", (attachment_id, test_package_id))
         conn.commit()
         logger.info(f'[API] 附件删除成功: attachment_id={attachment_id}, 客户端IP: {client_ip}')
