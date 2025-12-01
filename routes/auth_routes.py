@@ -278,20 +278,56 @@ def api_update_user(user_id):
 @login_required
 @permission_required('user.manage')
 def api_reset_password(user_id):
+    import logging
+    import traceback
+    from flask import jsonify, Response
+    logger = logging.getLogger('routes.auth_routes')
+    
+    client_ip = request.remote_addr
+    logger.info(f'[API] 收到重置用户 {user_id} 密码请求，客户端IP: {client_ip}')
+    
     data = request.get_json(silent=True) or {}
     new_password = data.get('password') or generate_random_password()
     try:
         reset_user_password(user_id, new_password, session['user']['username'])
         record_audit('USER_RESET_PW', '重置用户密码', session['user'], request, 'UserAccount', str(user_id))
         # 安全：只在响应中返回新密码（仅限管理员重置密码时），不记录到审计日志
-        return jsonify({'success': True, 'new_password': new_password})
+        response = jsonify({'success': True, 'new_password': new_password})
+        response_data = response.get_data()
+        response.headers['Connection'] = 'close'
+        response.headers['Content-Length'] = str(len(response_data))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        logger.info(f'[API] 重置用户 {user_id} 密码成功，客户端IP: {client_ip}')
+        return response
     except Exception as exc:
+        logger.error(f'[API] 重置用户 {user_id} 密码失败: {exc}')
+        logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
         # 安全：异常信息中可能包含敏感信息，只返回通用错误消息
         error_msg = str(exc)
         # 过滤可能包含密码的异常信息
         if any(keyword in error_msg.lower() for keyword in ['password', 'pwd', 'pass']):
             error_msg = '操作失败，请检查输入参数'
-        return jsonify({'success': False, 'message': error_msg}), 500
+        elif '数据库连接失败' in error_msg or 'connection' in error_msg.lower():
+            error_msg = '数据库连接失败，请稍后重试'
+        elif 'timeout' in error_msg.lower():
+            error_msg = '请求超时，请稍后重试'
+        
+        # 确保返回 JSON 响应，避免连接被重置
+        try:
+            response = jsonify({'success': False, 'message': error_msg})
+            response_data = response.get_data()
+            response.headers['Connection'] = 'close'
+            response.headers['Content-Length'] = str(len(response_data))
+            response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            return response, 500
+        except Exception as e:
+            logger.error(f'[API] 返回错误响应失败: {e}')
+            return Response(
+                f'{{"success": false, "message": "{error_msg}"}}',
+                status=500,
+                mimetype='application/json',
+                headers={'Connection': 'close', 'Content-Type': 'application/json; charset=utf-8'}
+            )
 
 
 @auth_bp.route('/api/admin/roles', methods=['GET'])
@@ -422,14 +458,20 @@ def api_set_user_modules(user_id):
         
         # 确保返回 JSON 响应，避免连接被重置
         try:
-            return jsonify({'success': False, 'message': error_msg}), 500
+            response = jsonify({'success': False, 'message': error_msg})
+            response_data = response.get_data()
+            response.headers['Connection'] = 'close'
+            response.headers['Content-Length'] = str(len(response_data))
+            response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            return response, 500
         except Exception as e:
             logger.error(f'[API] 返回错误响应失败: {e}')
             # 最后的保障：返回简单的文本响应
             return Response(
                 f'{{"success": false, "message": "{error_msg}"}}',
                 status=500,
-                mimetype='application/json'
+                mimetype='application/json',
+                headers={'Connection': 'close', 'Content-Type': 'application/json; charset=utf-8'}
             )
 
 
