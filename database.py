@@ -699,6 +699,7 @@ def ensure_precom_tables():
                 RectifiedDate DATETIME NULL,
                 Verified CHAR(1) NOT NULL DEFAULT 'N',
                 VerifiedDate DATETIME NULL,
+                Deleted CHAR(1) NOT NULL DEFAULT 'N',
                 CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_precom_punch_task (TaskID),
@@ -726,6 +727,17 @@ def ensure_precom_tables():
             if not col:
                 cursor.execute(
                     "ALTER TABLE PrecomTaskPunch ADD COLUMN RevNo VARCHAR(50) NULL AFTER SheetNo"
+                )
+                connection.commit()
+        except Error:
+            pass
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM PrecomTaskPunch LIKE 'Deleted'")
+            col = cursor.fetchone()
+            if not col:
+                cursor.execute(
+                    "ALTER TABLE PrecomTaskPunch ADD COLUMN Deleted CHAR(1) NOT NULL DEFAULT 'N' AFTER VerifiedDate"
                 )
                 connection.commit()
         except Error:

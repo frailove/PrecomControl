@@ -559,24 +559,20 @@
                                 
                                 <div class="mb-3">
                                     <label for="SystemCode" class="form-label required">系统代码</label>
-                                    <select class="form-select" id="SystemCode" name="SystemCode" required>
-                                        {% for system in systems %}
-                                        <option value="{{ system.SystemCode }}" {% if system.SystemCode == test_package.SystemCode %}selected{% endif %}>
-                                            {{ system.SystemCode }} - {{ system.SystemDescriptionENG }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
+                                    <input type="text" class="form-control" id="SystemCode" name="SystemCode" 
+                                           value="{{ test_package.SystemCode or '' }}" required
+                                           list="editSystemCodeAutocompleteList" autocomplete="off"
+                                           placeholder="输入系统编码...">
+                                    <datalist id="editSystemCodeAutocompleteList"></datalist>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="SubSystemCode" class="form-label required">子系统代码</label>
-                                    <select class="form-select" id="SubSystemCode" name="SubSystemCode" required>
-                                        {% for subsystem in subsystems %}
-                                        <option value="{{ subsystem.SubSystemCode }}" {% if subsystem.SubSystemCode == test_package.SubSystemCode %}selected{% endif %}>
-                                            {{ subsystem.SubSystemCode }} - {{ subsystem.SubSystemDescriptionENG }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
+                                    <input type="text" class="form-control" id="SubSystemCode" name="SubSystemCode" 
+                                           value="{{ test_package.SubSystemCode or '' }}" required
+                                           list="editSubSystemCodeAutocompleteList" autocomplete="off"
+                                           placeholder="输入子系统编码...">
+                                    <datalist id="editSubSystemCodeAutocompleteList"></datalist>
                                 </div>
                                 
                                 <div class="mb-3">
@@ -1070,21 +1066,6 @@
         const testPackageId = "{{ test_package.TestPackageID }}";
         const attachmentModules = JSON.parse(document.getElementById('attachment-modules-data').textContent);
 
-        function loadSubsystems() {
-            const systemCode = $("#SystemCode").val();
-            if (systemCode) {
-                $.get("/api/subsystems/" + systemCode, function(data) {
-                    const subsystemSelect = $("#SubSystemCode");
-                    subsystemSelect.empty();
-                    $.each(data, function(index, subsystem) {
-                        const selected = (subsystem.SubSystemCode === "{{ test_package.SubSystemCode }}") ? "selected" : "";
-                        subsystemSelect.append('<option value="' + subsystem.SubSystemCode + '" ' + selected + '>' + subsystem.SubSystemCode + ' - ' + subsystem.SubSystemDescriptionENG + '</option>');
-                    });
-                });
-            } else {
-                $("#SubSystemCode").empty();
-            }
-        }
 
         function renderEmptyRow(tbody, columns, text) {
             if (!tbody) return;
@@ -1464,7 +1445,138 @@
         });
 
         $(document).ready(function() {
-            $("#SystemCode").change(loadSubsystems);
+            // 系统代码autocomplete
+            var systemCodeInput = document.getElementById('SystemCode');
+            var systemCodeAutocompleteList = document.getElementById('editSystemCodeAutocompleteList');
+            var systemCodeTimer = null;
+            
+            if (systemCodeInput && systemCodeAutocompleteList) {
+                // 初始化时加载所有系统
+                fetch('/api/systems/autocomplete?limit=100')
+                    .then(response => response.json())
+                    .then(data => {
+                        systemCodeAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            systemCodeAutocompleteList.appendChild(option);
+                        });
+                    });
+                
+                systemCodeInput.addEventListener('input', function() {
+                    var query = this.value.trim();
+                    clearTimeout(systemCodeTimer);
+                    
+                    if (query.length < 1) {
+                        fetch('/api/systems/autocomplete?limit=100')
+                            .then(response => response.json())
+                            .then(data => {
+                                systemCodeAutocompleteList.innerHTML = '';
+                                data.forEach(function(item) {
+                                    var option = document.createElement('option');
+                                    option.value = item.code;
+                                    option.textContent = item.label;
+                                    systemCodeAutocompleteList.appendChild(option);
+                                });
+                            });
+                        return;
+                    }
+                    
+                    systemCodeTimer = setTimeout(function() {
+                        fetch('/api/systems/autocomplete?q=' + encodeURIComponent(query) + '&limit=20')
+                            .then(response => response.json())
+                            .then(data => {
+                                systemCodeAutocompleteList.innerHTML = '';
+                                data.forEach(function(item) {
+                                    var option = document.createElement('option');
+                                    option.value = item.code;
+                                    option.textContent = item.label;
+                                    systemCodeAutocompleteList.appendChild(option);
+                                });
+                            });
+                    }, 300);
+                });
+                
+                // 系统代码变化时，更新子系统选项
+                $(systemCodeInput).on('change input', function() {
+                    loadSubsystems();
+                });
+            }
+            
+            // 子系统代码autocomplete
+            var subsystemCodeInput = document.getElementById('SubSystemCode');
+            var subsystemCodeAutocompleteList = document.getElementById('editSubSystemCodeAutocompleteList');
+            var subsystemCodeTimer = null;
+            
+            function updateSubsystemAutocomplete() {
+                var systemCode = systemCodeInput ? systemCodeInput.value.trim() : '';
+                var query = subsystemCodeInput ? subsystemCodeInput.value.trim() : '';
+                
+                if (!subsystemCodeInput || !subsystemCodeAutocompleteList) return;
+                
+                clearTimeout(subsystemCodeTimer);
+                
+                if (query.length < 1 && !systemCode) {
+                    subsystemCodeAutocompleteList.innerHTML = '';
+                    return;
+                }
+                
+                subsystemCodeTimer = setTimeout(function() {
+                    var url = '/api/subsystems/autocomplete?limit=20';
+                    if (query) {
+                        url += '&q=' + encodeURIComponent(query);
+                    }
+                    if (systemCode) {
+                        url += '&system_code=' + encodeURIComponent(systemCode);
+                    }
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            subsystemCodeAutocompleteList.innerHTML = '';
+                            data.forEach(function(item) {
+                                var option = document.createElement('option');
+                                option.value = item.code;
+                                option.textContent = item.label;
+                                subsystemCodeAutocompleteList.appendChild(option);
+                            });
+                        });
+                }, 300);
+            }
+            
+            if (subsystemCodeInput && subsystemCodeAutocompleteList) {
+                subsystemCodeInput.addEventListener('input', updateSubsystemAutocomplete);
+            }
+            
+            // 初始加载子系统选项（如果有系统代码）
+            if (systemCodeInput && systemCodeInput.value.trim()) {
+                loadSubsystems();
+            }
+            
+            // 原有的loadSubsystems函数需要更新
+            function loadSubsystems() {
+                var systemCode = systemCodeInput ? systemCodeInput.value.trim() : '';
+                if (systemCode) {
+                    $.get("/api/subsystems/" + systemCode, function(data) {
+                        if (subsystemCodeAutocompleteList) {
+                            subsystemCodeAutocompleteList.innerHTML = '';
+                            data.forEach(function(subsystem) {
+                                var option = document.createElement('option');
+                                option.value = subsystem.SubSystemCode;
+                                option.textContent = subsystem.SubSystemCode + ' - ' + (subsystem.SubSystemDescriptionENG || '');
+                                subsystemCodeAutocompleteList.appendChild(option);
+                            });
+                        }
+                        // 更新子系统输入框的选项
+                        updateSubsystemAutocomplete();
+                    });
+                } else {
+                    if (subsystemCodeAutocompleteList) {
+                        subsystemCodeAutocompleteList.innerHTML = '';
+                    }
+                    updateSubsystemAutocomplete();
+                }
+            }
             loadPidList();
             loadIsoList();
             loadJointSummary();

@@ -401,7 +401,7 @@ def precom_task_edit(task_id: int):
         cur.execute(
             """
             SELECT ID, PunchNo, RefNo, SheetNo, RevNo, Description, Category, Cause,
-                   IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate
+                   IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, Deleted
             FROM PrecomTaskPunch
             WHERE TaskID = %s
             ORDER BY ID
@@ -546,6 +546,50 @@ def precom_upload_attachment(task_id: int):
         conn.close()
 
 
+@precom_bp.route('/api/precom/tasks/<int:task_id>/attachments/<int:attachment_id>', methods=['DELETE'])
+def precom_delete_attachment(task_id: int, attachment_id: int):
+    conn = create_connection()
+    if not conn:
+        return jsonify({'error': '数据库连接失败'}), 500
+    try:
+        cur = conn.cursor(dictionary=True)
+        # 先查询附件信息，包括文件路径
+        cur.execute(
+            """
+            SELECT AttachmentID, FilePath
+            FROM PrecomTaskAttachment
+            WHERE AttachmentID = %s AND TaskID = %s
+            """,
+            (attachment_id, task_id)
+        )
+        attachment = cur.fetchone()
+        if not attachment:
+            return jsonify({'error': '附件不存在'}), 404
+        
+        # 删除数据库记录
+        cur.execute(
+            "DELETE FROM PrecomTaskAttachment WHERE AttachmentID = %s",
+            (attachment_id,)
+        )
+        conn.commit()
+        
+        # 尝试删除文件（如果文件存在）
+        file_path = attachment.get('FilePath')
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                current_app.logger.warning(f"无法删除附件文件: {file_path}, 错误: {e}")
+        
+        return jsonify({'success': True})
+    except Exception as exc:
+        conn.rollback()
+        current_app.logger.error(f"删除附件失败: {exc}", exc_info=True)
+        return jsonify({'error': '删除失败'}), 500
+    finally:
+        conn.close()
+
+
 @precom_bp.route('/api/precom/tasks/<int:task_id>/punch_list', methods=['GET'])
 def precom_punch_list(task_id: int):
     conn = create_connection()
@@ -555,8 +599,8 @@ def precom_punch_list(task_id: int):
         cur = conn.cursor(dictionary=True)
         cur.execute(
             """
-            SELECT ID, PunchNo, RefNo, Description, Category, Cause,
-                   IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate
+            SELECT ID, PunchNo, RefNo, SheetNo, RevNo, Description, Category, Cause,
+                   IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, Deleted, CreatedAt
             FROM PrecomTaskPunch
             WHERE TaskID = %s
             ORDER BY ID
@@ -565,7 +609,7 @@ def precom_punch_list(task_id: int):
         )
         rows = cur.fetchall()
         for row in rows:
-            for key in ('RectifiedDate', 'VerifiedDate'):
+            for key in ('RectifiedDate', 'VerifiedDate', 'CreatedAt'):
                 if row.get(key):
                     row[key] = row[key].strftime('%Y-%m-%d %H:%M:%S')
         return jsonify(rows)
@@ -642,12 +686,234 @@ def precom_delete_punch(task_id: int, punch_id: int):
 
 @precom_bp.route('/precom/tasks/<int:task_id>/punch/import/template')
 def precom_punch_template(task_id: int):
-    # 简单模板：PunchNo, RefNo, Description, Category, Cause, IssuedBy
-    columns = ['PunchNo', 'RefNo', 'SheetNo', 'RevNo', 'Description', 'Category', 'Cause', 'IssuedBy']
-    df = pd.DataFrame(columns=columns)
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side  # type: ignore
+    from openpyxl.worksheet.datavalidation import DataValidation  # type: ignore
+    
+    # 获取任务信息和已有punch数据
+    system_code = ''
+    subsystem_code = ''
+    task_type = ''
+    punch_data = []
+    conn = create_connection()
+    if conn:
+        try:
+            cur = conn.cursor(dictionary=True)
+            cur.execute(
+                """
+                SELECT SystemCode, SubSystemCode, TaskType
+                FROM PrecomTask
+                WHERE TaskID = %s
+                """,
+                (task_id,)
+            )
+            row = cur.fetchone()
+            if row:
+                system_code = row.get('SystemCode') or ''
+                subsystem_code = row.get('SubSystemCode') or ''
+                task_type = row.get('TaskType') or ''
+            
+            # 查询已有的punch记录
+            cur.execute(
+                """
+                SELECT PunchNo, RefNo, SheetNo, RevNo, Description,
+                       Category, Cause, IssuedBy, CreatedAt as IssuedDate,
+                       Rectified, RectifiedDate, Verified, VerifiedDate, Deleted
+                FROM PrecomTaskPunch
+                WHERE TaskID = %s
+                ORDER BY ID
+                """,
+                (task_id,)
+            )
+            punch_data = cur.fetchall()
+            # 格式化日期字段
+            for punch in punch_data:
+                if punch.get('IssuedDate'):
+                    punch['IssuedDate'] = punch['IssuedDate'].strftime('%Y-%m-%d %H:%M:%S')
+                if punch.get('RectifiedDate'):
+                    punch['RectifiedDate'] = punch['RectifiedDate'].strftime('%Y-%m-%d %H:%M:%S')
+                if punch.get('VerifiedDate'):
+                    punch['VerifiedDate'] = punch['VerifiedDate'].strftime('%Y-%m-%d %H:%M:%S')
+        finally:
+            conn.close()
+
+    info_df = pd.DataFrame([{
+        'TaskID': task_id,
+        'TaskType': task_type,
+        'SystemCode': system_code,
+        'SubSystemCode': subsystem_code,
+        'GeneratedAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }])
+    
+    # 与试压包保持一致的列结构
+    template_columns = [
+        'PunchNo', 'RefNo', 'SheetNo', 'RevNo', 'Description',
+        'Category', 'Cause', 'IssuedBy', 'IssuedDate',
+        'Rectified', 'RectifiedDate', 'Verified', 'VerifiedDate', 'Deleted'
+    ]
+    # 如果有已有数据，使用已有数据；否则创建空模板
+    if punch_data:
+        template_df = pd.DataFrame(punch_data, columns=template_columns)
+    else:
+        template_df = pd.DataFrame(columns=template_columns)
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='PunchList', index=False)
+        info_df.to_excel(writer, sheet_name='Info', index=False)
+        template_df.to_excel(writer, sheet_name='PunchList', index=False)
+        
+        # 获取工作表对象以应用样式
+        workbook = writer.book
+        ws_punch = workbook['PunchList']
+        
+        # 定义样式
+        header_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')  # 蓝色底纹
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        cell_font = Font(name='Arial', size=10)
+        cell_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        
+        # 边框样式
+        thin_border = Border(
+            left=Side(style='thin', color='000000'),
+            right=Side(style='thin', color='000000'),
+            top=Side(style='thin', color='000000'),
+            bottom=Side(style='thin', color='000000')
+        )
+        
+        # 设置列宽
+        column_widths = {
+            'A': 15,   # PunchNo（只读，用于更新）
+            'B': 18,   # RefNo（ISO / Tag No.）
+            'C': 10,   # SheetNo
+            'D': 10,   # RevNo
+            'E': 40,   # Description
+            'F': 15,   # Category
+            'G': 15,   # Cause
+            'H': 12,   # IssuedBy
+            'I': 18,   # IssuedDate
+            'J': 10,   # Rectified
+            'K': 15,   # RectifiedDate
+            'L': 10,   # Verified
+            'M': 15,   # VerifiedDate
+            'N': 10    # Deleted
+        }
+        for col, width in column_widths.items():
+            ws_punch.column_dimensions[col].width = width
+        
+        # 设置行高
+        ws_punch.row_dimensions[1].height = 25  # 表头行高
+        
+        # 应用表头样式（第1行）
+        for col_idx, col_name in enumerate(template_columns, start=1):
+            cell = ws_punch.cell(row=1, column=col_idx)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = thin_border
+        
+        # 创建数据验证（下拉列表）
+        # 找到相关列的索引
+        punch_no_col = template_columns.index('PunchNo') + 1
+        category_col = template_columns.index('Category') + 1
+        cause_col = template_columns.index('Cause') + 1
+        rectified_col = template_columns.index('Rectified') + 1
+        verified_col = template_columns.index('Verified') + 1
+        deleted_col = template_columns.index('Deleted') + 1
+        
+        # Category列：A/B/C/D
+        category_validation = DataValidation(
+            type="list",
+            formula1='"A,B,C,D"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能选择 A, B, C 或 D"
+        )
+        
+        # Cause列：N/F/E
+        cause_validation = DataValidation(
+            type="list",
+            formula1='"N,F,E"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能选择 N(Non-Conformity), F(Field Revion) 或 E(Re-Engineering)"
+        )
+        
+        # Rectified列：Y/N
+        rectified_validation = DataValidation(
+            type="list",
+            formula1='"Y,N"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能输入 Y 或 N"
+        )
+        
+        # Verified列：Y/N
+        verified_validation = DataValidation(
+            type="list",
+            formula1='"Y,N"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能输入 Y 或 N"
+        )
+        
+        # Deleted列：Y/N
+        deleted_validation = DataValidation(
+            type="list",
+            formula1='"Y,N"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能输入 Y 或 N（Y表示已删除，不计算在计数中）"
+        )
+        
+        # 为PunchNo列添加注释说明
+        from openpyxl.comments import Comment  # type: ignore
+        punch_no_comment = Comment(
+            "PunchNo由系统自动生成，新增记录时留空。\n如需更新或删除已有记录，请填写对应的PunchNo。",
+            "系统提示"
+        )
+        
+        for row in range(2, 101):
+            for col in range(1, len(template_columns) + 1):
+                cell = ws_punch.cell(row=row, column=col)
+                cell.font = cell_font
+                cell.alignment = cell_alignment
+                cell.border = thin_border
+                
+                # 为PunchNo列添加注释（仅第一行数据作为示例）
+                if col == punch_no_col and row == 2:
+                    cell.comment = punch_no_comment
+                
+                # 为Category列添加数据验证
+                if col == category_col:
+                    category_validation.add(cell)
+                # 为Cause列添加数据验证
+                if col == cause_col:
+                    cause_validation.add(cell)
+                # 为Rectified列添加数据验证
+                if col == rectified_col:
+                    rectified_validation.add(cell)
+                # 为Verified列添加数据验证
+                if col == verified_col:
+                    verified_validation.add(cell)
+                # 为Deleted列添加数据验证
+                if col == deleted_col:
+                    deleted_validation.add(cell)
+        
+        # 将数据验证添加到工作表
+        ws_punch.add_data_validation(category_validation)
+        ws_punch.add_data_validation(cause_validation)
+        ws_punch.add_data_validation(rectified_validation)
+        ws_punch.add_data_validation(verified_validation)
+        ws_punch.add_data_validation(deleted_validation)
+        
+        # 冻结首行
+        ws_punch.freeze_panes = 'A2'
+        
     output.seek(0)
     filename = f"PrecomTask_{task_id}_PunchTemplate.xlsx"
     return send_file(
@@ -660,6 +926,26 @@ def precom_punch_template(task_id: int):
 
 @precom_bp.route('/api/precom/tasks/<int:task_id>/punch_list/import', methods=['POST'])
 def precom_import_punch(task_id: int):
+    def parse_flag(value):
+        """解析Y/N标志"""
+        if value is None:
+            return 'N'
+        v = str(value).strip().upper()
+        if v in {'Y', 'YES', '1'}:
+            return 'Y'
+        if v in {'N', 'NO', '0', ''}:
+            return 'N'
+        return None
+
+    def parse_datetime(value):
+        """解析日期时间"""
+        if value in (None, ''):
+            return None
+        dt = pd.to_datetime(value, errors='coerce')
+        if pd.isna(dt):
+            return None
+        return dt.to_pydatetime()
+
     upload = request.files.get('file')
     if not upload or upload.filename == '':
         return jsonify({'success': False, 'message': '请上传需要导入的 Excel 文件'}), 400
@@ -681,44 +967,194 @@ def precom_import_punch(task_id: int):
         return jsonify({'success': False, 'message': f"缺少必要字段: {', '.join(missing)}"}), 400
 
     records = []
-    for idx, row in df.iterrows():
-        desc = str(row.get('Description') or '').strip()
-        if not desc:
-            continue
-        records.append(
-            (
-                task_id,
-                str(row.get('PunchNo') or '').strip() or None,
-                str(row.get('RefNo') or '').strip() or None,
-                str(row.get('SheetNo') or '').strip() or None,
-                str(row.get('RevNo') or '').strip() or None,
-                desc,
-                str(row.get('Category') or '').strip() or None,
-                str(row.get('Cause') or '').strip() or None,
-                str(row.get('IssuedBy') or '').strip() or None,
-            )
-        )
+    errors = []
 
+    for idx, row in df.iterrows():
+        line_no = idx + 2
+
+        def cell(name):
+            value = row.get(name)
+            if pd.isna(value):
+                return ''
+            return str(value).strip()
+
+        punch_no = cell('PunchNo')
+        ref_no = cell('RefNo')
+        description = cell('Description')
+        
+        # 如果有PunchNo，说明是更新已有记录；如果没有，说明是新增记录
+        if punch_no:
+            # 更新记录：只需要PunchNo即可，其他字段可选
+            record = {
+                'PunchNo': punch_no,
+                'RefNo': ref_no or None,
+                'SheetNo': cell('SheetNo') or None,
+                'RevNo': cell('RevNo') or None,
+                'Description': description or None,
+                'Category': cell('Category') or None,
+                'Cause': cell('Cause') or None,
+                'IssuedBy': cell('IssuedBy') or None,
+                'Rectified': parse_flag(cell('Rectified')) or None,
+                'Verified': parse_flag(cell('Verified')) or None,
+                'RectifiedDate': parse_datetime(cell('RectifiedDate')),
+                'VerifiedDate': parse_datetime(cell('VerifiedDate')),
+                'Deleted': parse_flag(cell('Deleted')) or 'N',
+                'is_update': True
+            }
+        else:
+            # 新增记录：必须要有Description
+            if not description:
+                errors.append(f"第 {line_no} 行：新增记录时，请填写 Description。")
+                continue
+            record = {
+                'PunchNo': None,  # 由系统自动生成
+                'RefNo': ref_no or None,
+                'SheetNo': cell('SheetNo') or None,
+                'RevNo': cell('RevNo') or None,
+                'Description': description,
+                'Category': cell('Category') or None,
+                'Cause': cell('Cause') or None,
+                'IssuedBy': cell('IssuedBy') or None,
+                'Rectified': parse_flag(cell('Rectified')) or 'N',
+                'Verified': parse_flag(cell('Verified')) or 'N',
+                'RectifiedDate': parse_datetime(cell('RectifiedDate')),
+                'VerifiedDate': parse_datetime(cell('VerifiedDate')),
+                'Deleted': parse_flag(cell('Deleted')) or 'N',
+                'is_update': False
+            }
+        records.append(record)
+
+    if errors:
+        return jsonify({'success': False, 'message': '数据校验失败', 'errors': errors}), 400
     if not records:
-        return jsonify({'success': False, 'message': '没有可以导入的记录'}), 400
+        return jsonify({'success': False, 'message': '没有可以导入的数据'}), 400
 
     conn = create_connection()
     if not conn:
         return jsonify({'success': False, 'message': '数据库连接失败'}), 500
 
+    inserted = 0
+    updated = 0
     try:
-        cur = conn.cursor()
-        cur.executemany(
+        cur = conn.cursor(dictionary=True)
+        
+        # 分离新增和更新的记录
+        update_records = [r for r in records if r.get('is_update')]
+        insert_records = [r for r in records if not r.get('is_update')]
+        
+        # 处理更新记录：通过PunchNo匹配
+        if update_records:
+            punch_numbers = [r['PunchNo'] for r in update_records]
+            placeholders = ','.join(['%s'] * len(punch_numbers))
+            query = f"""
+                SELECT ID, PunchNo, RefNo, SheetNo, RevNo, Description,
+                       Category, Cause, IssuedBy, Rectified, RectifiedDate, 
+                       Verified, VerifiedDate, Deleted
+                FROM PrecomTaskPunch
+                WHERE TaskID = %s AND PunchNo IN ({placeholders})
             """
-            INSERT INTO PrecomTaskPunch (
-                TaskID, PunchNo, RefNo, SheetNo, RevNo, Description, Category, Cause,
-                IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'N', NULL, 'N', NULL)
-            """,
-            records,
-        )
+            cur.execute(query, tuple([task_id] + punch_numbers))
+            existing_map = {row['PunchNo']: row for row in cur.fetchall()}
+            
+            for record in update_records:
+                punch_no = record['PunchNo']
+                if punch_no not in existing_map:
+                    errors.append(f"PunchNo {punch_no} 不存在，无法更新。")
+                    continue
+                
+                existing = existing_map[punch_no]
+                # 只更新提供的字段，未提供的字段保持原值
+                update_fields = []
+                update_values = []
+                
+                if record.get('RefNo') is not None:
+                    update_fields.append('RefNo=%s')
+                    update_values.append(record['RefNo'])
+                if record.get('SheetNo') is not None:
+                    update_fields.append('SheetNo=%s')
+                    update_values.append(record['SheetNo'])
+                if record.get('RevNo') is not None:
+                    update_fields.append('RevNo=%s')
+                    update_values.append(record['RevNo'])
+                if record.get('Description'):
+                    update_fields.append('Description=%s')
+                    update_values.append(record['Description'])
+                if record.get('Category') is not None:
+                    update_fields.append('Category=%s')
+                    update_values.append(record['Category'])
+                if record.get('Cause') is not None:
+                    update_fields.append('Cause=%s')
+                    update_values.append(record['Cause'])
+                if record.get('IssuedBy') is not None:
+                    update_fields.append('IssuedBy=%s')
+                    update_values.append(record['IssuedBy'])
+                if record.get('Rectified') is not None:
+                    update_fields.append('Rectified=%s')
+                    update_values.append(record['Rectified'])
+                if record.get('Verified') is not None:
+                    update_fields.append('Verified=%s')
+                    update_values.append(record['Verified'])
+                if record.get('RectifiedDate') is not None:
+                    update_fields.append('RectifiedDate=%s')
+                    update_values.append(record['RectifiedDate'])
+                if record.get('VerifiedDate') is not None:
+                    update_fields.append('VerifiedDate=%s')
+                    update_values.append(record['VerifiedDate'])
+                if record.get('Deleted') is not None:
+                    update_fields.append('Deleted=%s')
+                    update_values.append(record['Deleted'])
+                
+                if update_fields:
+                    update_sql = f"UPDATE PrecomTaskPunch SET {', '.join(update_fields)} WHERE ID = %s"
+                    update_values.append(existing['ID'])
+                    cur.execute(update_sql, tuple(update_values))
+                    updated += cur.rowcount
+        
+        # 处理新增记录
+        if insert_records:
+            insert_values = []
+            for record in insert_records:
+                insert_values.append((
+                    task_id,
+                    record.get('RefNo'),
+                    record.get('SheetNo'),
+                    record.get('RevNo'),
+                    record['Description'],
+                    record.get('Category'),
+                    record.get('Cause'),
+                    record.get('IssuedBy'),
+                    record.get('Rectified', 'N'),
+                    record.get('RectifiedDate'),
+                    record.get('Verified', 'N'),
+                    record.get('VerifiedDate'),
+                    record.get('Deleted', 'N')
+                ))
+            
+            cur.executemany(
+                """
+                INSERT INTO PrecomTaskPunch (
+                    TaskID, RefNo, SheetNo, RevNo, Description, Category, Cause,
+                    IssuedBy, Rectified, RectifiedDate, Verified, VerifiedDate, Deleted
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                insert_values
+            )
+            inserted = cur.rowcount
+        
         conn.commit()
-        return jsonify({'success': True, 'inserted': cur.rowcount})
+        
+        message = []
+        if inserted > 0:
+            message.append(f"新增 {inserted} 条")
+        if updated > 0:
+            message.append(f"更新 {updated} 条")
+        
+        return jsonify({
+            'success': True,
+            'message': '、'.join(message) if message else '没有变化',
+            'inserted': inserted,
+            'updated': updated
+        })
     except Exception as exc:
         conn.rollback()
         return jsonify({'success': False, 'message': f'导入失败: {exc}'}), 500

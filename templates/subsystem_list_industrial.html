@@ -133,17 +133,16 @@
         <div class="filter-row">
             <div class="row g-2">
                 <div class="col-md-2">
-                    <input type="text" class="form-control" name="q" placeholder="搜索子系统代码..." value="{{ search_query }}">
+                    <input type="text" class="form-control" name="q" id="subsystemSearchInput" 
+                           placeholder="搜索子系统代码..." value="{{ search_query }}"
+                           list="subsystemAutocompleteList" autocomplete="off">
+                    <datalist id="subsystemAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" name="system_code">
-                        <option value="">全部系统</option>
-                        {% for system in systems %}
-                        <option value="{{ system.SystemCode }}" {% if system.SystemCode == filter_system %}selected{% endif %}>
-                            {{ system.SystemCode }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" class="form-control" name="system_code" id="systemCodeInput"
+                           placeholder="全部系统" value="{{ filter_system }}"
+                           list="systemCodeAutocompleteList" autocomplete="off">
+                    <datalist id="systemCodeAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="type">
@@ -526,13 +525,107 @@ $(document).ready(function() {
             });
     }
     
-    // 系统代码变化时，更新Faclist
-    $('select[name="system_code"]').change(function() {
-        clearTimeout(submitTimer);
-        submitTimer = setTimeout(function() {
-            updateFaclistOptions('system_code');
-        }, 300);
-    });
+    // 系统代码autocomplete
+    var systemCodeInput = document.getElementById('systemCodeInput');
+    var systemCodeAutocompleteList = document.getElementById('systemCodeAutocompleteList');
+    var systemCodeTimer = null;
+    
+    if (systemCodeInput && systemCodeAutocompleteList) {
+        // 初始化时加载所有系统
+        fetch('/api/systems/autocomplete?limit=100')
+            .then(response => response.json())
+            .then(data => {
+                systemCodeAutocompleteList.innerHTML = '';
+                data.forEach(function(item) {
+                    var option = document.createElement('option');
+                    option.value = item.code;
+                    option.textContent = item.label;
+                    systemCodeAutocompleteList.appendChild(option);
+                });
+            });
+        
+        systemCodeInput.addEventListener('input', function() {
+            var query = this.value.trim();
+            clearTimeout(systemCodeTimer);
+            
+            if (query.length < 1) {
+                // 如果为空，加载所有系统
+                fetch('/api/systems/autocomplete?limit=100')
+                    .then(response => response.json())
+                    .then(data => {
+                        systemCodeAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            systemCodeAutocompleteList.appendChild(option);
+                        });
+                    });
+                return;
+            }
+            
+            systemCodeTimer = setTimeout(function() {
+                fetch('/api/systems/autocomplete?q=' + encodeURIComponent(query) + '&limit=20')
+                    .then(response => response.json())
+                    .then(data => {
+                        systemCodeAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            systemCodeAutocompleteList.appendChild(option);
+                        });
+                    });
+            }, 300);
+        });
+        
+        // 系统代码变化时，更新Faclist
+        $(systemCodeInput).on('change input', function() {
+            clearTimeout(submitTimer);
+            submitTimer = setTimeout(function() {
+                updateFaclistOptions('system_code');
+            }, 300);
+        });
+    }
+    
+    // 子系统代码autocomplete
+    var subsystemSearchInput = document.getElementById('subsystemSearchInput');
+    var subsystemAutocompleteList = document.getElementById('subsystemAutocompleteList');
+    var subsystemSearchTimer = null;
+    
+    if (subsystemSearchInput && subsystemAutocompleteList) {
+        subsystemSearchInput.addEventListener('input', function() {
+            var query = this.value.trim();
+            var systemCode = systemCodeInput ? systemCodeInput.value.trim() : '';
+            clearTimeout(subsystemSearchTimer);
+            
+            if (query.length < 1) {
+                subsystemAutocompleteList.innerHTML = '';
+                return;
+            }
+            
+            subsystemSearchTimer = setTimeout(function() {
+                var url = '/api/subsystems/autocomplete?q=' + encodeURIComponent(query) + '&limit=20';
+                if (systemCode) {
+                    url += '&system_code=' + encodeURIComponent(systemCode);
+                }
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        subsystemAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            subsystemAutocompleteList.appendChild(option);
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Subsystem autocomplete error:', error);
+                    });
+            }, 300);
+        });
+    }
     
     // Faclist字段变化时，通过AJAX更新选项
     $('select[name="subproject_code"], select[name="train"], select[name="unit"], select[name="simpleblk"], select[name="mainblock"], select[name="block"], select[name="bccquarter"]').change(function() {

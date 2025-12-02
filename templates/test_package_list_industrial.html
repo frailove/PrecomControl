@@ -183,24 +183,16 @@
                     <input type="text" class="form-control" name="q" placeholder="搜索试压包ID..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" name="system_code">
-                        <option value="">全部系统</option>
-                        {% for system in systems %}
-                        <option value="{{ system.SystemCode }}" {% if system.SystemCode == filter_system %}selected{% endif %}>
-                            {{ system.SystemCode }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" class="form-control" name="system_code" id="testPackageSystemCodeInput"
+                           placeholder="全部系统" value="{{ filter_system }}"
+                           list="testPackageSystemCodeAutocompleteList" autocomplete="off">
+                    <datalist id="testPackageSystemCodeAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" name="subsystem_code">
-                        <option value="">全部子系统</option>
-                        {% for subsystem in subsystems %}
-                        <option value="{{ subsystem.SubSystemCode }}" {% if subsystem.SubSystemCode == filter_subsystem %}selected{% endif %}>
-                            {{ subsystem.SubSystemCode }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" class="form-control" name="subsystem_code" id="testPackageSubsystemCodeInput"
+                           placeholder="全部子系统" value="{{ filter_subsystem }}"
+                           list="testPackageSubsystemCodeAutocompleteList" autocomplete="off">
+                    <datalist id="testPackageSubsystemCodeAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="status">
@@ -230,7 +222,7 @@
         </div>
         
         <!-- 第二行：Faclist高级筛选（可折叠） -->
-        <div id="faclistFilter" style="display: {{ 'block' if (filter_subproject or filter_train or filter_unit or filter_simpleblk or filter_mainblock or filter_block or filter_bccquarter) else 'none' }};">
+        <div id="faclistFilter" {% if (filter_subproject or filter_train or filter_unit or filter_simpleblk or filter_mainblock or filter_block or filter_bccquarter) %}style="display: block;"{% else %}style="display: none;"{% endif %}>
     <hr style="margin: 0.75rem 0;">
     <div class="faclist-scroll">
         <select class="form-select" name="subproject_code">
@@ -339,8 +331,10 @@
                             <span>{{ package.welding_status.progress_pct }}%</span>
                         </div>
                         <div class="progress" style="height: 6px;">
+                            {% set progress_width = package.welding_status.progress_pct|default(0)|round %}
                             <div class="progress-bar {{ 'bg-success' if package.welding_status.joints_complete else 'bg-warning' }}"
-                                 style="width: {{ package.welding_status.progress_pct }}%;"></div>
+                                 data-progress="{{ progress_width }}"
+                                 style="width: 0%;"></div>
                         </div>
                         {% else %}
                         <span class="text-muted small">无焊口数据</span>
@@ -485,6 +479,12 @@ function toggleFaclistFilter() {
 }
 
 $(document).ready(function() {
+    // 初始化进度条宽度
+    $('.progress-bar[data-progress]').each(function() {
+        var progress = $(this).data('progress');
+        $(this).css('width', progress + '%');
+    });
+    
     // 防止重复提交的标记
     var isSubmitting = false;
     var submitTimer;
@@ -493,52 +493,153 @@ $(document).ready(function() {
     console.log('📝 Faclist筛选字段数量:', $('select[name="subproject_code"], select[name="train"], select[name="unit"], select[name="simpleblk"], select[name="mainblock"], select[name="block"], select[name="bccquarter"]').length);
     
     // 系统代码变化时，加载对应的子系统（AJAX，不刷新页面）
-    $('select[name="system_code"]').change(function() {
-        var systemCode = $(this).val();
-        console.log('🔄 系统变化:', systemCode);
-        
-        // 清空子系统选择
-        $('select[name="subsystem_code"]').val('');
-        
-        if (systemCode) {
-            $.get("/api/subsystems/" + systemCode, function(data) {
-                var subsystemSelect = $('select[name="subsystem_code"]');
-                subsystemSelect.empty();
-                subsystemSelect.append('<option value="">全部子系统</option>');
-                $.each(data, function(index, subsystem) {
-                    subsystemSelect.append('<option value="' + subsystem.SubSystemCode + '">' + subsystem.SubSystemCode + '</option>');
-                });
-                console.log('✅ 子系统选项已更新');
-            });
-        } else {
-            $('select[name="subsystem_code"]').empty().append('<option value="">全部子系统</option>');
-        }
-        
-        // 同时更新Faclist选项（系统可能影响Faclist）
-        clearTimeout(submitTimer);
-        submitTimer = setTimeout(function() {
-            updateFaclistOptions('system_code');
-        }, 300);
-    });
+    // 系统代码autocomplete
+    var testPackageSystemCodeInput = document.getElementById('testPackageSystemCodeInput');
+    var testPackageSystemCodeAutocompleteList = document.getElementById('testPackageSystemCodeAutocompleteList');
+    var testPackageSystemCodeTimer = null;
     
-    // 子系统代码变化时，更新Faclist选项
-    $('select[name="subsystem_code"]').change(function() {
-        var subsystemCode = $(this).val();
-        console.log('🔄 子系统变化:', subsystemCode);
+    if (testPackageSystemCodeInput && testPackageSystemCodeAutocompleteList) {
+        // 初始化时加载所有系统
+        fetch('/api/systems/autocomplete?limit=100')
+            .then(response => response.json())
+            .then(data => {
+                testPackageSystemCodeAutocompleteList.innerHTML = '';
+                data.forEach(function(item) {
+                    var option = document.createElement('option');
+                    option.value = item.code;
+                    option.textContent = item.label;
+                    testPackageSystemCodeAutocompleteList.appendChild(option);
+                });
+            });
         
-        // 更新Faclist选项（子系统可能影响Faclist）
-        clearTimeout(submitTimer);
-        submitTimer = setTimeout(function() {
-            updateFaclistOptions('subsystem_code');
-        }, 300);
-    });
+        testPackageSystemCodeInput.addEventListener('input', function() {
+            var query = this.value.trim();
+            clearTimeout(testPackageSystemCodeTimer);
+            
+            if (query.length < 1) {
+                fetch('/api/systems/autocomplete?limit=100')
+                    .then(response => response.json())
+                    .then(data => {
+                        testPackageSystemCodeAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            testPackageSystemCodeAutocompleteList.appendChild(option);
+                        });
+                    });
+                return;
+            }
+            
+            testPackageSystemCodeTimer = setTimeout(function() {
+                fetch('/api/systems/autocomplete?q=' + encodeURIComponent(query) + '&limit=20')
+                    .then(response => response.json())
+                    .then(data => {
+                        testPackageSystemCodeAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            testPackageSystemCodeAutocompleteList.appendChild(option);
+                        });
+                    });
+            }, 300);
+        });
+        
+        // 系统代码变化时，更新子系统选项和Faclist
+        $(testPackageSystemCodeInput).on('change input', function() {
+            var systemCode = this.value.trim();
+            console.log('🔄 系统变化:', systemCode);
+            
+            // 清空子系统选择
+            var subsystemInput = document.getElementById('testPackageSubsystemCodeInput');
+            if (subsystemInput) {
+                subsystemInput.value = '';
+            }
+            
+            if (systemCode) {
+                $.get("/api/subsystems/" + systemCode, function(data) {
+                    var subsystemAutocompleteList = document.getElementById('testPackageSubsystemCodeAutocompleteList');
+                    if (subsystemAutocompleteList) {
+                        subsystemAutocompleteList.innerHTML = '';
+                        data.forEach(function(subsystem) {
+                            var option = document.createElement('option');
+                            option.value = subsystem.SubSystemCode;
+                            option.textContent = subsystem.SubSystemCode + ' - ' + (subsystem.SubSystemDescriptionENG || '');
+                            subsystemAutocompleteList.appendChild(option);
+                        });
+                    }
+                    console.log('✅ 子系统选项已更新');
+                });
+            } else {
+                var subsystemAutocompleteList = document.getElementById('testPackageSubsystemCodeAutocompleteList');
+                if (subsystemAutocompleteList) {
+                    subsystemAutocompleteList.innerHTML = '';
+                }
+            }
+            
+            // 同时更新Faclist选项（系统可能影响Faclist）
+            clearTimeout(submitTimer);
+            submitTimer = setTimeout(function() {
+                updateFaclistOptions('system_code');
+            }, 300);
+        });
+    }
+    
+    // 子系统代码autocomplete
+    var testPackageSubsystemCodeInput = document.getElementById('testPackageSubsystemCodeInput');
+    var testPackageSubsystemCodeAutocompleteList = document.getElementById('testPackageSubsystemCodeAutocompleteList');
+    var testPackageSubsystemCodeTimer = null;
+    
+    if (testPackageSubsystemCodeInput && testPackageSubsystemCodeAutocompleteList) {
+        testPackageSubsystemCodeInput.addEventListener('input', function() {
+            var query = this.value.trim();
+            var systemCode = testPackageSystemCodeInput ? testPackageSystemCodeInput.value.trim() : '';
+            clearTimeout(testPackageSubsystemCodeTimer);
+            
+            if (query.length < 1) {
+                testPackageSubsystemCodeAutocompleteList.innerHTML = '';
+                return;
+            }
+            
+            testPackageSubsystemCodeTimer = setTimeout(function() {
+                var url = '/api/subsystems/autocomplete?q=' + encodeURIComponent(query) + '&limit=20';
+                if (systemCode) {
+                    url += '&system_code=' + encodeURIComponent(systemCode);
+                }
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        testPackageSubsystemCodeAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            testPackageSubsystemCodeAutocompleteList.appendChild(option);
+                        });
+                    });
+            }, 300);
+        });
+        
+        // 子系统代码变化时，更新Faclist选项
+        $(testPackageSubsystemCodeInput).on('change input', function() {
+            var subsystemCode = this.value.trim();
+            console.log('🔄 子系统变化:', subsystemCode);
+        
+            // 更新Faclist选项（子系统可能影响Faclist）
+            clearTimeout(submitTimer);
+            submitTimer = setTimeout(function() {
+                updateFaclistOptions('subsystem_code');
+            }, 300);
+        });
+    }
     
     // Faclist级联筛选 - 使用AJAX更新选项（不刷新页面）
     function updateFaclistOptions(changedField) {
         // 收集当前所有筛选条件（包括系统、子系统、Faclist所有字段）
         var params = {
-            system_code: $('select[name="system_code"]').val() || '',
-            subsystem_code: $('select[name="subsystem_code"]').val() || '',
+            system_code: $('#testPackageSystemCodeInput').val() || '',
+            subsystem_code: $('#testPackageSubsystemCodeInput').val() || '',
             subproject_code: $('select[name="subproject_code"]').val() || '',
             train: $('select[name="train"]').val() || '',
             unit: $('select[name="unit"]').val() || '',

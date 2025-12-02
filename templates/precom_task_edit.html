@@ -39,16 +39,66 @@
 .activity-progress-table {
     font-size: .78rem;
     table-layout: auto;
+    border-collapse: collapse;
 }
 .activity-progress-table th,
 .activity-progress-table td {
     white-space: nowrap;
     vertical-align: middle;
-    padding: .3rem .4rem;
+    padding: .2rem .3rem;
+    border: none !important;
+    background-color: transparent !important;
 }
-.activity-progress-table input.form-control-sm {
+/* ActDescription列允许换行 */
+.activity-progress-table td:nth-child(3) {
+    white-space: normal;
+    word-wrap: break-word;
+}
+/* 输入框样式 - 完全透明无底纹 */
+.activity-progress-table input.form-control-sm,
+.activity-progress-table textarea.form-control-sm {
     font-size: .78rem;
     padding: .15rem .35rem;
+    border: none;
+    background-color: transparent;
+    border-radius: 0;
+    transition: all 0.2s ease;
+}
+/* 获得焦点时的样式 */
+.activity-progress-table input.form-control-sm:focus,
+.activity-progress-table textarea.form-control-sm:focus {
+    background-color: rgba(13, 110, 253, 0.05);
+    border: none;
+    border-bottom: 2px solid #0d6efd;
+    box-shadow: none;
+    outline: none;
+}
+/* ActDescription的textarea特殊样式 */
+.activity-progress-table textarea.form-control-sm {
+    resize: vertical;
+    min-height: 2.2rem;
+    line-height: 1.3;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox隐藏滚动条 */
+}
+/* 完全隐藏滚动条 - Webkit浏览器 */
+.activity-progress-table textarea.form-control-sm::-webkit-scrollbar {
+    display: none;
+}
+/* 鼠标悬停时显示可编辑状态 */
+.activity-progress-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+.activity-progress-table tbody tr:hover input,
+.activity-progress-table tbody tr:hover textarea {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+/* 表头样式 - 高对比度 */
+.activity-progress-table thead th {
+    background-color: #f8f9fa !important;
+    color: #2c3e50 !important;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6 !important;
 }
 </style>
 <div class="page-header d-flex justify-content-between align-items-end">
@@ -80,7 +130,7 @@
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4" {% if task %}data-task-id="{{ task.TaskID }}"{% endif %}>
     <div class="col-12">
         <div class="card card-industrial mb-0">
             <div class="card-header">
@@ -95,21 +145,21 @@
                             <i class="bi bi-bar-chart-line"></i> 施工进度
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-sm align-middle activity-progress-table">
+                            <table class="table table-sm align-middle activity-progress-table table-borderless">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 130px;">ACT ID</th>
-                                        <th style="width: 140px;">Block</th>
-                                        <th>Act Description</th>
-                                        <th style="width: 120px;">Scope</th>
-                                        <th style="width: 120px;">Discipline</th>
-                                        <th style="width: 150px;">Work Package</th>
-                                        <th style="width: 115px;">Total Qty</th>
-                                        <th style="width: 125px;">Completed Qty</th>
-                                        <th style="width: 120px;">Completed %</th>
-                                        <th style="width: 110px;">Weight</th>
-                                        <th style="width: 110px;">Man Hours</th>
-                                        <th style="width: 130px;">Subproject</th>
+                                        <th style="width: 150px;">ACT ID</th>
+                                        <th style="width: 130px;">Block</th>
+                                        <th style="width: 280px; min-width: 280px;">Act Description</th>
+                                        <th style="width: 80px;">Scope</th>
+                                        <th style="width: 90px;">Discipline</th>
+                                        <th style="width: 110px;">Work Package</th>
+                                        <th style="width: 95px;">Total Qty</th>
+                                        <th style="width: 110px;">Completed Qty</th>
+                                        <th style="width: 105px;">Completed %</th>
+                                        <th style="width: 90px;">Weight</th>
+                                        <th style="width: 95px;">Man Hours</th>
+                                        <th style="width: 100px;">Subproject</th>
                                         <th style="width: 60px;" class="text-center">操作</th>
                                     </tr>
                                 </thead>
@@ -127,8 +177,8 @@
                                                        value="{{ a.Block or '' }}">
                                             </td>
                                             <td>
-                                                <input type="text" class="form-control form-control-sm"
-                                                       name="ActivityDescription" value="{{ a.ActDescription or '' }}">
+                                                <textarea class="form-control form-control-sm" rows="1"
+                                                          name="ActivityDescription">{{ a.ActDescription or '' }}</textarea>
                                             </td>
                                             <td>
                                                 <input type="text" class="form-control form-control-sm"
@@ -183,7 +233,7 @@
                                                        name="ActivityBlock" list="ActivityBlockList">
                                             </td>
                                             <td>
-                                                <input type="text" class="form-control form-control-sm" name="ActivityDescription">
+                                                <textarea class="form-control form-control-sm" rows="1" name="ActivityDescription"></textarea>
                                             </td>
                                             <td>
                                                 <input type="text" class="form-control form-control-sm" name="ActivityScope">
@@ -260,11 +310,7 @@
                                        list="SystemCodeList" required
                                        value="{{ task.SystemCode if task else '' }}"
                                        placeholder="可手填系统编码，支持下拉自动补齐">
-                                <datalist id="SystemCodeList">
-                                    {% for system in systems %}
-                                    <option value="{{ system.SystemCode }}">{{ system.SystemCode }} - {{ system.SystemDescriptionENG }}</option>
-                                    {% endfor %}
-                                </datalist>
+                                <datalist id="SystemCodeList"></datalist>
                                 <small class="text-muted" id="SystemDescriptionHint"></small>
                             </div>
                             <div class="col-md-3 col-sm-6">
@@ -273,11 +319,7 @@
                                        list="SubSystemCodeList" required
                                        value="{{ task.SubSystemCode if task else '' }}"
                                        placeholder="可手填子系统编码，支持下拉自动补齐">
-                                <datalist id="SubSystemCodeList">
-                                    {% for subsystem in subsystems %}
-                                    <option value="{{ subsystem.SubSystemCode }}">{{ subsystem.SubSystemCode }} - {{ subsystem.SubSystemDescriptionENG }}</option>
-                                    {% endfor %}
-                                </datalist>
+                                <datalist id="SubSystemCodeList"></datalist>
                                 <small class="text-muted" id="SubSystemDescriptionHint"></small>
                             </div>
                             <div class="col-md-3 col-sm-6">
@@ -418,15 +460,19 @@
                         <thead class="table-light">
                             <tr>
                                 <th>文件名</th>
-                                <th class="text-end" style="width: 100px;">大小</th>
+                                <th class="text-end" style="width: 80px;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="attachmentTableBody">
                             {% if attachments %}
                             {% for a in attachments %}
-                            <tr>
+                            <tr data-attachment-id="{{ a.AttachmentID }}">
                                 <td><small>{{ a.FileName }}</small></td>
-                                <td class="text-end"><small>{{ a.FileSize or 0 }}</small></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-danger" data-action="delete-attachment" title="删除">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
                             </tr>
                             {% endfor %}
                             {% else %}
@@ -477,10 +523,21 @@
                         <input type="text" class="form-control form-control-sm" id="punchDescInput" placeholder="描述（必填）">
                     </div>
                     <div class="col-md-4 col-sm-6">
-                        <input type="text" class="form-control form-control-sm" id="punchCategoryInput" placeholder="CATEGORY">
+                        <select class="form-select form-select-sm" id="punchCategoryInput">
+                            <option value="">-- 选择 CATEGORY --</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
                     </div>
                     <div class="col-md-4 col-sm-6">
-                        <input type="text" class="form-control form-control-sm" id="punchCauseInput" placeholder="CAUSE">
+                        <select class="form-select form-select-sm" id="punchCauseInput">
+                            <option value="">-- 选择 CAUSE --</option>
+                            <option value="N">N - Non-Conformity</option>
+                            <option value="F">F - Field Revion</option>
+                            <option value="E">E - Re-Engineering</option>
+                        </select>
                     </div>
                     <div class="col-md-4 col-sm-6">
                         <input type="text" class="form-control form-control-sm" id="punchIssuedInput" placeholder="ISSUED BY">
@@ -513,8 +570,10 @@
                                 <th>Category</th>
                                 <th>Cause</th>
                                 <th>Issued By</th>
+                                <th>提出日期</th>
                                 <th>Rectified</th>
                                 <th>Verified</th>
+                                <th>Deleted</th>
                                 <th class="text-end">操作</th>
                             </tr>
                         </thead>
@@ -530,6 +589,7 @@
                                 <td><small>{{ p.Category or '-' }}</small></td>
                                 <td><small>{{ p.Cause or '-' }}</small></td>
                                 <td><small>{{ p.IssuedBy or '-' }}</small></td>
+                                <td><small>{{ p.CreatedAt or '-' }}</small></td>
                                 <td>
                                     {% if p.Rectified == 'Y' %}
                                     <span class="badge bg-success">是</span>
@@ -544,6 +604,13 @@
                                     <span class="badge bg-secondary">否</span>
                                     {% endif %}
                                 </td>
+                                <td>
+                                    {% if p.Deleted == 'Y' %}
+                                    <span class="badge bg-danger">已删除</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">否</span>
+                                    {% endif %}
+                                </td>
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-danger" data-action="delete-punch" title="删除">
                                         <i class="bi bi-trash"></i>
@@ -553,7 +620,7 @@
                             {% endfor %}
                             {% else %}
                             <tr>
-                                <td colspan="11" class="text-center text-muted py-3">暂无尾项</td>
+                                <td colspan="12" class="text-center text-muted py-3">暂无尾项</td>
                             </tr>
                             {% endif %}
                         </tbody>
@@ -570,36 +637,104 @@
 {% block scripts %}
 <script>
 (function () {
-    const taskId = {{ task.TaskID if task else 'null' }};
+    const taskIdEl = document.querySelector('.row.g-4[data-task-id]');
+    const taskId = taskIdEl && taskIdEl.dataset.taskId ? parseInt(taskIdEl.dataset.taskId) : null;
 
-    // 系统/子系统描述提示与级联
-    const allSystems = {{ systems|tojson }};
-    let currentSubsystems = {{ subsystems|tojson }};
-
+    // 系统/子系统描述提示与级联（使用动态API）
+    let currentSubsystems = [];
     const systemInput = document.getElementById('SystemCode');
     const systemDescHint = document.getElementById('SystemDescriptionHint');
+    const systemCodeList = document.getElementById('SystemCodeList');
     const subsystemInput = document.getElementById('SubSystemCode');
     const subsystemDescHint = document.getElementById('SubSystemDescriptionHint');
+    const subsystemCodeList = document.getElementById('SubSystemCodeList');
+    
+    var systemCodeTimer = null;
+    var subsystemCodeTimer = null;
 
-    function findSystemByCode(code) {
-        if (!code) return null;
-        return allSystems.find(s => s.SystemCode === code) || null;
-    }
-
-    function findSubsystemByCode(code) {
-        if (!code) return null;
-        return currentSubsystems.find(s => s.SubSystemCode === code) || null;
+    // 系统代码autocomplete
+    if (systemInput && systemCodeList) {
+        // 初始化时加载所有系统
+        fetch('/api/systems/autocomplete?limit=100')
+            .then(response => response.json())
+            .then(data => {
+                systemCodeList.innerHTML = '';
+                data.forEach(function(item) {
+                    var option = document.createElement('option');
+                    option.value = item.code;
+                    option.textContent = item.label;
+                    systemCodeList.appendChild(option);
+                });
+                
+                // 如果有初始值，查找并显示描述
+                if (systemInput.value) {
+                    const sys = data.find(s => s.code === systemInput.value.trim());
+                    if (sys && systemDescHint) {
+                        systemDescHint.textContent = sys.label.split(' - ')[1] || '';
+                    }
+                    loadSubsystemsForSystem(systemInput.value.trim());
+                }
+            });
+        
+        systemInput.addEventListener('input', function() {
+            var query = this.value.trim();
+            clearTimeout(systemCodeTimer);
+            
+            if (query.length < 1) {
+                fetch('/api/systems/autocomplete?limit=100')
+                    .then(response => response.json())
+                    .then(data => {
+                        systemCodeList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            systemCodeList.appendChild(option);
+                        });
+                    });
+                return;
+            }
+            
+            systemCodeTimer = setTimeout(function() {
+                fetch('/api/systems/autocomplete?q=' + encodeURIComponent(query) + '&limit=20')
+                    .then(response => response.json())
+                    .then(data => {
+                        systemCodeList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            systemCodeList.appendChild(option);
+                        });
+                    });
+            }, 300);
+        });
+        
+        systemInput.addEventListener('change', function () {
+            const code = this.value.trim();
+            if (code && systemDescHint) {
+                // 从datalist中查找描述
+                const options = systemCodeList.querySelectorAll('option');
+                for (let opt of options) {
+                    if (opt.value === code) {
+                        const parts = opt.textContent.split(' - ');
+                        systemDescHint.textContent = parts.length > 1 ? parts[1] : '';
+                        break;
+                    }
+                }
+            }
+            loadSubsystemsForSystem(code);
+        });
     }
 
     function refreshSubsystemDatalist(list) {
-        const dl = document.getElementById('SubSystemCodeList');
-        if (!dl) return;
-        dl.innerHTML = '';
+        if (!subsystemCodeList) return;
+        subsystemCodeList.innerHTML = '';
         (list || []).forEach(sub => {
             const opt = document.createElement('option');
             opt.value = sub.SubSystemCode;
             opt.textContent = `${sub.SubSystemCode} - ${sub.SubSystemDescriptionENG || ''}`;
-            dl.appendChild(opt);
+            subsystemCodeList.appendChild(opt);
         });
     }
 
@@ -608,6 +743,7 @@
             currentSubsystems = [];
             refreshSubsystemDatalist(currentSubsystems);
             if (subsystemDescHint) subsystemDescHint.textContent = '';
+            if (subsystemInput) subsystemInput.value = '';
             return;
         }
         fetch('/api/subsystems/' + encodeURIComponent(systemCode))
@@ -615,49 +751,66 @@
             .then(data => {
                 currentSubsystems = data || [];
                 refreshSubsystemDatalist(currentSubsystems);
-                const sub = findSubsystemByCode(subsystemInput?.value || '');
+                const sub = currentSubsystems.find(s => s.SubSystemCode === (subsystemInput?.value || '').trim());
                 if (sub && subsystemDescHint) {
                     subsystemDescHint.textContent = sub.SubSystemDescriptionENG || '';
                 }
             })
             .catch(() => {
-                alert('加载子系统失败，请稍后重试。');
+                console.error('加载子系统失败');
             });
     }
 
-    if (systemInput) {
-        systemInput.addEventListener('change', function () {
-            const code = this.value.trim();
-            const sys = findSystemByCode(code);
-            if (systemDescHint) {
-                systemDescHint.textContent = sys ? (sys.SystemDescriptionENG || '') : '';
+    // 子系统代码autocomplete
+    if (subsystemInput && subsystemCodeList) {
+        subsystemInput.addEventListener('input', function() {
+            var query = this.value.trim();
+            var systemCode = systemInput ? systemInput.value.trim() : '';
+            clearTimeout(subsystemCodeTimer);
+            
+            if (query.length < 1 && !systemCode) {
+                subsystemCodeList.innerHTML = '';
+                return;
             }
-            loadSubsystemsForSystem(code);
+            
+            subsystemCodeTimer = setTimeout(function() {
+                var url = '/api/subsystems/autocomplete?limit=20';
+                if (query) {
+                    url += '&q=' + encodeURIComponent(query);
+                }
+                if (systemCode) {
+                    url += '&system_code=' + encodeURIComponent(systemCode);
+                }
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        subsystemCodeList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            subsystemCodeList.appendChild(option);
+                        });
+                    });
+            }, 300);
         });
-
-        // 初始加载时根据已有值刷新描述和子系统列表
-        if (systemInput.value) {
-            const sys = findSystemByCode(systemInput.value.trim());
-            if (systemDescHint) {
-                systemDescHint.textContent = sys ? (sys.SystemDescriptionENG || '') : '';
-            }
-            loadSubsystemsForSystem(systemInput.value.trim());
-        }
-    }
-
-    if (subsystemInput) {
+        
         subsystemInput.addEventListener('change', function () {
             const code = this.value.trim();
-            const sub = findSubsystemByCode(code);
-            if (subsystemDescHint) {
-                subsystemDescHint.textContent = sub ? (sub.SubSystemDescriptionENG || '') : '';
+            const sub = currentSubsystems.find(s => s.SubSystemCode === code);
+            if (sub && subsystemDescHint) {
+                subsystemDescHint.textContent = sub.SubSystemDescriptionENG || '';
+            } else if (subsystemDescHint) {
+                subsystemDescHint.textContent = '';
             }
         });
 
         // 初始描述填充
-        const sub = findSubsystemByCode(subsystemInput.value.trim());
-        if (sub && subsystemDescHint) {
-            subsystemDescHint.textContent = sub.SubSystemDescriptionENG || '';
+        if (subsystemInput.value) {
+            const sub = currentSubsystems.find(s => s.SubSystemCode === subsystemInput.value.trim());
+            if (sub && subsystemDescHint) {
+                subsystemDescHint.textContent = sub.SubSystemDescriptionENG || '';
+            }
         }
     }
 
@@ -799,7 +952,7 @@
         tr.innerHTML = `
             <td><input type="text" class="form-control form-control-sm" name="ActivityActID"></td>
             <td><input type="text" class="form-control form-control-sm" name="ActivityBlock" list="ActivityBlockList"></td>
-            <td><input type="text" class="form-control form-control-sm" name="ActivityDescription"></td>
+            <td><textarea class="form-control form-control-sm" rows="1" name="ActivityDescription"></textarea></td>
             <td><input type="text" class="form-control form-control-sm" name="ActivityScope"></td>
             <td><input type="text" class="form-control form-control-sm" name="ActivityDiscipline"></td>
             <td><input type="text" class="form-control form-control-sm" name="ActivityWorkPackage"></td>
@@ -945,9 +1098,13 @@
                     return;
                 }
                 attachmentBody.innerHTML = rows.map(a => `
-                    <tr>
+                    <tr data-attachment-id="${a.AttachmentID}">
                         <td><small>${a.FileName}</small></td>
-                        <td class="text-end"><small>${a.FileSize || 0}</small></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" data-action="delete-attachment" title="删除">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                 `).join('');
             })
@@ -988,6 +1145,31 @@
         });
     }
 
+    // 删除附件
+    if (attachmentBody) {
+        attachmentBody.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-action="delete-attachment"]');
+            if (!btn) return;
+            const tr = btn.closest('tr');
+            const attachmentId = tr && tr.getAttribute('data-attachment-id');
+            if (!attachmentId) return;
+            if (!confirm('确认删除该附件？')) return;
+            fetch(`/api/precom/tasks/${taskId}/attachments/${attachmentId}`, {
+                method: 'DELETE'
+            }).then(res => res.json())
+              .then(data => {
+                  if (!data.success) {
+                      alert(data.error || '删除失败');
+                  } else {
+                      reloadAttachments();
+                  }
+              })
+              .catch(err => {
+                  alert('删除失败：' + err);
+              });
+        });
+    }
+
     // Punch 列表
     const punchBody = document.getElementById('punchTableBody');
     const addPunchBtn = document.getElementById('addPunchBtn');
@@ -1007,7 +1189,7 @@
             .then(res => res.json())
             .then(rows => {
                 if (!rows.length) {
-                    punchBody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">暂无尾项</td></tr>';
+                    punchBody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-3">暂无尾项</td></tr>';
                     return;
                 }
                 punchBody.innerHTML = rows.map(p => `
@@ -1020,6 +1202,7 @@
                         <td><small>${p.Category || '-'}</small></td>
                         <td><small>${p.Cause || '-'}</small></td>
                         <td><small>${p.IssuedBy || '-'}</small></td>
+                        <td><small>${p.CreatedAt || '-'}</small></td>
                         <td>
                             ${p.Rectified === 'Y'
                                 ? '<span class="badge bg-success">是</span>'
@@ -1028,6 +1211,11 @@
                         <td>
                             ${p.Verified === 'Y'
                                 ? '<span class="badge bg-success">是</span>'
+                                : '<span class="badge bg-secondary">否</span>'}
+                        </td>
+                        <td>
+                            ${p.Deleted === 'Y'
+                                ? '<span class="badge bg-danger">已删除</span>'
                                 : '<span class="badge bg-secondary">否</span>'}
                         </td>
                         <td class="text-end">
@@ -1039,7 +1227,7 @@
                 `).join('');
             })
             .catch(() => {
-                punchBody.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-3">尾项加载失败</td></tr>';
+                punchBody.innerHTML = '<tr><td colspan="13" class="text-center text-danger py-3">尾项加载失败</td></tr>';
             });
     }
 

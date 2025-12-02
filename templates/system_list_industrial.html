@@ -125,7 +125,10 @@
         <div class="filter-row">
             <div class="row g-2">
                 <div class="col-md-3">
-                    <input type="text" class="form-control" name="q" placeholder="搜索系统编码..." value="{{ search_query }}">
+                    <input type="text" class="form-control" name="q" id="systemSearchInput" 
+                           placeholder="搜索系统编码..." value="{{ search_query }}" 
+                           list="systemAutocompleteList" autocomplete="off">
+                    <datalist id="systemAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="type">
@@ -509,6 +512,40 @@ $(document).ready(function() {
     });
     if (hasPreset) {
         $('#faclistFilter').show();
+    }
+    
+    // 系统编码自动补齐
+    var systemSearchInput = document.getElementById('systemSearchInput');
+    var systemAutocompleteList = document.getElementById('systemAutocompleteList');
+    var systemSearchTimer = null;
+    
+    if (systemSearchInput && systemAutocompleteList) {
+        systemSearchInput.addEventListener('input', function() {
+            var query = this.value.trim();
+            clearTimeout(systemSearchTimer);
+            
+            if (query.length < 1) {
+                systemAutocompleteList.innerHTML = '';
+                return;
+            }
+            
+            systemSearchTimer = setTimeout(function() {
+                fetch('/api/systems/autocomplete?q=' + encodeURIComponent(query) + '&limit=20')
+                    .then(response => response.json())
+                    .then(data => {
+                        systemAutocompleteList.innerHTML = '';
+                        data.forEach(function(item) {
+                            var option = document.createElement('option');
+                            option.value = item.code;
+                            option.textContent = item.label;
+                            systemAutocompleteList.appendChild(option);
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Autocomplete error:', error);
+                    });
+            }, 300);
+        });
     }
 });
 </script>

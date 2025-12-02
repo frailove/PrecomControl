@@ -1424,6 +1424,7 @@ def download_punch_template(test_package_id):
     normalized_id = unquote(test_package_id)
     system_code = ''
     subsystem_code = ''
+    punch_data = []
     conn = create_connection()
     if conn:
         try:
@@ -1440,6 +1441,28 @@ def download_punch_template(test_package_id):
             if row:
                 system_code = row.get('SystemCode') or ''
                 subsystem_code = row.get('SubSystemCode') or ''
+            
+            # 查询已有的punch记录
+            cur.execute(
+                """
+                SELECT PunchNo, ISODrawingNo, SheetNo, RevNo, Description,
+                       Category, Cause, IssuedBy, created_at as IssuedDate,
+                       Rectified, RectifiedDate, Verified, VerifiedDate, Deleted
+                FROM PunchList
+                WHERE TestPackageID = %s
+                ORDER BY ID
+                """,
+                (normalized_id,)
+            )
+            punch_data = cur.fetchall()
+            # 格式化日期字段
+            for punch in punch_data:
+                if punch.get('IssuedDate'):
+                    punch['IssuedDate'] = punch['IssuedDate'].strftime('%Y-%m-%d %H:%M:%S')
+                if punch.get('RectifiedDate'):
+                    punch['RectifiedDate'] = punch['RectifiedDate'].strftime('%Y-%m-%d %H:%M:%S')
+                if punch.get('VerifiedDate'):
+                    punch['VerifiedDate'] = punch['VerifiedDate'].strftime('%Y-%m-%d %H:%M:%S')
         finally:
             conn.close()
 
@@ -1452,10 +1475,14 @@ def download_punch_template(test_package_id):
     # 包含PunchNo列（用于更新记录），但用户不能自定义，只能填写已有记录的PunchNo
     template_columns = [
         'PunchNo', 'ISODrawingNo', 'SheetNo', 'RevNo', 'Description',
-        'Category', 'Cause', 'IssuedBy', 'Rectified', 'RectifiedDate',
-        'Verified', 'VerifiedDate', 'Deleted'
+        'Category', 'Cause', 'IssuedBy', 'IssuedDate',
+        'Rectified', 'RectifiedDate', 'Verified', 'VerifiedDate', 'Deleted'
     ]
-    template_df = pd.DataFrame(columns=template_columns)
+    # 如果有已有数据，使用已有数据；否则创建空模板
+    if punch_data:
+        template_df = pd.DataFrame(punch_data, columns=template_columns)
+    else:
+        template_df = pd.DataFrame(columns=template_columns)
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         info_df.to_excel(writer, sheet_name='Info', index=False)
@@ -1491,11 +1518,12 @@ def download_punch_template(test_package_id):
             'F': 15,   # Category
             'G': 15,   # Cause
             'H': 12,   # IssuedBy
-            'I': 10,   # Rectified
-            'J': 15,   # RectifiedDate
-            'K': 10,   # Verified
-            'L': 15,   # VerifiedDate
-            'M': 10    # Deleted
+            'I': 18,   # IssuedDate
+            'J': 10,   # Rectified
+            'K': 15,   # RectifiedDate
+            'L': 10,   # Verified
+            'M': 15,   # VerifiedDate
+            'N': 10    # Deleted
         }
         for col, width in column_widths.items():
             ws_punch.column_dimensions[col].width = width
@@ -1514,9 +1542,31 @@ def download_punch_template(test_package_id):
         # 为数据区域添加边框和数据验证（第2-100行，预留足够空间）
         # 找到相关列的索引
         punch_no_col = template_columns.index('PunchNo') + 1  # A列
+        category_col = template_columns.index('Category') + 1  # F列
+        cause_col = template_columns.index('Cause') + 1  # G列
         rectified_col = template_columns.index('Rectified') + 1  # I列
         verified_col = template_columns.index('Verified') + 1     # K列
         deleted_col = template_columns.index('Deleted') + 1       # M列
+        
+        # 创建数据验证：Category只能选择A/B/C/D
+        category_validation = DataValidation(
+            type="list",
+            formula1='"A,B,C,D"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能选择 A, B, C 或 D"
+        )
+        
+        # 创建数据验证：Cause只能选择N/F/E
+        cause_validation = DataValidation(
+            type="list",
+            formula1='"N,F,E"',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="输入错误",
+            error="只能选择 N(Non-Conformity), F(Field Revion) 或 E(Re-Engineering)"
+        )
         
         # 创建数据验证：Rectified、Verified和Deleted只能选择Y或N
         rectified_validation = DataValidation(
@@ -1562,6 +1612,12 @@ def download_punch_template(test_package_id):
                 if col == punch_no_col and row == 2:
                     cell.comment = punch_no_comment
                 
+                # 为Category列添加数据验证
+                if col == category_col:
+                    category_validation.add(cell)
+                # 为Cause列添加数据验证
+                if col == cause_col:
+                    cause_validation.add(cell)
                 # 为Rectified列添加数据验证
                 if col == rectified_col:
                     rectified_validation.add(cell)
@@ -1573,6 +1629,8 @@ def download_punch_template(test_package_id):
                     deleted_validation.add(cell)
         
         # 将数据验证添加到工作表
+        ws_punch.add_data_validation(category_validation)
+        ws_punch.add_data_validation(cause_validation)
         ws_punch.add_data_validation(rectified_validation)
         ws_punch.add_data_validation(verified_validation)
         ws_punch.add_data_validation(deleted_validation)

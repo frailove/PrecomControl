@@ -1137,3 +1137,47 @@ def delete_system(system_code):
     """删除系统"""
     SystemModel.delete_system(system_code)
     return redirect('/systems')
+
+@system_bp.route('/api/systems/autocomplete')
+def autocomplete_systems():
+    """系统编码自动补齐API"""
+    query = (request.args.get('q') or '').strip()
+    limit = int(request.args.get('limit', 20))
+    
+    conn = create_connection()
+    if not conn:
+        return jsonify([])
+    
+    try:
+        cur = conn.cursor(dictionary=True)
+        if query:
+            search_pattern = f"%{query}%"
+            cur.execute(
+                """
+                SELECT SystemCode, SystemDescriptionENG
+                FROM SystemList
+                WHERE SystemCode LIKE %s OR SystemDescriptionENG LIKE %s
+                ORDER BY SystemCode
+                LIMIT %s
+                """,
+                (search_pattern, search_pattern, limit)
+            )
+        else:
+            cur.execute(
+                """
+                SELECT SystemCode, SystemDescriptionENG
+                FROM SystemList
+                ORDER BY SystemCode
+                LIMIT %s
+                """,
+                (limit,)
+            )
+        results = cur.fetchall()
+        return jsonify([{
+            'code': r['SystemCode'],
+            'label': f"{r['SystemCode']} - {r['SystemDescriptionENG'] or ''}"
+        } for r in results])
+    except Exception as e:
+        return jsonify([])
+    finally:
+        conn.close()

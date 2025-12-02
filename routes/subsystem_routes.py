@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, render_template
+from flask import Blueprint, request, redirect, render_template, jsonify
 from models.subsystem import SubsystemModel
 from models.system import SystemModel
 from database import create_connection
@@ -1156,3 +1156,51 @@ def delete_subsystem(subsystem_code):
     """删除子系统"""
     SubsystemModel.delete_subsystem(subsystem_code)
     return redirect('/subsystems')
+
+@subsystem_bp.route('/api/subsystems/autocomplete')
+def autocomplete_subsystems():
+    """子系统代码自动补齐API"""
+    query = (request.args.get('q') or '').strip()
+    system_code = (request.args.get('system_code') or '').strip()
+    limit = int(request.args.get('limit', 20))
+    
+    conn = create_connection()
+    if not conn:
+        return jsonify([])
+    
+    try:
+        cur = conn.cursor(dictionary=True)
+        conditions = []
+        params = []
+        
+        if system_code:
+            conditions.append("SystemCode = %s")
+            params.append(system_code)
+        
+        if query:
+            search_pattern = f"%{query}%"
+            conditions.append("(SubSystemCode LIKE %s OR SubSystemDescriptionENG LIKE %s)")
+            params.extend([search_pattern, search_pattern])
+        
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        cur.execute(
+            f"""
+            SELECT SubSystemCode, SubSystemDescriptionENG, SystemCode
+            FROM SubsystemList
+            WHERE {where_clause}
+            ORDER BY SubSystemCode
+            LIMIT %s
+            """,
+            tuple(params + [limit])
+        )
+        results = cur.fetchall()
+        return jsonify([{
+            'code': r['SubSystemCode'],
+            'label': f"{r['SubSystemCode']} - {r['SubSystemDescriptionENG'] or ''}",
+            'system_code': r['SystemCode']
+        } for r in results])
+    except Exception as e:
+        return jsonify([])
+    finally:
+        conn.close()
