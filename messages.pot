@@ -1,0 +1,824 @@
+# Translations template for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-12-02 17:46+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: myenv/Lib/site-packages/click/_termui_impl.py:613
+#: venv/Lib/site-packages/click/_termui_impl.py:613
+#, python-brace-format
+msgid "{editor}: Editing failed"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/_termui_impl.py:617
+#: venv/Lib/site-packages/click/_termui_impl.py:617
+#, python-brace-format
+msgid "{editor}: Editing failed: {e}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1114
+#: myenv/Lib/site-packages/click/core.py:1151
+#: venv/Lib/site-packages/click/core.py:1114
+#: venv/Lib/site-packages/click/core.py:1151
+#, python-brace-format
+msgid "{text} {deprecated_message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1170
+#: venv/Lib/site-packages/click/core.py:1170
+msgid "Options"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1245
+#: venv/Lib/site-packages/click/core.py:1245
+#, python-brace-format
+msgid "Got unexpected extra argument ({args})"
+msgid_plural "Got unexpected extra arguments ({args})"
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/click/core.py:1264
+#: venv/Lib/site-packages/click/core.py:1264
+#, python-brace-format
+msgid "DeprecationWarning: The command {name!r} is deprecated.{extra_message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1448
+#: venv/Lib/site-packages/click/core.py:1448
+msgid "Aborted!"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1822
+#: venv/Lib/site-packages/click/core.py:1822
+msgid "Commands"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1853
+#: venv/Lib/site-packages/click/core.py:1853
+msgid "Missing command."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1931
+#: venv/Lib/site-packages/click/core.py:1931
+#, python-brace-format
+msgid "No such command {name!r}."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:2355
+#: venv/Lib/site-packages/click/core.py:2355
+msgid "Value must be an iterable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:2378
+#: venv/Lib/site-packages/click/core.py:2378
+#, python-brace-format
+msgid "Takes {nargs} values but 1 was given."
+msgid_plural "Takes {nargs} values but {len} were given."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/click/core.py:2567
+#: venv/Lib/site-packages/click/core.py:2567
+#, python-brace-format
+msgid ""
+"DeprecationWarning: The {param_type} {name!r} is "
+"deprecated.{extra_message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3015
+#: venv/Lib/site-packages/click/core.py:3015
+#, python-brace-format
+msgid "env var: {var}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3018
+#: venv/Lib/site-packages/click/core.py:3018
+#, python-brace-format
+msgid "default: {default}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3022
+#: venv/Lib/site-packages/click/core.py:3022
+msgid "required"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3082
+#: venv/Lib/site-packages/click/core.py:3082
+msgid "(dynamic)"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/decorators.py:465
+#: venv/Lib/site-packages/click/decorators.py:465
+#, python-format
+msgid "%(prog)s, version %(version)s"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/decorators.py:522
+#: venv/Lib/site-packages/click/decorators.py:522
+msgid "Show the version and exit."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/decorators.py:548
+#: venv/Lib/site-packages/click/decorators.py:548
+msgid "Show this message and exit."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:50
+#: myenv/Lib/site-packages/click/exceptions.py:89
+#: venv/Lib/site-packages/click/exceptions.py:50
+#: venv/Lib/site-packages/click/exceptions.py:89
+#, python-brace-format
+msgid "Error: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:81
+#: venv/Lib/site-packages/click/exceptions.py:81
+#, python-brace-format
+msgid "Try '{command} {option}' for help."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:130
+#: venv/Lib/site-packages/click/exceptions.py:130
+#, python-brace-format
+msgid "Invalid value: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:132
+#: venv/Lib/site-packages/click/exceptions.py:132
+#, python-brace-format
+msgid "Invalid value for {param_hint}: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:190
+#: venv/Lib/site-packages/click/exceptions.py:190
+msgid "Missing argument"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:192
+#: venv/Lib/site-packages/click/exceptions.py:192
+msgid "Missing option"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:194
+#: venv/Lib/site-packages/click/exceptions.py:194
+msgid "Missing parameter"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:196
+#: venv/Lib/site-packages/click/exceptions.py:196
+#, python-brace-format
+msgid "Missing {param_type}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:203
+#: venv/Lib/site-packages/click/exceptions.py:203
+#, python-brace-format
+msgid "Missing parameter: {param_name}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:223
+#: venv/Lib/site-packages/click/exceptions.py:223
+#, python-brace-format
+msgid "No such option: {name}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:235
+#: venv/Lib/site-packages/click/exceptions.py:235
+#, python-brace-format
+msgid "Did you mean {possibility}?"
+msgid_plural "(Possible options: {possibilities})"
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:282
+#: venv/Lib/site-packages/click/exceptions.py:282
+msgid "unknown error"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:289
+#: venv/Lib/site-packages/click/exceptions.py:289
+#, python-brace-format
+msgid "Could not open file {filename!r}: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/formatting.py:156
+#: venv/Lib/site-packages/click/formatting.py:156
+msgid "Usage:"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/parser.py:199
+#: venv/Lib/site-packages/click/parser.py:199
+#, python-brace-format
+msgid "Argument {name!r} takes {nargs} values."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/parser.py:381
+#: venv/Lib/site-packages/click/parser.py:381
+#, python-brace-format
+msgid "Option {name!r} does not take a value."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/parser.py:444
+#: venv/Lib/site-packages/click/parser.py:444
+#, python-brace-format
+msgid "Option {name!r} requires an argument."
+msgid_plural "Option {name!r} requires {nargs} arguments."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/click/shell_completion.py:332
+#: venv/Lib/site-packages/click/shell_completion.py:332
+msgid "Shell completion is not supported for Bash versions older than 4.4."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/shell_completion.py:339
+#: venv/Lib/site-packages/click/shell_completion.py:339
+msgid "Couldn't detect Bash version, shell completion is not supported."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:165
+#: venv/Lib/site-packages/click/termui.py:165
+msgid "Repeat for confirmation"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:181
+#: venv/Lib/site-packages/click/termui.py:181
+msgid "Error: The value you entered was invalid."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:183
+#: venv/Lib/site-packages/click/termui.py:183
+#, python-brace-format
+msgid "Error: {e.message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:194
+#: venv/Lib/site-packages/click/termui.py:194
+msgid "Error: The two entered values do not match."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:253
+#: venv/Lib/site-packages/click/termui.py:253
+msgid "Error: invalid input"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:872
+#: venv/Lib/site-packages/click/termui.py:872
+msgid "Press any key to continue..."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:332
+#: venv/Lib/site-packages/click/types.py:332
+#, python-brace-format
+msgid ""
+"Choose from:\n"
+"\t{choices}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:369
+#: venv/Lib/site-packages/click/types.py:369
+#, python-brace-format
+msgid "{value!r} is not {choice}."
+msgid_plural "{value!r} is not one of {choices}."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/click/types.py:460
+#: venv/Lib/site-packages/click/types.py:460
+#, python-brace-format
+msgid "{value!r} does not match the format {format}."
+msgid_plural "{value!r} does not match the formats {formats}."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/click/types.py:482
+#: venv/Lib/site-packages/click/types.py:482
+#, python-brace-format
+msgid "{value!r} is not a valid {number_type}."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:538
+#: venv/Lib/site-packages/click/types.py:538
+#, python-brace-format
+msgid "{value} is not in the range {range}."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:719
+#: venv/Lib/site-packages/click/types.py:719
+#, python-brace-format
+msgid "{value!r} is not a valid boolean. Recognized values: {states}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:747
+#: venv/Lib/site-packages/click/types.py:747
+#, python-brace-format
+msgid "{value!r} is not a valid UUID."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:937
+#: venv/Lib/site-packages/click/types.py:937
+msgid "file"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:939
+#: venv/Lib/site-packages/click/types.py:939
+msgid "directory"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:941
+#: venv/Lib/site-packages/click/types.py:941
+msgid "path"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:988
+#: venv/Lib/site-packages/click/types.py:988
+#, python-brace-format
+msgid "{name} {filename!r} does not exist."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:997
+#: venv/Lib/site-packages/click/types.py:997
+#, python-brace-format
+msgid "{name} {filename!r} is a file."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1005
+#: venv/Lib/site-packages/click/types.py:1005
+#, python-brace-format
+msgid "{name} {filename!r} is a directory."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1014
+#: venv/Lib/site-packages/click/types.py:1014
+#, python-brace-format
+msgid "{name} {filename!r} is not readable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1023
+#: venv/Lib/site-packages/click/types.py:1023
+#, python-brace-format
+msgid "{name} {filename!r} is not writable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1032
+#: venv/Lib/site-packages/click/types.py:1032
+#, python-brace-format
+msgid "{name} {filename!r} is not executable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1099
+#: venv/Lib/site-packages/click/types.py:1099
+#, python-brace-format
+msgid "{len_type} values are required, but {len_value} was given."
+msgid_plural "{len_type} values are required, but {len_value} were given."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/flask_wtf/file.py:55
+#: myenv/Lib/site-packages/wtforms/validators.py:293
+#: myenv/Lib/site-packages/wtforms/validators.py:323
+#: venv/Lib/site-packages/flask_wtf/file.py:55
+#: venv/Lib/site-packages/wtforms/validators.py:293
+#: venv/Lib/site-packages/wtforms/validators.py:323
+msgid "This field is required."
+msgstr ""
+
+#: myenv/Lib/site-packages/flask_wtf/file.py:94
+#: venv/Lib/site-packages/flask_wtf/file.py:94
+#, python-brace-format
+msgid "File does not have an approved extension: {extensions}"
+msgstr ""
+
+#: myenv/Lib/site-packages/flask_wtf/file.py:101
+#: venv/Lib/site-packages/flask_wtf/file.py:101
+msgid "File does not have an approved extension."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:86
+#: venv/Lib/site-packages/wtforms/validators.py:86
+#, python-format
+msgid "Invalid field name '%s'."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:99
+#: venv/Lib/site-packages/wtforms/validators.py:99
+#, python-format
+msgid "Field must be equal to %(other_name)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:146
+#: venv/Lib/site-packages/wtforms/validators.py:146
+#, python-format
+msgid "Field must be at least %(min)d character long."
+msgid_plural "Field must be at least %(min)d characters long."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:152
+#: venv/Lib/site-packages/wtforms/validators.py:152
+#, python-format
+msgid "Field cannot be longer than %(max)d character."
+msgid_plural "Field cannot be longer than %(max)d characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:158
+#: venv/Lib/site-packages/wtforms/validators.py:158
+#, python-format
+msgid "Field must be exactly %(max)d character long."
+msgid_plural "Field must be exactly %(max)d characters long."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:164
+#: venv/Lib/site-packages/wtforms/validators.py:164
+#, python-format
+msgid "Field must be between %(min)d and %(max)d characters long."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:216
+#: venv/Lib/site-packages/wtforms/validators.py:216
+#, python-format
+msgid "Number must be at least %(min)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:219
+#: venv/Lib/site-packages/wtforms/validators.py:219
+#, python-format
+msgid "Number must be at most %(max)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:222
+#: venv/Lib/site-packages/wtforms/validators.py:222
+#, python-format
+msgid "Number must be between %(min)s and %(max)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:358
+#: venv/Lib/site-packages/wtforms/validators.py:358
+msgid "Invalid input."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:422
+#: venv/Lib/site-packages/wtforms/validators.py:422
+msgid "Invalid email address."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:460
+#: venv/Lib/site-packages/wtforms/validators.py:460
+msgid "Invalid IP address."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:503
+#: venv/Lib/site-packages/wtforms/validators.py:503
+msgid "Invalid Mac address."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:540
+#: venv/Lib/site-packages/wtforms/validators.py:540
+msgid "Invalid URL."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:561
+#: venv/Lib/site-packages/wtforms/validators.py:561
+msgid "Invalid UUID."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:595
+#: venv/Lib/site-packages/wtforms/validators.py:595
+#, python-format
+msgid "Invalid value, must be one of: %(values)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:631
+#: venv/Lib/site-packages/wtforms/validators.py:631
+#, python-format
+msgid "Invalid value, can't be any of: %(values)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:700
+#: venv/Lib/site-packages/wtforms/validators.py:700
+msgid "This field cannot be edited."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:716
+#: venv/Lib/site-packages/wtforms/validators.py:716
+msgid "This field is disabled and cannot have a value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/core.py:96
+#: venv/Lib/site-packages/wtforms/csrf/core.py:96
+msgid "Invalid CSRF Token."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/session.py:64
+#: venv/Lib/site-packages/wtforms/csrf/session.py:64
+msgid "CSRF token missing."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/session.py:72
+#: venv/Lib/site-packages/wtforms/csrf/session.py:72
+msgid "CSRF failed."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/session.py:77
+#: venv/Lib/site-packages/wtforms/csrf/session.py:77
+msgid "CSRF token expired."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:142
+#: venv/Lib/site-packages/wtforms/fields/choices.py:142
+msgid "Invalid Choice: could not coerce."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:149
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:203
+#: venv/Lib/site-packages/wtforms/fields/choices.py:149
+#: venv/Lib/site-packages/wtforms/fields/choices.py:203
+msgid "Choices cannot be None."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:155
+#: venv/Lib/site-packages/wtforms/fields/choices.py:155
+msgid "Not a valid choice."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:194
+#: venv/Lib/site-packages/wtforms/fields/choices.py:194
+msgid "Invalid choice(s): one or more data inputs could not be coerced."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:212
+#: venv/Lib/site-packages/wtforms/fields/choices.py:212
+#, python-format
+msgid "'%(value)s' is not a valid choice for this field."
+msgid_plural "'%(value)s' are not valid choices for this field."
+msgstr[0] ""
+msgstr[1] ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:52
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:52
+msgid "Not a valid datetime value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:78
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:78
+msgid "Not a valid date value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:104
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:104
+msgid "Not a valid time value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:149
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:149
+msgid "Not a valid week value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:82
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:92
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:82
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:92
+msgid "Not a valid integer value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:168
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:168
+msgid "Not a valid decimal value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:197
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:197
+msgid "Not a valid float value."
+msgstr ""
+
+#: templates/base_industrial.html:475 templates/precom_task_edit.html:3
+msgid "预试车管理系统"
+msgstr ""
+
+#: templates/base_industrial.html:480 templates/precom_task_edit.html:112
+msgid "首页"
+msgstr ""
+
+#: templates/base_industrial.html:483 templates/precom_task_edit.html:308
+msgid "系统"
+msgstr ""
+
+#: templates/base_industrial.html:486 templates/precom_task_edit.html:317
+msgid "子系统"
+msgstr ""
+
+#: templates/base_industrial.html:489
+msgid "试压包"
+msgstr ""
+
+#: templates/base_industrial.html:493 templates/precom_task_edit.html:113
+msgid "预试车任务管理"
+msgstr ""
+
+#: templates/base_industrial.html:496
+msgid "人孔检查"
+msgstr ""
+
+#: templates/base_industrial.html:497
+msgid "电机单试"
+msgstr ""
+
+#: templates/base_industrial.html:498
+msgid "台件安装"
+msgstr ""
+
+#: templates/base_industrial.html:499
+msgid "回路测试"
+msgstr ""
+
+#: templates/base_industrial.html:500
+msgid "最终对中"
+msgstr ""
+
+#: templates/base_industrial.html:501
+msgid "MRT 联动测试"
+msgstr ""
+
+#: templates/base_industrial.html:507
+msgid "备份"
+msgstr ""
+
+#: templates/base_industrial.html:512
+msgid "账户"
+msgstr ""
+
+#: templates/base_industrial.html:516
+msgid "个人信息"
+msgstr ""
+
+#: templates/base_industrial.html:525 templates/base_industrial.html:531
+msgid "中文"
+msgstr ""
+
+#: templates/base_industrial.html:547
+msgid "退出"
+msgstr ""
+
+#: templates/base_industrial.html:551
+msgid "登录"
+msgstr ""
+
+#: templates/precom_task_edit.html:3
+msgid "预试车任务编辑"
+msgstr ""
+
+#: templates/precom_task_edit.html:108
+msgid "编辑预试车任务"
+msgstr ""
+
+#: templates/precom_task_edit.html:108
+msgid "新建预试车任务"
+msgstr ""
+
+#: templates/precom_task_edit.html:114
+msgid "编辑"
+msgstr ""
+
+#: templates/precom_task_edit.html:114
+msgid "新建"
+msgstr ""
+
+#: templates/precom_task_edit.html:120
+msgid "返回列表"
+msgstr ""
+
+#: templates/precom_task_edit.html:126
+msgid "删除任务"
+msgstr ""
+
+#: templates/precom_task_edit.html:137
+msgid "任务基本信息"
+msgstr ""
+
+#: templates/precom_task_edit.html:145
+msgid "施工进度"
+msgstr ""
+
+#: templates/precom_task_edit.html:163 templates/precom_task_edit.html:463
+msgid "操作"
+msgstr ""
+
+#: templates/precom_task_edit.html:278
+msgid "新增关键工程量"
+msgstr ""
+
+#: templates/precom_task_edit.html:284
+msgid "基础属性"
+msgstr ""
+
+#: templates/precom_task_edit.html:288
+msgid "任务类型"
+msgstr ""
+
+#: templates/precom_task_edit.html:347
+msgid "识别信息"
+msgstr ""
+
+#: templates/precom_task_edit.html:362
+msgid "新增图纸号"
+msgstr ""
+
+#: templates/precom_task_edit.html:380
+msgid "任务描述"
+msgstr ""
+
+#: templates/precom_task_edit.html:389
+msgid "测试参数"
+msgstr ""
+
+#: templates/precom_task_edit.html:393
+msgid "测试类型"
+msgstr ""
+
+#: templates/precom_task_edit.html:398
+msgid "总数量"
+msgstr ""
+
+#: templates/precom_task_edit.html:403
+msgid "已完成数量"
+msgstr ""
+
+#: templates/precom_task_edit.html:413
+msgid "测试计划时间"
+msgstr ""
+
+#: templates/precom_task_edit.html:418
+msgid "测试实际时间"
+msgstr ""
+
+#: templates/precom_task_edit.html:427
+msgid "保存"
+msgstr ""
+
+#: templates/precom_task_edit.html:439
+msgid "测试资料附件"
+msgstr ""
+
+#: templates/precom_task_edit.html:441
+msgid "导出"
+msgstr ""
+
+#: templates/precom_task_edit.html:446 templates/precom_task_edit.html:453
+msgid "上传附件"
+msgstr ""
+
+#: templates/precom_task_edit.html:462
+msgid "文件名"
+msgstr ""
+
+#: templates/precom_task_edit.html:480
+msgid "暂无附件"
+msgstr ""
+
+#: templates/precom_task_edit.html:496
+msgid "模板"
+msgstr ""
+
+#: templates/precom_task_edit.html:502
+msgid "导入"
+msgstr ""
+
+#: templates/precom_task_edit.html:523
+msgid "描述（必填）"
+msgstr ""
+
+#: templates/precom_task_edit.html:527
+msgid "-- 选择 CATEGORY --"
+msgstr ""
+
+#: templates/precom_task_edit.html:536
+msgid "-- 选择 CAUSE --"
+msgstr ""
+
+#: templates/precom_task_edit.html:559
+msgid "新增尾项"
+msgstr ""
+
+#: templates/precom_task_edit.html:569
+msgid "描述"
+msgstr ""
+
+#: templates/precom_task_edit.html:573
+msgid "提出日期"
+msgstr ""
+

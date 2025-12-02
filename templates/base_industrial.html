@@ -71,13 +71,18 @@
         .top-navbar .nav-link {
             color: rgba(255,255,255,0.9);
             font-weight: 600;
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-            margin: 0 0.25rem;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.85rem;
+            margin: 0 0.2rem;
             border-radius: 6px;
             transition: all 0.2s ease;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            min-width: fit-content;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
         }
         
         .top-navbar .nav-link:hover {
@@ -102,17 +107,20 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             margin-top: 0.5rem;
             padding: 0.5rem 0;
-            min-width: 200px;
+            min-width: 280px;
         }
         
         .top-navbar .dropdown-item {
             padding: 0.625rem 1.25rem;
             color: var(--text-primary);
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
             transition: all 0.2s ease;
+            white-space: normal;
+            min-width: 280px;
+            word-wrap: break-word;
         }
         
         .top-navbar .dropdown-item:hover {
@@ -212,6 +220,32 @@
             font-size: 0.8125rem;
             letter-spacing: 0.6px;
             border: none;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+        
+        /* 小按钮保持紧凑 */
+        .btn-sm {
+            padding: 0.375rem 0.875rem;
+            font-size: 0.75rem;
+            min-width: auto;
+            letter-spacing: 0.3px;
+        }
+        
+        /* 表格列标题自适应宽度，支持长文本 */
+        table th {
+            white-space: normal;
+            overflow: visible;
+            word-wrap: break-word;
+            min-width: 100px;
+        }
+        
+        /* 表单标签自适应宽度 */
+        .form-label {
+            display: block;
+            width: 100%;
+            white-space: normal;
+            word-wrap: break-word;
         }
         
         .btn-primary {
@@ -361,11 +395,13 @@
         
         .card-industrial-header h5 {
             margin: 0;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 800;
             color: var(--primary-blue-dark);
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.5px;
+            word-wrap: break-word;
+            white-space: normal;
         }
         
         .card-industrial-body {
@@ -431,7 +467,8 @@
             margin-bottom: 0.375rem;
             font-size: 0.8125rem;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.3px;
+            line-height: 1.4;
         }
         
         .form-control,
@@ -460,10 +497,10 @@
             font-weight: 900;
             font-size: 1.1em;
         }
-        
-        /* ==================== 自定义样式块 ==================== */
-        {% block extra_styles %}{% endblock %}
     </style>
+    
+    <!-- 自定义样式块 -->
+    {% block extra_styles %}{% endblock %}
 </head>
 <body>
     <!-- 顶部导航栏 -->
@@ -472,63 +509,93 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div class="brand">
                     <i class="bi bi-gear-wide-connected"></i>
-                    <span>预试车管理系统</span>
+                    <span class="d-none d-xl-inline">{{ _('预试车管理系统') }}</span>
+                    <span class="d-xl-none">{{ _('预试车') }}</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <div class="d-flex gap-1">
-                        <a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}">
-                            <i class="bi bi-house-door"></i> 首页
+                        <a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}" title="{{ _('首页') }}">
+                            <i class="bi bi-house-door"></i>
+                            <span class="d-none d-lg-inline">{{ _('首页') }}</span>
                         </a>
-                        <a href="/systems" class="nav-link {% if active_page == 'systems' %}active{% endif %}">
-                            <i class="bi bi-diagram-3"></i> 系统
+                        <a href="/systems" class="nav-link {% if active_page == 'systems' %}active{% endif %}" title="{{ _('系统') }}">
+                            <i class="bi bi-diagram-3"></i>
+                            <span class="d-none d-lg-inline">{{ _('系统') }}</span>
                         </a>
-                        <a href="/subsystems" class="nav-link {% if active_page == 'subsystems' %}active{% endif %}">
-                            <i class="bi bi-bezier2"></i> 子系统
+                        <a href="/subsystems" class="nav-link {% if active_page == 'subsystems' %}active{% endif %}" title="{{ _('子系统') }}">
+                            <i class="bi bi-bezier2"></i>
+                            <span class="d-none d-lg-inline">{{ _('子系统') }}</span>
                         </a>
-                        <a href="/test_packages" class="nav-link {% if active_page == 'test_packages' %}active{% endif %}">
-                            <i class="bi bi-box-seam"></i> 试压包
+                        <a href="/test_packages" class="nav-link {% if active_page == 'test_packages' %}active{% endif %}" title="{{ _('试压包') }}">
+                            <i class="bi bi-box-seam"></i>
+                            <span class="d-none d-lg-inline">{{ _('试压包') }}</span>
                         </a>
                         <div class="dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="precomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-clipboard-check"></i> 预试车任务管理
+                            <a class="nav-link dropdown-toggle" href="#" id="precomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('预试车任务管理') }}">
+                                <i class="bi bi-clipboard-check"></i>
+                                <span class="d-none d-xl-inline">{{ _('预试车任务') }}</span>
+                                <span class="d-xl-none">{{ _('任务') }}</span>
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="precomDropdown">
-                                <li><a class="dropdown-item" href="/precom/manhole"><i class="bi bi-door-open"></i> 人孔检查</a></li>
-                                <li><a class="dropdown-item" href="/precom/motor_solo"><i class="bi bi-lightning-charge-fill"></i> 电机单试</a></li>
-                                <li><a class="dropdown-item" href="/precom/skid_install"><i class="bi bi-hdd-network"></i> 台件安装</a></li>
-                                <li><a class="dropdown-item" href="/precom/loop_test"><i class="bi bi-activity"></i> 回路测试</a></li>
-                                <li><a class="dropdown-item" href="/precom/alignment"><i class="bi bi-arrow-repeat"></i> 最终对中</a></li>
-                                <li><a class="dropdown-item" href="/precom/mrt"><i class="bi bi-diagram-3"></i> MRT 联动测试</a></li>
+                                <li><a class="dropdown-item" href="/precom/manhole"><i class="bi bi-door-open"></i> {{ _('人孔检查') }}</a></li>
+                                <li><a class="dropdown-item" href="/precom/motor_solo"><i class="bi bi-lightning-charge-fill"></i> {{ _('电机单试') }}</a></li>
+                                <li><a class="dropdown-item" href="/precom/skid_install"><i class="bi bi-hdd-network"></i> {{ _('台件安装') }}</a></li>
+                                <li><a class="dropdown-item" href="/precom/loop_test"><i class="bi bi-activity"></i> {{ _('回路测试') }}</a></li>
+                                <li><a class="dropdown-item" href="/precom/alignment"><i class="bi bi-arrow-repeat"></i> {{ _('最终对中') }}</a></li>
+                                <li><a class="dropdown-item" href="/precom/mrt"><i class="bi bi-diagram-3"></i> {{ _('MRT 联动测试') }}</a></li>
                                 <li><a class="dropdown-item" href="/precom/function_test"><i class="bi bi-check2-square"></i> Function Test</a></li>
                             </ul>
                         </div>
                         {% if has_permission('backup.manage') %}
-                        <a href="/backup" class="nav-link {% if active_page == 'backup' %}active{% endif %}">
-                            <i class="bi bi-database"></i> 备份
+                        <a href="/backup" class="nav-link {% if active_page == 'backup' %}active{% endif %}" title="{{ _('备份') }}">
+                            <i class="bi bi-database"></i>
+                            <span class="d-none d-lg-inline">{{ _('备份') }}</span>
                         </a>
                         {% endif %}
                         {% if has_permission('user.view') %}
-                            <a href="/admin/users" class="nav-link {% if active_page == 'admin_users' %}active{% endif %}">
-                                <i class="bi bi-shield-lock"></i> 账户
+                            <a href="/admin/users" class="nav-link {% if active_page == 'admin_users' %}active{% endif %}" title="{{ _('账户') }}">
+                                <i class="bi bi-shield-lock"></i>
+                                <span class="d-none d-lg-inline">{{ _('账户') }}</span>
                             </a>
                         {% else %}
-                            <a href="/profile" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
-                                <i class="bi bi-person-circle"></i> 个人信息
+                            <a href="/profile" class="nav-link {% if active_page == 'profile' %}active{% endif %}" title="{{ _('个人信息') }}">
+                                <i class="bi bi-person-circle"></i>
+                                <span class="d-none d-lg-inline">{{ _('个人信息') }}</span>
                             </a>
                         {% endif %}
                     </div>
                     <div class="d-flex align-items-center gap-2">
+                        <!-- 语言切换器 -->
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-translate"></i>
+                                {% if get_locale() == 'zh_CN' %}{{ _('中文') }}
+                                {% elif get_locale() == 'en_US' %}English
+                                {% else %}Русский{% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                                <li><a class="dropdown-item {% if get_locale() == 'zh_CN' %}active{% endif %}" href="/set_language/zh_CN">
+                                    🇨🇳 {{ _('中文') }}
+                                </a></li>
+                                <li><a class="dropdown-item {% if get_locale() == 'en_US' %}active{% endif %}" href="/set_language/en_US">
+                                    🇺🇸 English
+                                </a></li>
+                                <li><a class="dropdown-item {% if get_locale() == 'ru_RU' %}active{% endif %}" href="/set_language/ru_RU">
+                                    🇷🇺 Русский
+                                </a></li>
+                            </ul>
+                        </div>
                         {% if current_user %}
                             <span class="user-pill">
                                 <i class="bi bi-person-badge"></i>
                                 {{ current_user.full_name or current_user.username }}
                             </span>
                             <a href="/logout" class="nav-link">
-                                <i class="bi bi-box-arrow-right"></i> 退出
+                                <i class="bi bi-box-arrow-right"></i> {{ _('退出') }}
                             </a>
                         {% else %}
                             <a href="/login" class="nav-link">
-                                <i class="bi bi-box-arrow-in-right"></i> 登录
+                                <i class="bi bi-box-arrow-in-right"></i> {{ _('登录') }}
                             </a>
                         {% endif %}
                     </div>

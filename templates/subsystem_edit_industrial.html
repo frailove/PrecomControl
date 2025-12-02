@@ -1,6 +1,6 @@
 {% extends "base_industrial.html" %}
 
-{% block title %}{{ '新增子系统' if mode == 'create' else '编辑子系统' }} - 预试车管理系统{% endblock %}
+{% block title %}{{ _('新增子系统') if mode == 'create' else _('编辑子系统') }} - {{ _('预试车管理系统') }}{% endblock %}
 
 {% block extra_styles %}
 <style>
@@ -54,14 +54,14 @@
     <div class="container-fluid">
         <h1>
             <i class="bi bi-diagram-3"></i>
-            {{ '新增子系统' if mode == 'create' else '编辑子系统' }}
+            {{ _('新增子系统') if mode == 'create' else _('编辑子系统') }}
         </h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
-                <li class="breadcrumb-item"><a href="/subsystems">子系统管理</a></li>
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> {{ _('首页') }}</a></li>
+                <li class="breadcrumb-item"><a href="/subsystems">{{ _('子系统管理') }}</a></li>
                 <li class="breadcrumb-item active" aria-current="page">
-                    {{ '新增子系统' if mode == 'create' else subsystem.SubSystemCode }}
+                    {{ _('新增子系统') if mode == 'create' else subsystem.SubSystemCode }}
                 </li>
             </ol>
         </nav>
@@ -70,7 +70,7 @@
 
 <div class="page-actions">
     <a href="/subsystems" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> 返回列表
+        <i class="bi bi-arrow-left"></i> {{ _('返回列表') }}
     </a>
 </div>
 
@@ -82,8 +82,8 @@
 
 {% if mode == 'edit' and subsystem is none %}
 <div class="alert alert-warning">
-    指定的子系统不存在或已被删除。
-    <a href="/subsystems" class="alert-link">返回子系统列表</a>
+    {{ _('指定的子系统不存在或已被删除') }}
+    <a href="/subsystems" class="alert-link">{{ _('返回列表') }}</a>
 </div>
 {% else %}
 <div class="form-card">
@@ -91,19 +91,19 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="row g-4">
             <div class="col-md-4">
-                <label class="form-label">子系统代码 *</label>
+                <label class="form-label">{{ _('子系统代码') }} *</label>
                 {% if mode == 'create' %}
                 <input type="text" class="form-control" name="SubSystemCode"
-                       value="{{ subsystem.SubSystemCode }}" required placeholder="例如：CD-101-A01">
+                       value="{{ subsystem.SubSystemCode }}" required placeholder="{{ _('例如') }}：CD-101-A01">
                 {% else %}
                 <input type="text" class="form-control" value="{{ subsystem.SubSystemCode }}" readonly>
-                <div class="form-text text-muted">子系统代码不可修改</div>
+                <div class="form-text text-muted">{{ _('子系统代码不可修改') }}</div>
                 {% endif %}
             </div>
             <div class="col-md-4">
-                <label class="form-label">所属系统 *</label>
+                <label class="form-label">{{ _('所属系统') }} *</label>
                 <select class="form-select" name="SystemCode" required>
-                    <option value="">请选择系统</option>
+                    <option value="">{{ _('请选择') }}</option>
                     {% for system in systems %}
                     <option value="{{ system.SystemCode }}"
                             {% if subsystem.SystemCode == system.SystemCode %}selected{% endif %}>
@@ -113,11 +113,11 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">类型 *</label>
+                <label class="form-label">{{ _('类型') }} *</label>
                 <select class="form-select" name="ProcessOrNonProcess" required>
-                    <option value="">请选择类型</option>
-                    <option value="Process" {% if subsystem.ProcessOrNonProcess == 'Process' %}selected{% endif %}>工艺</option>
-                    <option value="NonProcess" {% if subsystem.ProcessOrNonProcess == 'NonProcess' %}selected{% endif %}>非工艺</option>
+                    <option value="">{{ _('请选择') }}</option>
+                    <option value="Process" {% if subsystem.ProcessOrNonProcess == 'Process' %}selected{% endif %}>{{ _('工艺系统') }}</option>
+                    <option value="NonProcess" {% if subsystem.ProcessOrNonProcess == 'NonProcess' %}selected{% endif %}>{{ _('非工艺系统') }}</option>
                 </select>
             </div>
         </div>
@@ -126,12 +126,12 @@
 
         <div class="row g-4">
             <div class="col-md-6">
-                <label class="form-label">子系统描述（英文） *</label>
+                <label class="form-label">{{ _('子系统描述') }} *</label>
                 <input type="text" class="form-control" name="SubSystemDescriptionENG"
                        value="{{ subsystem.SubSystemDescriptionENG }}" required>
             </div>
             <div class="col-md-6">
-                <label class="form-label">子系统描述（俄文）</label>
+                <label class="form-label">{{ _('子系统描述') }} ({{ _('俄文') }})</label>
                 <input type="text" class="form-control" name="SubSystemDescriptionRUS"
                        value="{{ subsystem.SubSystemDescriptionRUS }}">
             </div>
@@ -139,23 +139,23 @@
 
         <div class="row g-4 mt-1">
             <div class="col-md-4">
-                <label class="form-label">优先级</label>
+                <label class="form-label">{{ _('优先级') }}</label>
                 <input type="number" class="form-control" name="Priority"
                        value="{{ subsystem.Priority or 0 }}" min="0" max="10">
             </div>
             <div class="col-md-8">
-                <label class="form-label">备注</label>
+                <label class="form-label">{{ _('备注') }}</label>
                 <textarea class="form-control" name="Remarks" rows="2"
-                          placeholder="可选">{{ subsystem.Remarks }}</textarea>
+                          placeholder="{{ _('可选') }}">{{ subsystem.Remarks }}</textarea>
             </div>
         </div>
 
         <div class="mt-4 text-end">
             <a href="/subsystems" class="btn btn-outline-secondary">
-                <i class="bi bi-x-circle"></i> 取消
+                <i class="bi bi-x-circle"></i> {{ _('取消') }}
             </a>
             <button type="submit" class="btn btn-primary ms-2">
-                <i class="bi bi-save"></i> {{ '创建子系统' if mode == 'create' else '保存修改' }}
+                <i class="bi bi-save"></i> {{ _('创建子系统') if mode == 'create' else _('保存修改') }}
             </button>
         </div>
     </form>

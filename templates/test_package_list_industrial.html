@@ -1,6 +1,6 @@
 {% extends "base_industrial.html" %}
 
-{% block title %}试压包管理 - 预试车管理系统{% endblock %}
+{% block title %}{{ _('试压包管理') }} - {{ _('预试车管理系统') }}{% endblock %}
 
 {% block extra_styles %}
 <style>
@@ -136,12 +136,12 @@
     <div>
         <h1>
             <i class="bi bi-box-seam-fill"></i>
-            试压包管理
+            {{ _('试压包管理') }}
         </h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
-                <li class="breadcrumb-item active">试压包管理</li>
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> {{ _('首页') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('试压包管理') }}</li>
             </ol>
         </nav>
     </div>
@@ -149,25 +149,25 @@
         <div class="col-auto">
             <div class="stat-card mini-card">
                 <h3>{{ total_count }}</h3>
-                <p>总试压包数</p>
+                <p>{{ _('总试压包数') }}</p>
             </div>
         </div>
         <div class="col-auto">
             <div class="stat-card mini-card border-left-success">
                 <h3>{{ completed_count }}</h3>
-                <p>已完成</p>
+                <p>{{ _('已完成') }}</p>
             </div>
         </div>
         <div class="col-auto">
             <div class="stat-card mini-card border-left-warning">
                 <h3>{{ in_progress_count }}</h3>
-                <p>进行中</p>
+                <p>{{ _('进行中') }}</p>
             </div>
         </div>
         <div class="col-auto">
             <div class="stat-card mini-card border-left-orange">
                 <h3>{{ pending_count }}</h3>
-                <p>待处理</p>
+                <p>{{ _('待处理') }}</p>
             </div>
         </div>
     </div>
@@ -180,41 +180,41 @@
         <div class="filter-row">
             <div class="row g-2">
                 <div class="col-md-2">
-                    <input type="text" class="form-control" name="q" placeholder="搜索试压包ID..." value="{{ search_query }}">
+                    <input type="text" class="form-control" name="q" placeholder="{{ _('搜索') }}..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-2">
                     <input type="text" class="form-control" name="system_code" id="testPackageSystemCodeInput"
-                           placeholder="全部系统" value="{{ filter_system }}"
+                           placeholder="{{ _('选择系统') }}" value="{{ filter_system }}"
                            list="testPackageSystemCodeAutocompleteList" autocomplete="off">
                     <datalist id="testPackageSystemCodeAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
                     <input type="text" class="form-control" name="subsystem_code" id="testPackageSubsystemCodeInput"
-                           placeholder="全部子系统" value="{{ filter_subsystem }}"
+                           placeholder="{{ _('选择子系统') }}" value="{{ filter_subsystem }}"
                            list="testPackageSubsystemCodeAutocompleteList" autocomplete="off">
                     <datalist id="testPackageSubsystemCodeAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="status">
-                        <option value="">全部状态</option>
-                        <option value="Pending" {% if filter_status == 'Pending' %}selected{% endif %}>Pending</option>
-                        <option value="In Progress" {% if filter_status == 'In Progress' %}selected{% endif %}>In Progress</option>
-                        <option value="Completed" {% if filter_status == 'Completed' %}selected{% endif %}>Completed</option>
+                        <option value="">{{ _('全部状态') }}</option>
+                        <option value="Pending" {% if filter_status == 'Pending' %}selected{% endif %}>{{ _('待处理') }}</option>
+                        <option value="In Progress" {% if filter_status == 'In Progress' %}selected{% endif %}>{{ _('进行中') }}</option>
+                        <option value="Completed" {% if filter_status == 'Completed' %}selected{% endif %}>{{ _('已完成') }}</option>
                     </select>
                 </div>
                 <div class="col-md-4">
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary flex-grow-1">
-                            <i class="bi bi-search"></i> 搜索
+                            <i class="bi bi-search"></i> {{ _('搜索') }}
                         </button>
                         <a href="/test_packages" class="btn btn-secondary">
-                            <i class="bi bi-arrow-clockwise"></i> 重置
+                            <i class="bi bi-arrow-clockwise"></i> {{ _('重置') }}
                         </a>
                         <button type="button" class="btn btn-warning" onclick="toggleFaclistFilter()">
-                            <i class="bi bi-funnel"></i> Faclist筛选
+                            <i class="bi bi-funnel"></i> {{ _('筛选') }}
                         </button>
                         <a class="btn btn-outline-warning" href="/test_packages/alerts">
-                            <i class="bi bi-activity"></i> 编制提醒
+                            <i class="bi bi-activity"></i> {{ _('编制提醒') }}
                         </a>
                     </div>
                 </div>
@@ -226,13 +226,13 @@
     <hr style="margin: 0.75rem 0;">
     <div class="faclist-scroll">
         <select class="form-select" name="subproject_code">
-            <option value="">全部项目</option>
+            <option value="">{{ _('全部') }} SubProject</option>
             {% for code in faclist_options.subproject_codes %}
             <option value="{{ code }}" {% if code == filter_subproject %}selected{% endif %}>{{ code }}</option>
             {% endfor %}
         </select>
         <select class="form-select" name="train">
-            <option value="">全部项目期</option>
+            <option value="">{{ _('全部') }} Train</option>
             {% for train in faclist_options.trains %}
             <option value="{{ train }}" {% if train == filter_train %}selected{% endif %}>{{ train }}</option>
             {% endfor %}

@@ -1,0 +1,98 @@
+# 最常用UI术语翻译速查表
+
+## 通用操作
+保存 | Save | Сохранить
+取消 | Cancel | Отмена
+删除 | Delete | Удалить
+编辑 | Edit | Редактировать  
+新建 | New | Создать
+新增 | Add | Добавить
+导出 | Export | Экспорт
+导入 | Import | Импорт
+搜索 | Search | Поиск
+筛选 | Filter | Фильтр
+刷新 | Refresh | Обновить
+返回 | Back | Назад
+返回列表 | Back to List | Вернуться к списку
+提交 | Submit | Отправить
+确认 | Confirm | Подтвердить
+关闭 | Close | Закрыть
+查看 | View | Просмотр
+上传 | Upload | Загрузить
+下载 | Download | Скачать
+模板 | Template | Шаблон
+
+## 页面元素
+首页 | Home | Главная
+列表 | List | Список
+详情 | Details | Детали
+信息 | Information | Информация
+任务 | Task | Задача
+操作 | Action | Действие
+状态 | Status | Статус
+描述 | Description | Описание
+备注 | Remarks | Примечание
+附件 | Attachments | Вложения
+
+## 预试车专用
+预试车管理系统 | Pre-commissioning Control System | Система управления предпусковыми испытаниями
+预试车任务管理 | Pre-comm Task Management | Управление задачами предпуска
+编辑预试车任务 | Edit Pre-commissioning Task | Редактировать задачу предпуска
+新建预试车任务 | New Pre-commissioning Task | Новая задача предпуска
+删除任务 | Delete Task | Удалить задачу
+任务基本信息 | Task Basic Information | Основная информация о задаче
+施工进度 | Construction Progress | Ход строительства
+基础属性 | Basic Properties | Основные свойства
+识别信息 | Identification Info | Идентификационная информация
+测试参数 | Test Parameters | Параметры испытания
+测试资料附件 | Test Attachments | Вложения испытаний
+
+## 任务类型
+人孔检查 | Manhole Inspection | Проверка люков
+电机单试 | Motor Solo Test | Индивидуальное испытание двигателя
+台件安装 | Skid Installation | Установка блочно-модульных систем
+回路测试 | Loop Test | Испытание контуров
+最终对中 | Final Alignment | Окончательная центровка
+MRT 联动测试 | MRT Mechanical Run Test | Механическое испытание MRT
+
+## 字段标签
+系统 | System | Система
+子系统 | Subsystem | Подсистема
+试压包 | Test Package | Пакет гидроиспытаний
+区域 Block | Area Block | Зона Block
+图纸号 | Drawing Number | Номер чертежа
+设备位号 | Tag Number | Номер бирки оборудования
+任务类型 | Task Type | Тип задачи
+任务描述 | Task Description | Описание задачи
+测试类型 | Test Type | Тип испытания
+总数量 | Total Quantity | Общее количество
+已完成数量 | Completed Quantity | Выполненное количество
+测试计划时间 | Planned Date | Плановая дата
+测试实际时间 | Actual Date | Фактическая дата
+执行人 | Performed By | Выполнено
+提出人 | Issued By | Выдано
+提出日期 | Issue Date | Дата выдачи
+
+## 状态/消息
+保存成功 | Save successful | Сохранение успешно
+删除成功 | Delete successful | Удаление успешно
+操作失败 | Operation failed | Операция не выполнена
+加载中 | Loading... | Загрузка...
+暂无数据 | No data | Нет данных
+暂无附件 | No attachments | Нет вложений
+暂无尾项 | No punch items | Нет пунктов дефектов
+数据加载失败 | Data loading failed | Ошибка загрузки данных
+请先选择文件 | Please select file first | Сначала выберите файл
+确认删除 | Confirm deletion | Подтвердить удаление
+
+## Punch List
+尾项 | Punch Item | Пункт дефектов
+新增尾项 | Add Punch Item | Добавить пункт дефектов
+整改 | Rectified | Исправлено
+验证 | Verified | Проверено
+已整改 | Rectified | Исправлено
+未整改 | Not Rectified | Не исправлено
+已验证 | Verified | Проверено
+未验证 | Not Verified | Не проверено
+已删除 | Deleted | Удалено
+

@@ -20,6 +20,36 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(FlaskConfig)
     
+    # 国际化配置
+    from flask_babel import Babel
+    
+    app.config['BABEL_DEFAULT_LOCALE'] = 'zh_CN'
+    app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+    app.config['LANGUAGES'] = {
+        'zh_CN': '中文',
+        'en_US': 'English',
+        'ru_RU': 'Русский'
+    }
+    
+    def get_locale():
+        # 1. 优先从URL参数读取
+        lang = request.args.get('lang')
+        if lang in app.config['LANGUAGES']:
+            return lang
+        # 2. 从cookie读取
+        lang = request.cookies.get('language')
+        if lang in app.config['LANGUAGES']:
+            return lang
+        # 3. 从用户设置读取（如果已登录）
+        if session.get('user'):
+            lang = session.get('user', {}).get('language')
+            if lang in app.config['LANGUAGES']:
+                return lang
+        # 4. 默认中文
+        return 'zh_CN'
+    
+    babel = Babel(app, locale_selector=get_locale)
+    
     # CSRF 保护（安全关键）
     from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
     csrf = CSRFProtect(app)
@@ -148,9 +178,12 @@ def create_app():
 
     @app.context_processor
     def inject_user():
+        from flask_babel import get_locale as babel_get_locale
         return {
             'current_user': session.get('user'),
-            'has_permission': has_permission
+            'has_permission': has_permission,
+            'get_locale': babel_get_locale,
+            'available_languages': app.config['LANGUAGES']
         }
     
     # 添加响应头，确保跨网络请求正常工作
@@ -204,6 +237,23 @@ def create_app():
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
 
+    # 语言切换路由
+    @app.route('/set_language/<language>')
+    def set_language(language):
+        from flask import make_response
+        if language not in app.config['LANGUAGES']:
+            language = 'zh_CN'
+        
+        response = make_response(redirect(request.referrer or url_for('index')))
+        # 设置cookie，有效期1年
+        response.set_cookie('language', language, max_age=365*24*60*60)
+        
+        # 如果用户已登录，保存语言偏好到session（未来可以保存到数据库）
+        if session.get('user'):
+            session['user']['language'] = language
+        
+        return response
+    
     # 首页（工业化风格）
     @app.route('/')
     def index():

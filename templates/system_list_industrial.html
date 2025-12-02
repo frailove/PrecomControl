@@ -1,4 +1,5 @@
-﻿{% extends "base_industrial.html" %}
+﻿{# CSS linter 会对 Jinja2 模板中的动态样式值报错，这些是误报可以忽略 #}
+{% extends "base_industrial.html" %}
 
 {% block title %}System Management - PrecomControl{% endblock %}
 
@@ -24,12 +25,12 @@
     
     .stat-card {
         background: white;
-    padding: 0.65rem 0.9rem;
+        padding: 0.65rem 0.9rem;
         border: 2px solid var(--border-color);
         border-left: 5px solid var(--primary-blue);
         border-radius: 8px;
         text-align: center;
-    min-width: 140px;
+        min-width: 140px;
     }
     
     .faclist-scroll {
@@ -87,12 +88,12 @@
     <div>
         <h1>
             <i class="bi bi-diagram-3-fill"></i>
-            系统管理
+            {{ _('系统管理') }}
         </h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
-                <li class="breadcrumb-item active">系统管理</li>
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> {{ _('首页') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('系统管理') }}</li>
             </ol>
         </nav>
     </div>
@@ -100,19 +101,19 @@
         <div class="col-auto">
             <div class="stat-card mini-card">
                 <h3>{{ total_count }}</h3>
-                <p>系统总数</p>
+                <p>{{ _('总系统数') }}</p>
             </div>
         </div>
         <div class="col-auto">
             <div class="stat-card mini-card border-left-success">
                 <h3>{{ process_count }}</h3>
-                <p>工艺系统</p>
+                <p>{{ _('工艺系统') }}</p>
             </div>
         </div>
         <div class="col-auto">
             <div class="stat-card mini-card border-left-orange">
                 <h3>{{ non_process_count }}</h3>
-                <p>非工艺系统</p>
+                <p>{{ _('非工艺系统') }}</p>
             </div>
         </div>
     </div>
@@ -126,30 +127,30 @@
             <div class="row g-2">
                 <div class="col-md-3">
                     <input type="text" class="form-control" name="q" id="systemSearchInput" 
-                           placeholder="搜索系统编码..." value="{{ search_query }}" 
+                           placeholder="{{ _('搜索') }}..." value="{{ search_query }}" 
                            list="systemAutocompleteList" autocomplete="off">
                     <datalist id="systemAutocompleteList"></datalist>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="type">
-                        <option value="">全部类型</option>
-                        <option value="Process" {% if filter_type == 'Process' %}selected{% endif %}>工艺</option>
-                        <option value="NonProcess" {% if filter_type == 'NonProcess' %}selected{% endif %}>非工艺</option>
+                        <option value="">{{ _('全部') }}</option>
+                        <option value="Process" {% if filter_type == 'Process' %}selected{% endif %}>{{ _('工艺系统') }}</option>
+                        <option value="NonProcess" {% if filter_type == 'NonProcess' %}selected{% endif %}>{{ _('非工艺系统') }}</option>
                     </select>
                 </div>
                 <div class="col-md-7">
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary flex-grow-1">
-                            <i class="bi bi-search"></i> 搜索
+                            <i class="bi bi-search"></i> {{ _('搜索') }}
                         </button>
                         <a href="/systems" class="btn btn-secondary">
-                            <i class="bi bi-arrow-clockwise"></i> 重置
+                            <i class="bi bi-arrow-clockwise"></i> {{ _('重置') }}
                         </a>
                         <button type="button" class="btn btn-warning" onclick="toggleFaclistFilter()">
-                            <i class="bi bi-funnel"></i> Faclist筛选
+                            <i class="bi bi-funnel"></i> {{ _('筛选') }}
                         </button>
                         <a class="btn btn-success" href="/systems/add">
-                            <i class="bi bi-plus-circle"></i> 新增系统
+                            <i class="bi bi-plus-circle"></i> {{ _('新增系统') }}
                         </a>
                     </div>
                 </div>
@@ -161,43 +162,43 @@
             <hr style="margin: 0.75rem 0;">
             <div class="faclist-scroll">
                 <select class="form-select" name="subproject_code">
-                    <option value="">全部项目</option>
+                    <option value="">{{ _('全部') }} SubProject</option>
                     {% for code in faclist_options.subproject_codes %}
                     <option value="{{ code }}" {% if code == filter_subproject %}selected{% endif %}>{{ code }}</option>
                     {% endfor %}
                 </select>
                 <select class="form-select" name="train">
-                    <option value="">全部项目期</option>
+                    <option value="">{{ _('全部') }} Train</option>
                     {% for train in faclist_options.trains %}
                     <option value="{{ train }}" {% if train == filter_train %}selected{% endif %}>{{ train }}</option>
                     {% endfor %}
                 </select>
                 <select class="form-select" name="unit">
-                    <option value="">全部装置</option>
+                    <option value="">{{ _('全部') }} Unit</option>
                     {% for unit in faclist_options.units %}
                     <option value="{{ unit }}" {% if unit == filter_unit %}selected{% endif %}>{{ unit }}</option>
                     {% endfor %}
                 </select>
                 <select class="form-select" name="bccquarter">
-                    <option value="">全部片区</option>
+                    <option value="">{{ _('全部') }} Quarter</option>
                     {% for quarter in faclist_options.bccquarters %}
                     <option value="{{ quarter }}" {% if quarter == filter_bccquarter %}selected{% endif %}>{{ quarter }}</option>
                     {% endfor %}
                 </select>
                 <select class="form-select" name="simpleblk">
-                    <option value="">全部大主项</option>
+                    <option value="">{{ _('全部') }} SimpleBlk</option>
                     {% for blk in faclist_options.simpleblks %}
                     <option value="{{ blk }}" {% if blk == filter_simpleblk %}selected{% endif %}>{{ blk }}</option>
                     {% endfor %}
                 </select>
                 <select class="form-select" name="mainblock">
-                    <option value="">全部主项</option>
+                    <option value="">{{ _('全部') }} MainBlock</option>
                     {% for mainblock in (available_mainblocks or []) %}
                     <option value="{{ mainblock }}" {% if mainblock == filter_mainblock %}selected{% endif %}>{{ mainblock }}</option>
                     {% endfor %}
                 </select>
                 <select class="form-select" name="block">
-                    <option value="">全部CIA主子项</option>
+                    <option value="">{{ _('全部') }} Block</option>
                     {% for blk in (available_blocks or []) %}
                     <option value="{{ blk }}" {% if blk == filter_block %}selected{% endif %}>{{ blk }}</option>
                     {% endfor %}
@@ -212,16 +213,16 @@
     <table class="table table-hover mb-0">
         <thead>
             <tr>
-                <th style="width: 150px;">系统编码</th>
-                <th style="width: 220px;">系统描述(EN)</th>
-                <th style="width: 140px;">类型</th>
-                <th style="width: 200px;">试压包统计</th>
-                <th style="width: 110px;">DIN总量</th>
-                <th style="width: 110px;">DIN完成量</th>
-                <th style="width: 200px;">焊接进度</th>
-                <th style="width: 200px;">测试进度</th>
-                <th style="width: 80px;">优先级</th>
-                <th style="width: 180px;">操作</th>
+                <th style="width: 150px;">{{ _('系统代码') }}</th>
+                <th style="width: 220px;">{{ _('系统描述') }}</th>
+                <th style="width: 140px;">{{ _('类型') }}</th>
+                <th style="width: 200px;">{{ _('试压包') }}</th>
+                <th style="width: 110px;">DIN {{ _('总数量') }}</th>
+                <th style="width: 110px;">DIN {{ _('已完成数量') }}</th>
+                <th style="width: 200px;">{{ _('焊接进度') }}</th>
+                <th style="width: 200px;">{{ _('测试进度') }}</th>
+                <th style="width: 80px;">{{ _('优先级') }}</th>
+                <th style="width: 180px;">{{ _('操作') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -234,22 +235,22 @@
                         {% if system.ProcessOrNonProcess == 'Process' %}
                         <span class="badge badge-completed">
                             <i class="bi bi-circle-fill"></i>
-                            工艺
+                            {{ _('工艺系统') }}
                         </span>
                         {% else %}
                         <span class="badge badge-pending">
                             <i class="bi bi-circle-fill"></i>
-                            非工艺
+                            {{ _('非工艺系统') }}
                         </span>
                         {% endif %}
                     </td>
                     {% set stats = system.stats %}
                     <td>
                         {% if stats.total_packages %}
-                        <div class="fw-semibold text-primary">{{ stats.tested_packages }}/{{ stats.total_packages }} 已完成</div>
-                        <div class="text-muted small">DIN进度 {{ (stats.welding_progress * 100)|round(1) }}%</div>
+                        <div class="fw-semibold text-primary">{{ stats.tested_packages }}/{{ stats.total_packages }} {{ _('已完成') }}</div>
+                        <div class="text-muted small">DIN {{ _('完成进度') }} {{ (stats.welding_progress * 100)|round(1) }}%</div>
                         {% else %}
-                        <span class="text-muted small">暂无试压包</span>
+                        <span class="text-muted small">{{ _('无数据') }}</span>
                         {% endif %}
                     </td>
                     <td>{{ '%.1f' % stats.total_din }}</td>
@@ -282,10 +283,10 @@
                     <td>
                         <div class="action-buttons">
                             <a class="btn btn-sm btn-primary" href="/systems/edit/{{ system.SystemCode }}">
-                                <i class="bi bi-pencil"></i> 编辑
+                                <i class="bi bi-pencil"></i> {{ _('编辑') }}
                             </a>
                             <a href="/subsystems?system_code={{ system.SystemCode|urlencode }}" class="btn btn-sm btn-success">
-                                <i class="bi bi-list"></i> 子系统
+                                <i class="bi bi-list"></i> {{ _('到子系统') }}
                             </a>
                         </div>
                     </td>
@@ -294,7 +295,7 @@
             {% else %}
                 <tr>
                     <td colspan="10" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox"></i> 暂无数据
+                        <i class="bi bi-inbox"></i> {{ _('无数据') }}
                     </td>
                 </tr>
             {% endif %}
@@ -307,14 +308,14 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
     <div class="text-muted small">
         {% if total_count %}
-        显示第 {{ pagination.start_index }} - {{ pagination.end_index }} 条，共 {{ total_count }} 条
+        {{ _('显示') }} {{ pagination.start_index }} - {{ pagination.end_index }} / {{ total_count }}
         {% endif %}
     </div>
     {% if pagination.total_pages > 1 %}
     <nav>
         <ul class="pagination pagination-sm mb-0">
             <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                <a class="page-link" href="{{ pagination.prev_url if pagination.has_prev else '#' }}">上一页</a>
+                <a class="page-link" href="{{ pagination.prev_url if pagination.has_prev else '#' }}">{{ _('上一页') }}</a>
             </li>
             {% for page_num in pagination.window %}
             <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">

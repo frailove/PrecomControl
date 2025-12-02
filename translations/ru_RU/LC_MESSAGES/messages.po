@@ -1,0 +1,1430 @@
+# Russian (Russia) translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-12-02 17:46+0300\n"
+"PO-Revision-Date: 2025-12-02 17:07+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ru_RU\n"
+"Language-Team: ru_RU <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: myenv/Lib/site-packages/click/_termui_impl.py:613
+#: venv/Lib/site-packages/click/_termui_impl.py:613
+#, python-brace-format
+msgid "{editor}: Editing failed"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/_termui_impl.py:617
+#: venv/Lib/site-packages/click/_termui_impl.py:617
+#, python-brace-format
+msgid "{editor}: Editing failed: {e}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1114
+#: myenv/Lib/site-packages/click/core.py:1151
+#: venv/Lib/site-packages/click/core.py:1114
+#: venv/Lib/site-packages/click/core.py:1151
+#, python-brace-format
+msgid "{text} {deprecated_message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1170
+#: venv/Lib/site-packages/click/core.py:1170
+msgid "Options"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1245
+#: venv/Lib/site-packages/click/core.py:1245
+#, python-brace-format
+msgid "Got unexpected extra argument ({args})"
+msgid_plural "Got unexpected extra arguments ({args})"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/click/core.py:1264
+#: venv/Lib/site-packages/click/core.py:1264
+#, python-brace-format
+msgid "DeprecationWarning: The command {name!r} is deprecated.{extra_message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1448
+#: venv/Lib/site-packages/click/core.py:1448
+msgid "Aborted!"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1822
+#: venv/Lib/site-packages/click/core.py:1822
+msgid "Commands"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1853
+#: venv/Lib/site-packages/click/core.py:1853
+msgid "Missing command."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:1931
+#: venv/Lib/site-packages/click/core.py:1931
+#, python-brace-format
+msgid "No such command {name!r}."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:2355
+#: venv/Lib/site-packages/click/core.py:2355
+msgid "Value must be an iterable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:2378
+#: venv/Lib/site-packages/click/core.py:2378
+#, python-brace-format
+msgid "Takes {nargs} values but 1 was given."
+msgid_plural "Takes {nargs} values but {len} were given."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/click/core.py:2567
+#: venv/Lib/site-packages/click/core.py:2567
+#, python-brace-format
+msgid ""
+"DeprecationWarning: The {param_type} {name!r} is "
+"deprecated.{extra_message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3015
+#: venv/Lib/site-packages/click/core.py:3015
+#, python-brace-format
+msgid "env var: {var}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3018
+#: venv/Lib/site-packages/click/core.py:3018
+#, python-brace-format
+msgid "default: {default}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3022
+#: venv/Lib/site-packages/click/core.py:3022
+msgid "required"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/core.py:3082
+#: venv/Lib/site-packages/click/core.py:3082
+msgid "(dynamic)"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/decorators.py:465
+#: venv/Lib/site-packages/click/decorators.py:465
+#, python-format
+msgid "%(prog)s, version %(version)s"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/decorators.py:522
+#: venv/Lib/site-packages/click/decorators.py:522
+msgid "Show the version and exit."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/decorators.py:548
+#: venv/Lib/site-packages/click/decorators.py:548
+msgid "Show this message and exit."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:50
+#: myenv/Lib/site-packages/click/exceptions.py:89
+#: venv/Lib/site-packages/click/exceptions.py:50
+#: venv/Lib/site-packages/click/exceptions.py:89
+#, python-brace-format
+msgid "Error: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:81
+#: venv/Lib/site-packages/click/exceptions.py:81
+#, python-brace-format
+msgid "Try '{command} {option}' for help."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:130
+#: venv/Lib/site-packages/click/exceptions.py:130
+#, python-brace-format
+msgid "Invalid value: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:132
+#: venv/Lib/site-packages/click/exceptions.py:132
+#, python-brace-format
+msgid "Invalid value for {param_hint}: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:190
+#: venv/Lib/site-packages/click/exceptions.py:190
+msgid "Missing argument"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:192
+#: venv/Lib/site-packages/click/exceptions.py:192
+msgid "Missing option"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:194
+#: venv/Lib/site-packages/click/exceptions.py:194
+msgid "Missing parameter"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:196
+#: venv/Lib/site-packages/click/exceptions.py:196
+#, python-brace-format
+msgid "Missing {param_type}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:203
+#: venv/Lib/site-packages/click/exceptions.py:203
+#, python-brace-format
+msgid "Missing parameter: {param_name}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:223
+#: venv/Lib/site-packages/click/exceptions.py:223
+#, python-brace-format
+msgid "No such option: {name}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:235
+#: venv/Lib/site-packages/click/exceptions.py:235
+#, python-brace-format
+msgid "Did you mean {possibility}?"
+msgid_plural "(Possible options: {possibilities})"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:282
+#: venv/Lib/site-packages/click/exceptions.py:282
+msgid "unknown error"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/exceptions.py:289
+#: venv/Lib/site-packages/click/exceptions.py:289
+#, python-brace-format
+msgid "Could not open file {filename!r}: {message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/formatting.py:156
+#: venv/Lib/site-packages/click/formatting.py:156
+msgid "Usage:"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/parser.py:199
+#: venv/Lib/site-packages/click/parser.py:199
+#, python-brace-format
+msgid "Argument {name!r} takes {nargs} values."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/parser.py:381
+#: venv/Lib/site-packages/click/parser.py:381
+#, python-brace-format
+msgid "Option {name!r} does not take a value."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/parser.py:444
+#: venv/Lib/site-packages/click/parser.py:444
+#, python-brace-format
+msgid "Option {name!r} requires an argument."
+msgid_plural "Option {name!r} requires {nargs} arguments."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/click/shell_completion.py:332
+#: venv/Lib/site-packages/click/shell_completion.py:332
+msgid "Shell completion is not supported for Bash versions older than 4.4."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/shell_completion.py:339
+#: venv/Lib/site-packages/click/shell_completion.py:339
+msgid "Couldn't detect Bash version, shell completion is not supported."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:165
+#: venv/Lib/site-packages/click/termui.py:165
+msgid "Repeat for confirmation"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:181
+#: venv/Lib/site-packages/click/termui.py:181
+msgid "Error: The value you entered was invalid."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:183
+#: venv/Lib/site-packages/click/termui.py:183
+#, python-brace-format
+msgid "Error: {e.message}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:194
+#: venv/Lib/site-packages/click/termui.py:194
+msgid "Error: The two entered values do not match."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:253
+#: venv/Lib/site-packages/click/termui.py:253
+msgid "Error: invalid input"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/termui.py:872
+#: venv/Lib/site-packages/click/termui.py:872
+msgid "Press any key to continue..."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:332
+#: venv/Lib/site-packages/click/types.py:332
+#, python-brace-format
+msgid ""
+"Choose from:\n"
+"\t{choices}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:369
+#: venv/Lib/site-packages/click/types.py:369
+#, python-brace-format
+msgid "{value!r} is not {choice}."
+msgid_plural "{value!r} is not one of {choices}."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/click/types.py:460
+#: venv/Lib/site-packages/click/types.py:460
+#, python-brace-format
+msgid "{value!r} does not match the format {format}."
+msgid_plural "{value!r} does not match the formats {formats}."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/click/types.py:482
+#: venv/Lib/site-packages/click/types.py:482
+#, python-brace-format
+msgid "{value!r} is not a valid {number_type}."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:538
+#: venv/Lib/site-packages/click/types.py:538
+#, python-brace-format
+msgid "{value} is not in the range {range}."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:719
+#: venv/Lib/site-packages/click/types.py:719
+#, python-brace-format
+msgid "{value!r} is not a valid boolean. Recognized values: {states}"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:747
+#: venv/Lib/site-packages/click/types.py:747
+#, python-brace-format
+msgid "{value!r} is not a valid UUID."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:937
+#: venv/Lib/site-packages/click/types.py:937
+msgid "file"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:939
+#: venv/Lib/site-packages/click/types.py:939
+msgid "directory"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:941
+#: venv/Lib/site-packages/click/types.py:941
+msgid "path"
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:988
+#: venv/Lib/site-packages/click/types.py:988
+#, python-brace-format
+msgid "{name} {filename!r} does not exist."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:997
+#: venv/Lib/site-packages/click/types.py:997
+#, python-brace-format
+msgid "{name} {filename!r} is a file."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1005
+#: venv/Lib/site-packages/click/types.py:1005
+#, python-brace-format
+msgid "{name} {filename!r} is a directory."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1014
+#: venv/Lib/site-packages/click/types.py:1014
+#, python-brace-format
+msgid "{name} {filename!r} is not readable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1023
+#: venv/Lib/site-packages/click/types.py:1023
+#, python-brace-format
+msgid "{name} {filename!r} is not writable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1032
+#: venv/Lib/site-packages/click/types.py:1032
+#, python-brace-format
+msgid "{name} {filename!r} is not executable."
+msgstr ""
+
+#: myenv/Lib/site-packages/click/types.py:1099
+#: venv/Lib/site-packages/click/types.py:1099
+#, python-brace-format
+msgid "{len_type} values are required, but {len_value} was given."
+msgid_plural "{len_type} values are required, but {len_value} were given."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/flask_wtf/file.py:55
+#: myenv/Lib/site-packages/wtforms/validators.py:293
+#: myenv/Lib/site-packages/wtforms/validators.py:323
+#: venv/Lib/site-packages/flask_wtf/file.py:55
+#: venv/Lib/site-packages/wtforms/validators.py:293
+#: venv/Lib/site-packages/wtforms/validators.py:323
+msgid "This field is required."
+msgstr ""
+
+#: myenv/Lib/site-packages/flask_wtf/file.py:94
+#: venv/Lib/site-packages/flask_wtf/file.py:94
+#, python-brace-format
+msgid "File does not have an approved extension: {extensions}"
+msgstr ""
+
+#: myenv/Lib/site-packages/flask_wtf/file.py:101
+#: venv/Lib/site-packages/flask_wtf/file.py:101
+msgid "File does not have an approved extension."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:86
+#: venv/Lib/site-packages/wtforms/validators.py:86
+#, python-format
+msgid "Invalid field name '%s'."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:99
+#: venv/Lib/site-packages/wtforms/validators.py:99
+#, python-format
+msgid "Field must be equal to %(other_name)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:146
+#: venv/Lib/site-packages/wtforms/validators.py:146
+#, python-format
+msgid "Field must be at least %(min)d character long."
+msgid_plural "Field must be at least %(min)d characters long."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:152
+#: venv/Lib/site-packages/wtforms/validators.py:152
+#, python-format
+msgid "Field cannot be longer than %(max)d character."
+msgid_plural "Field cannot be longer than %(max)d characters."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:158
+#: venv/Lib/site-packages/wtforms/validators.py:158
+#, python-format
+msgid "Field must be exactly %(max)d character long."
+msgid_plural "Field must be exactly %(max)d characters long."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:164
+#: venv/Lib/site-packages/wtforms/validators.py:164
+#, python-format
+msgid "Field must be between %(min)d and %(max)d characters long."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:216
+#: venv/Lib/site-packages/wtforms/validators.py:216
+#, python-format
+msgid "Number must be at least %(min)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:219
+#: venv/Lib/site-packages/wtforms/validators.py:219
+#, python-format
+msgid "Number must be at most %(max)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:222
+#: venv/Lib/site-packages/wtforms/validators.py:222
+#, python-format
+msgid "Number must be between %(min)s and %(max)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:358
+#: venv/Lib/site-packages/wtforms/validators.py:358
+msgid "Invalid input."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:422
+#: venv/Lib/site-packages/wtforms/validators.py:422
+msgid "Invalid email address."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:460
+#: venv/Lib/site-packages/wtforms/validators.py:460
+msgid "Invalid IP address."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:503
+#: venv/Lib/site-packages/wtforms/validators.py:503
+msgid "Invalid Mac address."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:540
+#: venv/Lib/site-packages/wtforms/validators.py:540
+msgid "Invalid URL."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:561
+#: venv/Lib/site-packages/wtforms/validators.py:561
+msgid "Invalid UUID."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:595
+#: venv/Lib/site-packages/wtforms/validators.py:595
+#, python-format
+msgid "Invalid value, must be one of: %(values)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:631
+#: venv/Lib/site-packages/wtforms/validators.py:631
+#, python-format
+msgid "Invalid value, can't be any of: %(values)s."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:700
+#: venv/Lib/site-packages/wtforms/validators.py:700
+msgid "This field cannot be edited."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/validators.py:716
+#: venv/Lib/site-packages/wtforms/validators.py:716
+msgid "This field is disabled and cannot have a value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/core.py:96
+#: venv/Lib/site-packages/wtforms/csrf/core.py:96
+msgid "Invalid CSRF Token."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/session.py:64
+#: venv/Lib/site-packages/wtforms/csrf/session.py:64
+msgid "CSRF token missing."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/session.py:72
+#: venv/Lib/site-packages/wtforms/csrf/session.py:72
+msgid "CSRF failed."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/csrf/session.py:77
+#: venv/Lib/site-packages/wtforms/csrf/session.py:77
+msgid "CSRF token expired."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:142
+#: venv/Lib/site-packages/wtforms/fields/choices.py:142
+msgid "Invalid Choice: could not coerce."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:149
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:203
+#: venv/Lib/site-packages/wtforms/fields/choices.py:149
+#: venv/Lib/site-packages/wtforms/fields/choices.py:203
+msgid "Choices cannot be None."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:155
+#: venv/Lib/site-packages/wtforms/fields/choices.py:155
+msgid "Not a valid choice."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:194
+#: venv/Lib/site-packages/wtforms/fields/choices.py:194
+msgid "Invalid choice(s): one or more data inputs could not be coerced."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/choices.py:212
+#: venv/Lib/site-packages/wtforms/fields/choices.py:212
+#, python-format
+msgid "'%(value)s' is not a valid choice for this field."
+msgid_plural "'%(value)s' are not valid choices for this field."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:52
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:52
+msgid "Not a valid datetime value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:78
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:78
+msgid "Not a valid date value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:104
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:104
+msgid "Not a valid time value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/datetime.py:149
+#: venv/Lib/site-packages/wtforms/fields/datetime.py:149
+msgid "Not a valid week value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:82
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:92
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:82
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:92
+msgid "Not a valid integer value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:168
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:168
+msgid "Not a valid decimal value."
+msgstr ""
+
+#: myenv/Lib/site-packages/wtforms/fields/numeric.py:197
+#: venv/Lib/site-packages/wtforms/fields/numeric.py:197
+msgid "Not a valid float value."
+msgstr ""
+
+#: templates/base_industrial.html:475 templates/precom_task_edit.html:3
+msgid "预试车管理系统"
+msgstr "Система управления предпусковыми испытаниями"
+
+#: templates/base_industrial.html:480 templates/precom_task_edit.html:112
+msgid "首页"
+msgstr "Главная"
+
+#: templates/base_industrial.html:483 templates/precom_task_edit.html:308
+msgid "系统"
+msgstr "Системы"
+
+#: templates/base_industrial.html:486 templates/precom_task_edit.html:317
+msgid "子系统"
+msgstr "Подсистемы"
+
+#: templates/base_industrial.html:489
+msgid "试压包"
+msgstr "Пакеты гидроиспытаний"
+
+#: templates/base_industrial.html:493 templates/precom_task_edit.html:113
+msgid "预试车任务管理"
+msgstr "Управление задачами предпуска"
+
+#: templates/base_industrial.html:496
+msgid "人孔检查"
+msgstr "Проверка люков"
+
+#: templates/base_industrial.html:497
+msgid "电机单试"
+msgstr "Индивидуальное испытание двигателя"
+
+#: templates/base_industrial.html:498
+msgid "台件安装"
+msgstr "Установка блочно-модульных систем"
+
+#: templates/base_industrial.html:499
+msgid "回路测试"
+msgstr "Испытание контуров"
+
+#: templates/base_industrial.html:500
+msgid "最终对中"
+msgstr "Окончательная центровка"
+
+#: templates/base_industrial.html:501
+msgid "MRT 联动测试"
+msgstr "Механическое испытание MRT"
+
+#: templates/base_industrial.html:507
+msgid "备份"
+msgstr "Резервное копирование"
+
+#: templates/base_industrial.html:512
+msgid "账户"
+msgstr "Учетные записи"
+
+#: templates/base_industrial.html:516
+msgid "个人信息"
+msgstr "Профиль"
+
+#: templates/base_industrial.html:525 templates/base_industrial.html:531
+msgid "中文"
+msgstr "Китайский"
+
+#: templates/base_industrial.html:547
+msgid "退出"
+msgstr "Выйти"
+
+#: templates/base_industrial.html:551
+msgid "登录"
+msgstr "Войти"
+
+#: templates/precom_task_edit.html:3
+#, fuzzy
+msgid "预试车任务编辑"
+msgstr "Управление задачами предпуска"
+
+#: templates/precom_task_edit.html:108
+#, fuzzy
+msgid "编辑预试车任务"
+msgstr "Управление задачами предпуска"
+
+#: templates/precom_task_edit.html:108
+#, fuzzy
+msgid "新建预试车任务"
+msgstr "Управление задачами предпуска"
+
+#: templates/precom_task_edit.html:114
+msgid "编辑"
+msgstr "Редактировать"
+
+#: templates/precom_task_edit.html:114
+msgid "新建"
+msgstr "Создать"
+
+#: templates/precom_task_edit.html:120
+msgid "返回列表"
+msgstr "Вернуться к списку"
+
+#: templates/precom_task_edit.html:126
+msgid "删除任务"
+msgstr "Удалить задачу"
+
+#: templates/precom_task_edit.html:137
+msgid "任务基本信息"
+msgstr "Основная информация о задаче"
+
+#: templates/precom_task_edit.html:145
+msgid "施工进度"
+msgstr "Ход строительства"
+
+#: templates/precom_task_edit.html:163 templates/precom_task_edit.html:463
+msgid "操作"
+msgstr "Действия"
+
+#: templates/precom_task_edit.html:278
+msgid "新增关键工程量"
+msgstr "Добавить ключевой объем работ"
+
+#: templates/precom_task_edit.html:284
+msgid "基础属性"
+msgstr "Основные свойства"
+
+#: templates/precom_task_edit.html:288
+msgid "任务类型"
+msgstr "Тип задачи"
+
+#: templates/precom_task_edit.html:347
+msgid "识别信息"
+msgstr "Идентификационная информация"
+
+#: templates/precom_task_edit.html:362
+msgid "新增图纸号"
+msgstr "Добавить номер чертежа"
+
+#: templates/precom_task_edit.html:380
+msgid "任务描述"
+msgstr "Описание задачи"
+
+#: templates/precom_task_edit.html:389
+msgid "测试参数"
+msgstr "Параметры испытания"
+
+#: templates/precom_task_edit.html:393
+msgid "测试类型"
+msgstr "Тип испытания"
+
+#: templates/precom_task_edit.html:398
+msgid "总数量"
+msgstr "Общее количество"
+
+#: templates/precom_task_edit.html:403
+msgid "已完成数量"
+msgstr "Выполненное количество"
+
+#: templates/precom_task_edit.html:413
+msgid "测试计划时间"
+msgstr "Плановая дата испытания"
+
+#: templates/precom_task_edit.html:418
+msgid "测试实际时间"
+msgstr "Фактическая дата испытания"
+
+#: templates/precom_task_edit.html:427
+msgid "保存"
+msgstr "Сохранить"
+
+#: templates/precom_task_edit.html:439
+msgid "测试资料附件"
+msgstr "Вложения документов испытаний"
+
+#: templates/precom_task_edit.html:441
+msgid "导出"
+msgstr "Экспорт"
+
+#: templates/precom_task_edit.html:446 templates/precom_task_edit.html:453
+msgid "上传附件"
+msgstr "Загрузить вложения"
+
+#: templates/precom_task_edit.html:462
+msgid "文件名"
+msgstr "Имя файла"
+
+#: templates/precom_task_edit.html:480
+msgid "暂无附件"
+msgstr "Нет вложений"
+
+#: templates/precom_task_edit.html:496
+msgid "模板"
+msgstr "Шаблон"
+
+#: templates/precom_task_edit.html:502
+msgid "导入"
+msgstr "Импорт"
+
+#: templates/precom_task_edit.html:523
+msgid "描述（必填）"
+msgstr "Описание (обязательно)"
+
+#: templates/precom_task_edit.html:527
+msgid "-- 选择 CATEGORY --"
+msgstr "-- Выберите КАТЕГОРИЮ --"
+
+#: templates/precom_task_edit.html:536
+msgid "-- 选择 CAUSE --"
+msgstr "-- Выберите ПРИЧИНУ --"
+
+#: templates/precom_task_edit.html:559
+msgid "新增尾项"
+msgstr "Добавить пункт дефектов"
+
+#: templates/precom_task_edit.html:569
+msgid "描述"
+msgstr ""
+
+#: templates/precom_task_edit.html:573
+msgid "提出日期"
+msgstr "Дата выдачи"
+
+#: templates/precom_task_edit.html
+msgid "预试车任务编辑"
+msgstr "Редактирование задачи предпуска"
+
+msgid "编辑预试车任务"
+msgstr "Редактировать задачу предпуска"
+
+msgid "新建预试车任务"
+msgstr "Новая задача предпуска"
+
+msgid "编辑"
+msgstr "Редактировать"
+
+msgid "新建"
+msgstr "Создать"
+
+msgid "返回列表"
+msgstr "Вернуться к списку"
+
+msgid "删除任务"
+msgstr "Удалить задачу"
+
+msgid "任务基本信息"
+msgstr "Основная информация о задаче"
+
+msgid "施工进度"
+msgstr "Ход строительства"
+
+msgid "新增关键工程量"
+msgstr "Добавить ключевой объем работ"
+
+msgid "基础属性"
+msgstr "Основные свойства"
+
+msgid "任务类型"
+msgstr "Тип задачи"
+
+msgid "识别信息"
+msgstr "Идентификационная информация"
+
+msgid "测试参数"
+msgstr "Параметры испытания"
+
+msgid "测试类型"
+msgstr "Тип испытания"
+
+msgid "总数量"
+msgstr "Общее количество"
+
+msgid "已完成数量"
+msgstr "Выполненное количество"
+
+msgid "测试计划时间"
+msgstr "Плановая дата испытания"
+
+msgid "测试实际时间"
+msgstr "Фактическая дата испытания"
+
+msgid "保存"
+msgstr "Сохранить"
+
+msgid "测试资料附件"
+msgstr "Вложения испытаний"
+
+msgid "上传附件"
+msgstr "Загрузить вложения"
+
+msgid "文件名"
+msgstr "Имя файла"
+
+msgid "暂无附件"
+msgstr "Нет вложений"
+
+msgid "模板"
+msgstr "Шаблон"
+
+msgid "导入"
+msgstr "Импорт"
+
+msgid "描述（必填）"
+msgstr "Описание (обязательно)"
+
+msgid "-- 选择 CATEGORY --"
+msgstr "-- Выбрать CATEGORY --"
+
+msgid "-- 选择 CAUSE --"
+msgstr "-- Выбрать CAUSE --"
+
+msgid "新增尾项"
+msgstr "Добавить пункт дефектов"
+
+msgid "新增图纸号"
+msgstr "Добавить номер чертежа"
+
+msgid "任务描述"
+msgstr "Описание задачи"
+
+msgid "系统登录"
+msgstr "Вход в систему"
+
+msgid "用户名"
+msgstr "Имя пользователя"
+
+msgid "密码"
+msgstr "Пароль"
+
+msgid "新建任务"
+msgstr "Новая задача"
+
+msgid "导出任务清单"
+msgstr "Экспорт задач"
+
+msgid "导入清单"
+msgstr "Импорт"
+
+msgid "搜索"
+msgstr "Поиск"
+
+msgid "重置"
+msgstr "Сброс"
+
+msgid "全部任务类型"
+msgstr "Все типы"
+
+msgid "全部状态"
+msgstr "Все статусы"
+
+msgid "未开始"
+msgstr "Не начато"
+
+msgid "进行中"
+msgstr "В процессе"
+
+msgid "已完成"
+msgstr "Завершено"
+
+msgid "任务ID"
+msgstr "ID задачи"
+
+msgid "图纸号"
+msgstr "Номер чертежа"
+
+msgid "点位"
+msgstr "Точка"
+
+msgid "区域"
+msgstr "Зона"
+
+msgid "数量"
+msgstr "Количество"
+
+msgid "计划时间"
+msgstr "Планируется"
+
+msgid "实际时间"
+msgstr "Фактически"
+
+msgid "状态"
+msgstr "Статус"
+
+msgid "试压包管理"
+msgstr "Управление пакетами гидроиспытаний"
+
+msgid "总试压包数"
+msgstr "Всего пакетов"
+
+msgid "待处理"
+msgstr "Ожидает"
+
+# 导航栏缩写
+msgid "预试车"
+msgstr "ПИ"
+
+msgid "任务"
+msgstr "Задачи"
+
+msgid "预试车任务"
+msgstr "Задачи ПИ"
+
+# 系统管理页面
+msgid "系统管理"
+msgstr "Управление системами"
+
+msgid "新增系统"
+msgstr "Добавить систему"
+
+msgid "编辑系统"
+msgstr "Редактировать систему"
+
+msgid "删除系统"
+msgstr "Удалить систему"
+
+msgid "查看子系统"
+msgstr "Просмотр подсистем"
+
+msgid "到子系统"
+msgstr "К подсистемам"
+
+msgid "系统代码"
+msgstr "Код системы"
+
+msgid "系统名称"
+msgstr "Название системы"
+
+msgid "系统描述"
+msgstr "Описание системы"
+
+msgid "子系统数量"
+msgstr "Количество подсистем"
+
+msgid "完成进度"
+msgstr "Прогресс"
+
+msgid "总系统数"
+msgstr "Всего систем"
+
+msgid "已完成系统"
+msgstr "Завершено систем"
+
+msgid "进行中系统"
+msgstr "В процессе"
+
+# 子系统管理页面
+msgid "子系统管理"
+msgstr "Управление подсистемами"
+
+msgid "新增子系统"
+msgstr "Добавить подсистему"
+
+msgid "编辑子系统"
+msgstr "Редактировать подсистему"
+
+msgid "删除子系统"
+msgstr "Удалить подсистему"
+
+msgid "子系统代码"
+msgstr "Код подсистемы"
+
+msgid "子系统名称"
+msgstr "Название подсистемы"
+
+msgid "子系统描述"
+msgstr "Описание подсистемы"
+
+msgid "所属系统"
+msgstr "Родительская система"
+
+msgid "总子系统数"
+msgstr "Всего подсистем"
+
+msgid "已完成子系统"
+msgstr "Завершено подсистем"
+
+# 试压包管理页面
+msgid "编辑试压包"
+msgstr "Редактировать пакет"
+
+msgid "新增试压包"
+msgstr "Добавить пакет"
+
+msgid "删除试压包"
+msgstr "Удалить пакет"
+
+msgid "试压包代码"
+msgstr "Код пакета"
+
+msgid "试压包名称"
+msgstr "Название пакета"
+
+msgid "试压包描述"
+msgstr "Описание пакета"
+
+msgid "试压日期"
+msgstr "Дата испытания"
+
+msgid "试压结果"
+msgstr "Результат испытания"
+
+msgid "合格"
+msgstr "Принято"
+
+msgid "不合格"
+msgstr "Не принято"
+
+# 通用操作
+msgid "编辑"
+msgstr "Редактировать"
+
+msgid "删除"
+msgstr "Удалить"
+
+msgid "查看"
+msgstr "Просмотр"
+
+msgid "新增"
+msgstr "Добавить"
+
+msgid "取消"
+msgstr "Отмена"
+
+msgid "确认"
+msgstr "Подтвердить"
+
+msgid "提交"
+msgstr "Отправить"
+
+msgid "重置"
+msgstr "Сброс"
+
+msgid "搜索"
+msgstr "Поиск"
+
+msgid "筛选"
+msgstr "Фильтр"
+
+msgid "全部"
+msgstr "Все"
+
+msgid "选择系统"
+msgstr "Выбрать систему"
+
+msgid "选择子系统"
+msgstr "Выбрать подсистему"
+
+msgid "请选择"
+msgstr "Пожалуйста, выберите"
+
+msgid "无数据"
+msgstr "Нет данных"
+
+msgid "加载中"
+msgstr "Загрузка"
+
+msgid "成功"
+msgstr "Успешно"
+
+msgid "失败"
+msgstr "Ошибка"
+
+msgid "警告"
+msgstr "Предупреждение"
+
+msgid "确定要删除吗？"
+msgstr "Вы уверены, что хотите удалить?"
+
+msgid "此操作不可撤销"
+msgstr "Это действие необратимо"
+
+msgid "工艺系统"
+msgstr "Технологические системы"
+
+msgid "非工艺系统"
+msgstr "Нетехнологические системы"
+
+msgid "焊接进度"
+msgstr "Прогресс сварки"
+
+msgid "测试进度"
+msgstr "Прогресс испытаний"
+
+msgid "优先级"
+msgstr "Приоритет"
+
+msgid "已完成"
+msgstr "Завершено"
+
+msgid "类型"
+msgstr "Тип"
+
+msgid "显示"
+msgstr "Показано"
+
+msgid "上一页"
+msgstr "Назад"
+
+msgid "下一页"
+msgstr "Вперед"
+
+msgid "全部状态"
+msgstr "Все статусы"
+
+msgid "编制提醒"
+msgstr "Напоминания о подготовке"
+
+msgid "系统信息"
+msgstr "Информация о системе"
+
+msgid "请填写完整的系统基础信息"
+msgstr "Заполните базовую информацию о системе"
+
+msgid "更新系统基本信息并保存"
+msgstr "Обновите и сохраните информацию"
+
+msgid "系统不存在或已被删除"
+msgstr "Система не существует или удалена"
+
+msgid "例如"
+msgstr "Например"
+
+msgid "系统唯一标识代码（创建后不可更改）"
+msgstr "Уникальный код системы (нельзя изменить после создания)"
+
+msgid "系统代码不可修改"
+msgstr "Код системы нельзя изменить"
+
+msgid "范围 0-10，数字越大优先级越高"
+msgstr "Диапазон 0-10, чем больше число, тем выше приоритет"
+
+msgid "可选"
+msgstr "Необязательно"
+
+msgid "创建系统"
+msgstr "Создать систему"
+
+msgid "保存修改"
+msgstr "Сохранить изменения"
+
+msgid "指定的子系统不存在或已被删除"
+msgstr "Указанная подсистема не существует или удалена"
+
+msgid "子系统代码不可修改"
+msgstr "Код подсистемы нельзя изменить"
+
+msgid "俄文"
+msgstr "Русский"
+
+msgid "创建子系统"
+msgstr "Создать подсистему"
+
+msgid "新增子系统"
+msgstr "Добавить подсистему"
+
+msgid "您暂无访问权限，请联系系统管理员"
+msgstr "У вас нет прав доступа, обратитесь к администратору"
+
+msgid "系统说明"
+msgstr "Описание системы"
+
+msgid "工艺系统管理"
+msgstr "Управление технологическими системами"
+
+msgid "管道专业试压包管理"
+msgstr "Управление пакетами гидроиспытаний трубопроводов"
+
+msgid "焊口数据汇总分析"
+msgstr "Сводный анализ данных по сварным швам"
+
+msgid "NDE/PWHT状态追踪"
+msgstr "Отслеживание статуса NDE/PWHT"
+
+msgid "Punch List管理"
+msgstr "Управление списком дефектов"
+
+msgid "数据同步备份"
+msgstr "Синхронизация и резервное копирование данных"
+
+msgid "自动备份机制"
+msgstr "Механизм автоматического резервного копирования"
+
+msgid "智能同步功能"
+msgstr "Интеллектуальная функция синхронизации"
+
+msgid "时间点恢复"
+msgstr "Восстановление на определенный момент времени"
+
+msgid "数据清理归档"
+msgstr "Очистка и архивирование данных"
+
+msgid "系统特色"
+msgstr "Особенности системы"
+
+msgid "工业化UI设计"
+msgstr "Промышленный дизайн пользовательского интерфейса"
+
+msgid "响应式布局"
+msgstr "Адаптивная верстка"
+
+msgid "多级数据关联"
+msgstr "Многоуровневая связь данных"
+
+msgid "灵活的筛选功能"
+msgstr "Гибкая функция фильтрации"
+
+msgid "试压包ID"
+msgstr "ID пакета гидроиспытаний"
+
+msgid "输入系统编码"
+msgstr "Введите код системы"
+
+msgid "输入子系统编码"
+msgstr "Введите код подсистемы"
+
+msgid "试压信息"
+msgstr "Информация об испытании"
+
+msgid "管道材料"
+msgstr "Материал трубопровода"
+
+msgid "聚乙烯"
+msgstr "Полиэтилен"
+
+msgid "碳钢"
+msgstr "Углеродистая сталь"
+
+msgid "不锈钢"
+msgstr "Нержавеющая сталь"
+
+msgid "双相不锈钢"
+msgstr "Двухфазная нержавеющая сталь"
+
+msgid "合金钢"
+msgstr "Легированная сталь"
+
+msgid "低温碳钢"
+msgstr "Низкотемпературная углеродистая сталь"
+
+msgid "镍合金"
+msgstr "Никелевый сплав"
+
+msgid "试压类型"
+msgstr "Тип испытания"
+
+msgid "水压"
+msgstr "Гидравлическое"
+
+msgid "气压"
+msgstr "Пневматическое"
+
+msgid "观察包"
+msgstr "Наблюдательный пакет"
+
+msgid "试压介质"
+msgstr "Среда испытания"
+
+msgid "设计压力"
+msgstr "Расчетное давление"
+
+msgid "试压压力"
+msgstr "Давление испытания"
+
+msgid "计划与状态"
+msgstr "План и статус"
+
+msgid "计划日期"
+msgstr "Плановая дата"
+
+msgid "实际日期"
+msgstr "Фактическая дата"
+
+msgid "保存更改"
+msgstr "Сохранить изменения"
+
+msgid "更新成功"
+msgstr "Обновление успешно"
+
+msgid "试压包基础信息已更新"
+msgstr "Базовая информация пакета обновлена"
+
+msgid "操作失败"
+msgstr "Операция не удалась"
+
+msgid "图纸清单"
+msgstr "Список чертежей"
+
+msgid "附件管理"
+msgstr "Управление вложениями"
+
+msgid "焊口汇总"
+msgstr "Сводка по сварным швам"
+
+msgid "P&ID清单"
+msgstr "Список P&ID"
+
+msgid "维护该试压包的P&ID清单"
+msgstr "Управление списком P&ID для этого пакета"
+
+msgid "P&ID编号"
+msgstr "Номер P&ID"
+
+msgid "ISO图纸"
+msgstr "Чертежи ISO"
+
+msgid "系统会自动从WeldingList抓取ISO图纸"
+msgstr "Система автоматически извлекает чертежи ISO из WeldingList"
+
+msgid "ISO编号"
+msgstr "Номер ISO"
+
+msgid "基础信息"
+msgstr "Базовая информация"

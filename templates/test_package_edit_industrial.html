@@ -1,18 +1,9 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>编辑试压包 - {{ test_package.TestPackageID }}</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
-    <style>
+{% extends "base_industrial.html" %}
+
+{% block title %}{{ _('编辑试压包') }} - {{ test_package.TestPackageID }}{% endblock %}
+
+{% block extra_styles %}
+<style>
         /* ==================== 工业化配色方案 ==================== */
         :root {
             /* 主色调 - 工业深蓝 */
@@ -422,39 +413,20 @@
             }
         }
     </style>
-</head>
-<body>
-    <!-- 顶部导航栏 -->
-    <nav class="top-navbar">
-        <div class="container-fluid" style="max-width: 1850px; padding: 0 1.5rem;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="brand">
-                    <i class="bi bi-gear-wide-connected"></i>
-                    <span>预试车管理系统</span>
-                </div>
-                <div class="d-flex gap-1">
-                    <a href="/" class="nav-link"><i class="bi bi-house-door"></i> 首页</a>
-                    <a href="/systems" class="nav-link"><i class="bi bi-diagram-3"></i> 系统</a>
-                    <a href="/subsystems" class="nav-link"><i class="bi bi-bezier2"></i> 子系统</a>
-                    <a href="/test_packages" class="nav-link active"><i class="bi bi-box-seam"></i> 试压包</a>
-                    <a href="/backup" class="nav-link"><i class="bi bi-database"></i> 备份</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+{% endblock %}
 
-    <div class="container-fluid" style="max-width: 1850px; padding: 0 1.5rem;">
+{% block content %}
         <!-- 页面头部 -->
         <div class="page-header">
             <div class="container-fluid">
                 <h1>
                     <i class="bi bi-pencil-square"></i>
-                    编辑试压包
+                    {{ _('编辑试压包') }}
                 </h1>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
-                        <li class="breadcrumb-item"><a href="/test_packages"><i class="bi bi-box-seam"></i> 试压包管理</a></li>
+                        <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> {{ _('首页') }}</a></li>
+                        <li class="breadcrumb-item"><a href="/test_packages"><i class="bi bi-box-seam"></i> {{ _('试压包管理') }}</a></li>
                         <li class="breadcrumb-item active">{{ test_package.TestPackageID }}</li>
                     </ol>
                 </nav>
@@ -465,17 +437,17 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div>
                 <a href="/test_packages" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> 返回列表
+                    <i class="bi bi-arrow-left"></i> {{ _('返回列表') }}
                 </a>
             </div>
             <div class="d-flex gap-2">
                 <span class="info-tag">
                     <i class="bi bi-diagram-3-fill"></i>
-                    系统: <strong>{{ test_package.SystemCode or '-' }}</strong>
+                    {{ _('系统') }}: <strong>{{ test_package.SystemCode or '-' }}</strong>
                 </span>
                 <span class="info-tag">
                     <i class="bi bi-bezier2"></i>
-                    子系统: <strong>{{ test_package.SubSystemCode or '-' }}</strong>
+                    {{ _('子系统') }}: <strong>{{ test_package.SubSystemCode or '-' }}</strong>
                 </span>
                 {% if test_package.Status %}
                 <span class="badge badge-{{ test_package.Status|lower|replace(' ', '') }}">
@@ -490,14 +462,14 @@
         {% if success %}
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle-fill"></i>
-            <strong>更新成功！</strong> 试压包基础信息已更新。
+            <strong>{{ _('更新成功') }}！</strong> {{ _('试压包基础信息已更新') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {% endif %}
         {% if error_message %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-triangle-fill"></i>
-            <strong>操作失败：</strong> {{ error_message }}
+            <strong>{{ _('操作失败') }}：</strong> {{ error_message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {% endif %}
@@ -507,31 +479,31 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab">
                     <i class="bi bi-info-circle-fill"></i>
-                    基础信息
+                    {{ _('基础信息') }}
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="drawings-tab" data-bs-toggle="tab" data-bs-target="#drawings" type="button" role="tab">
                     <i class="bi bi-file-earmark-text-fill"></i>
-                    图纸清单
+                    {{ _('图纸清单') }}
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab">
                     <i class="bi bi-paperclip"></i>
-                    附件管理
+                    {{ _('附件管理') }}
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="joint-tab" data-bs-toggle="tab" data-bs-target="#joint" type="button" role="tab">
                     <i class="bi bi-box-seam-fill"></i>
-                    焊口汇总
+                    {{ _('焊口汇总') }}
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="punch-tab" data-bs-toggle="tab" data-bs-target="#punch" type="button" role="tab">
                     <i class="bi bi-list-check"></i>
-                    Punch List
+                    {{ _('Punch List') }}
                 </button>
             </li>
         </ul>
@@ -549,34 +521,34 @@
                             <div class="form-section">
                                 <div class="form-section-header">
                                     <i class="bi bi-info-circle-fill"></i>
-                                    <h5>基本信息</h5>
+                                    <h5>{{ _('基础信息') }}</h5>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="TestPackageID" class="form-label required">试压包ID</label>
+                                    <label for="TestPackageID" class="form-label required">{{ _('试压包ID') }}</label>
                                     <input type="text" class="form-control" value="{{ test_package.TestPackageID }}" disabled>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="SystemCode" class="form-label required">系统代码</label>
+                                    <label for="SystemCode" class="form-label required">{{ _('系统代码') }}</label>
                                     <input type="text" class="form-control" id="SystemCode" name="SystemCode" 
                                            value="{{ test_package.SystemCode or '' }}" required
                                            list="editSystemCodeAutocompleteList" autocomplete="off"
-                                           placeholder="输入系统编码...">
+                                           placeholder="{{ _('输入系统编码') }}...">
                                     <datalist id="editSystemCodeAutocompleteList"></datalist>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="SubSystemCode" class="form-label required">子系统代码</label>
+                                    <label for="SubSystemCode" class="form-label required">{{ _('子系统代码') }}</label>
                                     <input type="text" class="form-control" id="SubSystemCode" name="SubSystemCode" 
                                            value="{{ test_package.SubSystemCode or '' }}" required
                                            list="editSubSystemCodeAutocompleteList" autocomplete="off"
-                                           placeholder="输入子系统编码...">
+                                           placeholder="{{ _('输入子系统编码') }}...">
                                     <datalist id="editSubSystemCodeAutocompleteList"></datalist>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="Description" class="form-label">描述</label>
+                                    <label for="Description" class="form-label">{{ _('描述') }}</label>
                                     <textarea class="form-control" id="Description" name="Description" rows="4">{{ test_package.Description or '' }}</textarea>
                                 </div>
                             </div>
@@ -587,45 +559,45 @@
                             <div class="form-section">
                                 <div class="form-section-header">
                                     <i class="bi bi-speedometer"></i>
-                                    <h5>试压信息</h5>
+                                    <h5>{{ _('试压信息') }}</h5>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="PipeMaterial" class="form-label">管道材料</label>
+                                    <label for="PipeMaterial" class="form-label">{{ _('管道材料') }}</label>
                                     <select class="form-select" id="PipeMaterial" name="PipeMaterial">
-                                        <option value="">请选择</option>
-                                        <option value="PE" {% if test_package.PipeMaterial == 'PE' %}selected{% endif %}>PE（聚乙烯）</option>
-                                        <option value="CS" {% if test_package.PipeMaterial == 'CS' %}selected{% endif %}>CS（碳钢）</option>
-                                        <option value="SS" {% if test_package.PipeMaterial == 'SS' %}selected{% endif %}>SS（不锈钢）</option>
-                                        <option value="DUSS" {% if test_package.PipeMaterial == 'DUSS' %}selected{% endif %}>DUSS（双相不锈钢）</option>
-                                        <option value="LACS" {% if test_package.PipeMaterial == 'LACS' %}selected{% endif %}>LACS（合金钢）</option>
-                                        <option value="LTCS" {% if test_package.PipeMaterial == 'LTCS' %}selected{% endif %}>LTCS（低温碳钢）</option>
-                                        <option value="NIAS" {% if test_package.PipeMaterial == 'NIAS' %}selected{% endif %}>NIAS（镍合金）</option>
+                                        <option value="">{{ _('请选择') }}</option>
+                                        <option value="PE" {% if test_package.PipeMaterial == 'PE' %}selected{% endif %}>PE ({{ _('聚乙烯') }})</option>
+                                        <option value="CS" {% if test_package.PipeMaterial == 'CS' %}selected{% endif %}>CS ({{ _('碳钢') }})</option>
+                                        <option value="SS" {% if test_package.PipeMaterial == 'SS' %}selected{% endif %}>SS ({{ _('不锈钢') }})</option>
+                                        <option value="DUSS" {% if test_package.PipeMaterial == 'DUSS' %}selected{% endif %}>DUSS ({{ _('双相不锈钢') }})</option>
+                                        <option value="LACS" {% if test_package.PipeMaterial == 'LACS' %}selected{% endif %}>LACS ({{ _('合金钢') }})</option>
+                                        <option value="LTCS" {% if test_package.PipeMaterial == 'LTCS' %}selected{% endif %}>LTCS ({{ _('低温碳钢') }})</option>
+                                        <option value="NIAS" {% if test_package.PipeMaterial == 'NIAS' %}selected{% endif %}>NIAS ({{ _('镍合金') }})</option>
                                     </select>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="TestType" class="form-label">试压类型</label>
+                                    <label for="TestType" class="form-label">{{ _('试压类型') }}</label>
                                     <select class="form-select" id="TestType" name="TestType">
-                                        <option value="">请选择</option>
-                                        <option value="Hydrostatic" {% if test_package.TestType == 'Hydrostatic' %}selected{% endif %}>Hydrostatic（水压）</option>
-                                        <option value="Pneumatic" {% if test_package.TestType == 'Pneumatic' %}selected{% endif %}>Pneumatic（气压）</option>
-                                        <option value="Observation" {% if test_package.TestType == 'Observation' %}selected{% endif %}>Observation（观察包）</option>
+                                        <option value="">{{ _('请选择') }}</option>
+                                        <option value="Hydrostatic" {% if test_package.TestType == 'Hydrostatic' %}selected{% endif %}>Hydrostatic ({{ _('水压') }})</option>
+                                        <option value="Pneumatic" {% if test_package.TestType == 'Pneumatic' %}selected{% endif %}>Pneumatic ({{ _('气压') }})</option>
+                                        <option value="Observation" {% if test_package.TestType == 'Observation' %}selected{% endif %}>Observation ({{ _('观察包') }})</option>
                                     </select>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="TestMedium" class="form-label">试压介质</label>
+                                    <label for="TestMedium" class="form-label">{{ _('试压介质') }}</label>
                                     <input type="text" class="form-control" id="TestMedium" name="TestMedium" value="{{ test_package.TestMedium or '' }}">
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="DesignPressure" class="form-label">设计压力 (MPa)</label>
+                                    <label for="DesignPressure" class="form-label">{{ _('设计压力') }} (MPa)</label>
                                     <input type="number" step="0.01" class="form-control" id="DesignPressure" name="DesignPressure" value="{{ test_package.DesignPressure or '' }}">
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="TestPressure" class="form-label">试压压力 (MPa)</label>
+                                    <label for="TestPressure" class="form-label">{{ _('试压压力') }} (MPa)</label>
                                     <input type="number" step="0.01" class="form-control" id="TestPressure" name="TestPressure" value="{{ test_package.TestPressure or '' }}">
                                 </div>
                             </div>
@@ -636,25 +608,25 @@
                             <div class="form-section">
                                 <div class="form-section-header">
                                     <i class="bi bi-calendar-event-fill"></i>
-                                    <h5>计划与状态</h5>
+                                    <h5>{{ _('计划与状态') }}</h5>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="PlannedDate" class="form-label">计划日期</label>
+                                    <label for="PlannedDate" class="form-label">{{ _('计划日期') }}</label>
                                     <input type="date" class="form-control" id="PlannedDate" name="PlannedDate" value="{{ test_package.PlannedDate or '' }}">
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="ActualDate" class="form-label">实际日期</label>
+                                    <label for="ActualDate" class="form-label">{{ _('实际日期') }}</label>
                                     <input type="date" class="form-control" id="ActualDate" name="ActualDate" value="{{ test_package.ActualDate or '' }}">
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="Status" class="form-label">状态</label>
+                                    <label for="Status" class="form-label">{{ _('状态') }}</label>
                                     <select class="form-select" id="Status" name="Status">
-                                        <option value="Pending" {% if test_package.Status == 'Pending' %}selected{% endif %}>Pending（待处理）</option>
-                                        <option value="In Progress" {% if test_package.Status == 'In Progress' %}selected{% endif %}>In Progress（进行中）</option>
-                                        <option value="Completed" {% if test_package.Status == 'Completed' %}selected{% endif %}>Completed（已完成）</option>
+                                        <option value="Pending" {% if test_package.Status == 'Pending' %}selected{% endif %}>Pending ({{ _('待处理') }})</option>
+                                        <option value="In Progress" {% if test_package.Status == 'In Progress' %}selected{% endif %}>In Progress ({{ _('进行中') }})</option>
+                                        <option value="Completed" {% if test_package.Status == 'Completed' %}selected{% endif %}>Completed ({{ _('已完成') }})</option>
                                     </select>
                                 </div>
                             </div>
@@ -664,7 +636,7 @@
                     <!-- 提交按钮 -->
                     <div class="text-end mt-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle-fill"></i> 保存更改
+                            <i class="bi bi-check-circle-fill"></i> {{ _('保存更改') }}
                         </button>
                     </div>
                 </form>
@@ -677,12 +649,12 @@
                         <div class="form-section h-100">
                             <div class="form-section-header">
                                 <i class="bi bi-diagram-3"></i>
-                                <h5>P&ID 清单</h5>
+                                <h5>{{ _('P&ID清单') }}</h5>
                             </div>
-                            <p class="text-muted small mb-3">维护该试压包的 P&ID 清单，支持手工新增和删除。</p>
+                            <p class="text-muted small mb-3">{{ _('维护该试压包的P&ID清单') }}</p>
                             <form id="pidForm" class="row g-2 align-items-end">
                                 <div class="col-md-7">
-                                    <label class="form-label required">P&ID 编号</label>
+                                    <label class="form-label required">{{ _('P&ID编号') }}</label>
                                     <input type="text" class="form-control" name="PIDNo" required>
                                 </div>
                                 <div class="col-md-3">
@@ -691,7 +663,7 @@
                                 </div>
                                 <div class="col-md-2 text-md-end">
                                     <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-plus-circle"></i> 新增
+                                        <i class="bi bi-plus-circle"></i> {{ _('新增') }}
                                     </button>
                                 </div>
                             </form>
@@ -700,14 +672,14 @@
                                     <thead>
                                         <tr>
                                             <th style="width: 60px;">#</th>
-                                            <th>P&ID 编号</th>
+                                            <th>{{ _('P&ID编号') }}</th>
                                             <th style="width: 120px;">Rev No.</th>
-                                            <th style="width: 120px;">操作</th>
+                                            <th style="width: 120px;">{{ _('操作') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody id="pidTableBody">
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-3">数据加载中...</td>
+                                            <td colspan="4" class="text-center text-muted py-3">{{ _('加载中') }}...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -728,7 +700,7 @@
                             </div>
                             <form id="isoForm" class="row g-2 align-items-end">
                                 <div class="col-md-7">
-                                    <label class="form-label required">ISO 编号</label>
+                                    <label class="form-label required">{{ _('ISO编号') }}</label>
                                     <input type="text" class="form-control" name="ISODrawingNo" required>
                                 </div>
                                 <div class="col-md-3">
@@ -737,7 +709,7 @@
                                 </div>
                                 <div class="col-md-2 text-md-end">
                                     <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-upload"></i> 新增
+                                        <i class="bi bi-upload"></i> {{ _('新增') }}
                                     </button>
                                 </div>
                             </form>
@@ -746,7 +718,7 @@
                                     <thead>
                                         <tr>
                                             <th style="width: 60px;">#</th>
-                                            <th>ISO 编号</th>
+                                            <th>{{ _('ISO编号') }}</th>
                                             <th style="width: 120px;">Rev No.</th>
                                             <th style="width: 120px;">操作</th>
                                         </tr>
@@ -1017,11 +989,9 @@
         
         <!-- 底部间距 -->
         <div style="height: 2rem;"></div>
-    </div>
+{% endblock %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block scripts %}
 
     <!-- CSRF Token 支持（与工业化主模板保持一致，用于本页的 fetch / AJAX 请求） -->
     <script>
@@ -1618,6 +1588,5 @@
             }
         });
     </script>
-</body>
-</html>
+{% endblock %}
 

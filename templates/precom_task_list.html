@@ -11,23 +11,23 @@
         </h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> 首页</a></li>
-                <li class="breadcrumb-item active">预试车任务管理</li>
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> {{ _('首页') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('预试车任务管理') }}</li>
             </ol>
         </nav>
     </div>
     <div class="d-flex gap-2">
         <a href="{{ new_task_url }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> 新建任务
+            <i class="bi bi-plus-circle"></i> {{ _('新建任务') }}
         </a>
         <a href="{{ url_for('precom.precom_export_tasks', task_type=filter_task_type) }}" class="btn btn-outline-success">
-            <i class="bi bi-download"></i> 导出任务清单
+            <i class="bi bi-download"></i> {{ _('导出任务清单') }}
         </a>
         <form class="d-inline-block" method="post" enctype="multipart/form-data"
               action="{{ url_for('precom.precom_import_tasks', task_type=filter_task_type) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <label class="btn btn-outline-secondary mb-0">
-                <i class="bi bi-upload"></i> 导入清单
+                <i class="bi bi-upload"></i> {{ _('导入清单') }}
                 <input type="file" name="file" accept=".xlsx,.xls" style="display:none" onchange="this.form.submit();">
             </label>
         </form>
@@ -40,7 +40,7 @@
         <div class="row g-2">
             <div class="col-md-2">
                 <select class="form-select" name="task_type">
-                    <option value="">全部任务类型</option>
+                    <option value="">{{ _('全部任务类型') }}</option>
                     {% set types = [
                         ('Manhole', '人孔检查'),
                         ('MotorSolo', '电机单试'),
@@ -73,19 +73,19 @@
             </div>
             <div class="col-md-2">
                 <select class="form-select" name="status">
-                    <option value="">全部状态</option>
-                    <option value="未开始" {% if filter_status == '未开始' %}selected{% endif %}>未开始</option>
-                    <option value="进行中" {% if filter_status == '进行中' %}selected{% endif %}>进行中</option>
-                    <option value="已完成" {% if filter_status == '已完成' %}selected{% endif %}>已完成</option>
+                    <option value="">{{ _('全部状态') }}</option>
+                    <option value="未开始" {% if filter_status == '未开始' %}selected{% endif %}>{{ _('未开始') }}</option>
+                    <option value="进行中" {% if filter_status == '进行中' %}selected{% endif %}>{{ _('进行中') }}</option>
+                    <option value="已完成" {% if filter_status == '已完成' %}selected{% endif %}>{{ _('已完成') }}</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1">
-                        <i class="bi bi-search"></i> 搜索
+                        <i class="bi bi-search"></i> {{ _('搜索') }}
                     </button>
                     <a href="{{ url_for('precom.precom_task_list') }}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-clockwise"></i> 重置
+                        <i class="bi bi-arrow-clockwise"></i> {{ _('重置') }}
                     </a>
                 </div>
             </div>
@@ -99,18 +99,18 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">任务ID</th>
-                        <th style="width: 140px;">任务类型</th>
-                        <th style="width: 120px;">系统</th>
-                        <th style="width: 140px;">子系统</th>
-                        <th style="width: 150px;">图纸号</th>
-                        <th style="width: 150px;">Tag / 点位</th>
-                        <th style="width: 120px;">区域 Block</th>
-                        <th style="width: 120px;" class="text-center">数量</th>
-                        <th style="width: 140px;">计划时间</th>
-                        <th style="width: 140px;">实际时间</th>
-                        <th style="width: 100px;">状态</th>
-                        <th style="width: 120px;">操作</th>
+                        <th style="width: 80px;">{{ _('任务ID') }}</th>
+                        <th style="width: 140px;">{{ _('任务类型') }}</th>
+                        <th style="width: 120px;">{{ _('系统') }}</th>
+                        <th style="width: 140px;">{{ _('子系统') }}</th>
+                        <th style="width: 150px;">{{ _('图纸号') }}</th>
+                        <th style="width: 150px;">Tag / {{ _('点位') }}</th>
+                        <th style="width: 120px;">{{ _('区域') }} Block</th>
+                        <th style="width: 120px;" class="text-center">{{ _('数量') }}</th>
+                        <th style="width: 140px;">{{ _('计划时间') }}</th>
+                        <th style="width: 140px;">{{ _('实际时间') }}</th>
+                        <th style="width: 100px;">{{ _('状态') }}</th>
+                        <th style="width: 120px;">{{ _('操作') }}</th>
                     </tr>
                 </thead>
                 <tbody>
