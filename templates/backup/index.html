@@ -1,8 +1,9 @@
 ﻿{% extends "base_industrial.html" %}
 
-{% block title %}备份与同步管理 - 预试车管理系统{% endblock %}
+{% block title %}{{ _('备份与同步管理') }} - {{ _('预试车管理系统') }}{% endblock %}
 
 {% block extra_styles %}
+<style>
 .backup-hero {
     background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,64,175,0.85));
     border-radius: 16px;
@@ -65,6 +66,7 @@
 .spec-list li span {
     color: var(--text-primary);
 }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -75,20 +77,20 @@
                 <div>
                     <span class="badge bg-warning text-dark fw-bold">DATA SAFETY</span>
                     <h1 class="display-6 fw-bolder mt-3 mb-2">
-                        <i class="bi bi-database-fill-gear me-2"></i>备份与同步控制台
+                        <i class="bi bi-database-fill-gear me-2"></i>{{ _('备份与同步控制台') }}
                     </h1>
                     <p class="text-light opacity-75 mb-0">
-                        自动化备份 + 智能同步流水线，确保导入/恢复可控、可追溯。
+                        {{ _('自动化备份 + 智能同步流水线，确保导入/恢复可控、可追溯。') }}
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-3">
                     <div class="info-tag">
                         <i class="bi bi-hdd-network"></i>
-                        最近备份：{{ backups_last_time if backups_last_time else '暂无记录' }}
+                        {{ _('最近备份') }}：{{ backups_last_time if backups_last_time else _('暂无记录') }}
                     </div>
                     <div class="info-tag">
                         <i class="bi bi-clock-history"></i>
-                        最近同步：{{ sync_last_time if sync_last_time else '暂无记录' }}
+                        {{ _('最近同步') }}：{{ sync_last_time if sync_last_time else _('暂无记录') }}
                     </div>
                 </div>
             </div>
@@ -103,14 +105,14 @@
                 <div class="icon-pill bg-primary text-white">
                     <i class="bi bi-shield-lock"></i>
                 </div>
-                <h4 class="fw-bold mb-0">备份管理</h4>
-                <p class="text-muted mb-2">生成、查看、恢复全量备份，保障数据安全</p>
+                <h4 class="fw-bold mb-0">{{ _('备份管理') }}</h4>
+                <p class="text-muted mb-2">{{ _('生成、查看、恢复全量备份，保障数据安全') }}</p>
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ url_for('backup.backup_list') }}" class="btn btn-outline-primary btn-sm px-3">
-                        <i class="bi bi-list-ul me-1"></i>历史记录
+                        <i class="bi bi-list-ul me-1"></i>{{ _('历史记录') }}
                     </a>
                     <button class="btn btn-primary btn-sm px-3" onclick="createBackup()">
-                        <i class="bi bi-save2 me-1"></i>立即备份
+                        <i class="bi bi-save2 me-1"></i>{{ _('立即备份') }}
                     </button>
                 </div>
             </div>
@@ -120,14 +122,14 @@
                 <div class="icon-pill bg-success text-white">
                     <i class="bi bi-arrow-repeat"></i>
                 </div>
-                <h4 class="fw-bold mb-0">同步流水线</h4>
-                <p class="text-muted mb-2">焊口导入后的系统/子系统/试压包自动同步</p>
+                <h4 class="fw-bold mb-0">{{ _('同步流水线') }}</h4>
+                <p class="text-muted mb-2">{{ _('焊口导入后的系统/子系统/试压包自动同步') }}</p>
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ url_for('backup.sync_logs') }}" class="btn btn-outline-success btn-sm px-3">
-                        <i class="bi bi-clock-history me-1"></i>日志
+                        <i class="bi bi-clock-history me-1"></i>{{ _('日志') }}
                     </a>
                     <button class="btn btn-success btn-sm px-3" onclick="runSync()">
-                        <i class="bi bi-lightning-charge me-1"></i>执行同步
+                        <i class="bi bi-lightning-charge me-1"></i>{{ _('执行同步') }}
                     </button>
                 </div>
             </div>
@@ -137,14 +139,14 @@
                 <div class="icon-pill bg-info text-white">
                     <i class="bi bi-graph-up"></i>
                 </div>
-                <h4 class="fw-bold mb-0">数据统计</h4>
-                <p class="text-muted mb-2">清理归档、资源占用与趋势一目了然</p>
+                <h4 class="fw-bold mb-0">{{ _('数据统计') }}</h4>
+                <p class="text-muted mb-2">{{ _('清理归档、资源占用与趋势一目了然') }}</p>
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ url_for('backup.statistics') }}" class="btn btn-outline-info btn-sm px-3">
-                        <i class="bi bi-bar-chart me-1"></i>进入看板
+                        <i class="bi bi-bar-chart me-1"></i>{{ _('进入看板') }}
                     </a>
                     <button class="btn btn-info text-dark btn-sm px-3" onclick="cleanPreview()">
-                        <i class="bi bi-broom me-1"></i>清理预览
+                        <i class="bi bi-broom me-1"></i>{{ _('清理预览') }}
                     </button>
                 </div>
             </div>
@@ -154,35 +156,35 @@
     <div class="row g-3 mt-1">
         <div class="col-xl-6">
             <div class="industrial-panel h-100">
-                <h5 class="mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>快捷操作</h5>
+                <h5 class="mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>{{ _('快捷操作') }}</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <button class="btn btn-lg btn-outline-primary w-100" onclick="createBackup()">
-                            <i class="bi bi-cloud-arrow-down me-2"></i>生成全量备份
+                            <i class="bi bi-cloud-arrow-down me-2"></i>{{ _('生成全量备份') }}
                         </button>
                     </div>
                     <div class="col-md-6">
                         <button class="btn btn-lg btn-outline-success w-100" onclick="runSync()">
-                            <i class="bi bi-diagram-3 me-2"></i>触发同步流水线
+                            <i class="bi bi-diagram-3 me-2"></i>{{ _('触发同步流水线') }}
                         </button>
                     </div>
                 </div>
                 <div class="row g-3 mt-2">
                     <div class="col-md-12">
                         <button class="btn btn-lg btn-warning w-100" onclick="showPipelineModal()">
-                            <i class="bi bi-play-circle-fill me-2"></i>运行完整数据同步流水线
+                            <i class="bi bi-play-circle-fill me-2"></i>{{ _('运行完整数据同步流水线') }}
                         </button>
                     </div>
                 </div>
                 <div class="row g-3 mt-2">
                     <div class="col-md-6">
                         <button class="btn btn-outline-secondary w-100" onclick="window.location.href='{{ url_for('backup.backup_list') }}'">
-                            <i class="bi bi-hdd-stack me-2"></i>查看更多备份
+                            <i class="bi bi-hdd-stack me-2"></i>{{ _('查看更多备份') }}
                         </button>
                     </div>
                     <div class="col-md-6">
                         <button class="btn btn-outline-warning w-100" onclick="window.location.href='{{ url_for('backup.statistics') }}'">
-                            <i class="bi bi-exclamation-triangle me-2"></i>数据清理中心
+                            <i class="bi bi-exclamation-triangle me-2"></i>{{ _('数据清理中心') }}
                         </button>
                     </div>
                 </div>
@@ -190,22 +192,22 @@
         </div>
         <div class="col-xl-6">
             <div class="industrial-panel h-100">
-                <h5 class="mb-3"><i class="bi bi-info-circle-fill text-primary me-2"></i>策略说明</h5>
+                <h5 class="mb-3"><i class="bi bi-info-circle-fill text-primary me-2"></i>{{ _('策略说明') }}</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <h6 class="text-uppercase text-muted fw-bold small">备份策略</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small">{{ _('备份策略') }}</h6>
                         <ul class="spec-list">
-                            <li><span>自动备份</span><small>导入前自动执行</small></li>
-                            <li><span>手动备份</span><small>任意时间创建</small></li>
-                            <li><span>保留策略</span><small>最近 30 天 / 10 份</small></li>
+                            <li><span>{{ _('自动备份') }}</span><small>{{ _('导入前自动执行') }}</small></li>
+                            <li><span>{{ _('手动备份') }}</span><small>{{ _('任意时间创建') }}</small></li>
+                            <li><span>{{ _('保留策略') }}</span><small>{{ _('最近 30 天 / 10 份') }}</small></li>
                         </ul>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-uppercase text-muted fw-bold small">同步机制</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small">{{ _('同步机制') }}</h6>
                         <ul class="spec-list">
-                            <li><span>增量清理</span><small>保留必要历史</small></li>
-                            <li><span>联动同步</span><small>系统/子系统/试压包</small></li>
-                            <li><span>人工维护</span><small>避免遗漏冲突</small></li>
+                            <li><span>{{ _('增量清理') }}</span><small>{{ _('保留必要历史') }}</small></li>
+                            <li><span>{{ _('联动同步') }}</span><small>{{ _('系统/子系统/试压包') }}</small></li>
+                            <li><span>{{ _('人工维护') }}</span><small>{{ _('避免遗漏冲突') }}</small></li>
                         </ul>
                     </div>
                 </div>
@@ -220,33 +222,33 @@
         <div class="modal-content">
             <div class="modal-header bg-warning text-dark">
                 <h5 class="modal-title" id="pipelineModalLabel">
-                    <i class="bi bi-play-circle-fill me-2"></i>运行完整数据同步流水线
+                    <i class="bi bi-play-circle-fill me-2"></i>{{ _('运行完整数据同步流水线') }}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('关闭') }}"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>流水线步骤：</strong>备份 → 焊口导入 → 主数据同步 → 聚合刷新 → 数据清理
+                    <strong>{{ _('流水线步骤') }}：</strong>{{ _('备份 → 焊口导入 → 主数据同步 → 聚合刷新 → 数据清理') }}
                 </div>
                 
                 <form id="pipelineForm">
                     <div class="mb-3">
                         <label for="excelFile" class="form-label">
-                            <i class="bi bi-file-earmark-excel me-2"></i>Excel文件（可选）
+                            <i class="bi bi-file-earmark-excel me-2"></i>{{ _('Excel文件（可选）') }}
                         </label>
                         <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx,.xls">
                         <small class="form-text text-muted">
-                            如果不选择文件，将使用默认目录：<code>nordinfo/</code>（自动查找所有 <code>WeldingDB_*.xlsx</code> 文件）
+                            {{ _('如果不选择文件，将使用默认目录') }}：<code>nordinfo/</code>（{{ _('自动查找所有') }} <code>WeldingDB_*.xlsx</code> {{ _('文件') }}）
                         </small>
                     </div>
                     
                     <div class="mb-3">
                         <label for="pipelineDescription" class="form-label">
-                            <i class="bi bi-card-text me-2"></i>备份描述（可选）
+                            <i class="bi bi-card-text me-2"></i>{{ _('备份描述（可选）') }}
                         </label>
                         <input type="text" class="form-control" id="pipelineDescription" 
-                               name="description" placeholder="自动生成描述">
+                               name="description" placeholder="{{ _('自动生成描述') }}">
                     </div>
                     
                     <div class="row">
@@ -254,7 +256,7 @@
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" id="skipBackup" name="skip_backup">
                                 <label class="form-check-label" for="skipBackup">
-                                    跳过备份步骤
+                                    {{ _('跳过备份步骤') }}
                                 </label>
                             </div>
                         </div>
@@ -262,7 +264,7 @@
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" id="skipCleanup" name="skip_cleanup">
                                 <label class="form-check-label" for="skipCleanup">
-                                    跳过清理步骤
+                                    {{ _('跳过清理步骤') }}
                                 </label>
                             </div>
                         </div>
@@ -271,16 +273,16 @@
                     <div id="pipelineProgress" class="d-none mt-3">
                         <div class="progress mb-2">
                             <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" style="width: 100%">执行中...</div>
+                                 role="progressbar" style="width: 100%">{{ _('执行中...') }}</div>
                         </div>
                         <div id="pipelineStatus" class="text-muted small"></div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('取消') }}</button>
                 <button type="button" class="btn btn-warning" onclick="runPipeline()">
-                    <i class="bi bi-play-fill me-2"></i>开始执行
+                    <i class="bi bi-play-fill me-2"></i>{{ _('开始执行') }}
                 </button>
             </div>
         </div>

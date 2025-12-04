@@ -568,10 +568,16 @@
                         <!-- 语言切换器 -->
                         <div class="dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-translate"></i>
-                                {% if get_locale() == 'zh_CN' %}{{ _('中文') }}
-                                {% elif get_locale() == 'en_US' %}English
-                                {% else %}Русский{% endif %}
+                                {% set current_lang = get_locale()|string %}
+                                {% if current_lang == 'zh_CN' or current_lang == 'zh' %}
+                                    🇨🇳 {{ _('中文') }}
+                                {% elif current_lang == 'en_US' or current_lang == 'en' %}
+                                    🇺🇸 English
+                                {% elif current_lang == 'ru_RU' or current_lang == 'ru' %}
+                                    🇷🇺 Русский
+                                {% else %}
+                                    🇨🇳 {{ _('中文') }}
+                                {% endif %}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
                                 <li><a class="dropdown-item {% if get_locale() == 'zh_CN' %}active{% endif %}" href="/set_language/zh_CN">
@@ -588,7 +594,11 @@
                         {% if current_user %}
                             <span class="user-pill">
                                 <i class="bi bi-person-badge"></i>
-                                {{ current_user.full_name or current_user.username }}
+                                {% if (current_user.full_name or current_user.username) == '系统管理员' %}
+                                    {{ _('系统管理员') }}
+                                {% else %}
+                                    {{ current_user.full_name or current_user.username }}
+                                {% endif %}
                             </span>
                             <a href="/logout" class="nav-link">
                                 <i class="bi bi-box-arrow-right"></i> {{ _('退出') }}

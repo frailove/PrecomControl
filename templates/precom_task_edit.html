@@ -446,7 +446,11 @@
                     <label class="form-label">{{ _('上传附件') }}</label>
                     <div class="row g-2">
                         <div class="col-md-8 col-sm-12">
-                            <input type="file" id="attachmentFiles" multiple class="form-control">
+                            <div class="custom-file-wrapper">
+                                <input type="file" id="attachmentFiles" multiple class="form-control custom-file-input"
+                                       data-choose-text="{{ _('选择文件') }}" 
+                                       data-no-file-text="{{ _('未选择文件') }}">
+                            </div>
                         </div>
                         <div class="col-md-4 col-sm-12 d-grid">
                             <button class="btn btn-outline-primary" id="uploadAttachmentBtn">
@@ -620,7 +624,7 @@
                             {% endfor %}
                             {% else %}
                             <tr>
-                                <td colspan="12" class="text-center text-muted py-3">暂无尾项</td>
+                                <td colspan="12" class="text-center text-muted py-3">{{ _('暂无尾项') }}</td>
                             </tr>
                             {% endif %}
                         </tbody>
@@ -1189,7 +1193,7 @@
             .then(res => res.json())
             .then(rows => {
                 if (!rows.length) {
-                    punchBody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-3">暂无尾项</td></tr>';
+                    punchBody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-3">{{ _("暂无尾项") }}</td></tr>';
                     return;
                 }
                 punchBody.innerHTML = rows.map(p => `
@@ -1306,6 +1310,54 @@
         });
     }
 })();
+
+// 自定义文件选择器显示文本（使其支持翻译）
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.custom-file-input').forEach(function(input) {
+        const chooseText = input.dataset.chooseText || '{{ _("选择文件") }}';
+        const noFileText = input.dataset.noFileText || '{{ _("未选择文件") }}';
+        
+        // 创建自定义显示
+        const wrapper = input.parentElement;
+        if (wrapper && wrapper.classList.contains('custom-file-wrapper')) {
+            // 隐藏原生input，使用自定义button
+            input.style.display = 'none';
+            
+            const customDiv = document.createElement('div');
+            customDiv.className = 'd-flex gap-2';
+            customDiv.innerHTML = `
+                <button type="button" class="btn btn-outline-primary flex-shrink-0 custom-file-btn" style="white-space: nowrap;">
+                    <i class="bi bi-folder2-open"></i> ${chooseText}
+                </button>
+                <input type="text" class="form-control custom-file-display" readonly 
+                       placeholder="${noFileText}" style="background: white; cursor: pointer;">
+            `;
+            
+            wrapper.appendChild(customDiv);
+            
+            const btn = customDiv.querySelector('.custom-file-btn');
+            const display = customDiv.querySelector('.custom-file-display');
+            
+            // 点击按钮或文本框时触发文件选择
+            btn.addEventListener('click', () => input.click());
+            display.addEventListener('click', () => input.click());
+            
+            // 文件选择后更新显示
+            input.addEventListener('change', function() {
+                const fileCount = this.files.length;
+                if (fileCount > 0) {
+                    if (fileCount === 1) {
+                        display.value = this.files[0].name;
+                    } else {
+                        display.value = `${fileCount} {{ _("个文件") }}`;
+                    }
+                } else {
+                    display.value = '';
+                }
+            });
+        }
+    });
+});
 </script>
 {% endblock %}
 

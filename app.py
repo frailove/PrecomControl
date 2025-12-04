@@ -15,10 +15,45 @@ from utils.auth_decorators import has_permission
 # from routes.subsystem_routes_new_ui import subsystem_new_ui_bp  # 子系统管理新UI
 
 
+def compile_translations_if_needed():
+    """编译翻译文件（如果 babel 可用）"""
+    try:
+        import os
+        from babel.messages.mofile import write_mo
+        from babel.messages.pofile import read_po
+        
+        languages = ['en_US', 'ru_RU', 'zh_CN']
+        translations_dir = 'translations'
+        
+        for lang in languages:
+            po_file = os.path.join(translations_dir, lang, 'LC_MESSAGES', 'messages.po')
+            mo_file = os.path.join(translations_dir, lang, 'LC_MESSAGES', 'messages.mo')
+            
+            if os.path.exists(po_file):
+                # 检查 .mo 文件是否存在或是否过期
+                if not os.path.exists(mo_file) or os.path.getmtime(po_file) > os.path.getmtime(mo_file):
+                    print(f'[翻译] 编译 {lang} 翻译文件...')
+                    try:
+                        with open(po_file, 'rb') as f:
+                            catalog = read_po(f)
+                        with open(mo_file, 'wb') as f:
+                            write_mo(f, catalog)
+                        print(f'[翻译] ✓ 成功编译 {lang}')
+                    except Exception as e:
+                        print(f'[翻译] ✗ 编译 {lang} 失败: {e}')
+    except ImportError:
+        print('[翻译] Babel 未安装，跳过翻译编译')
+    except Exception as e:
+        print(f'[翻译] 编译翻译文件时出错: {e}')
+
+
 def create_app():
     """创建Flask应用"""
     app = Flask(__name__)
     app.config.from_object(FlaskConfig)
+    
+    # 编译翻译文件（如果需要）
+    compile_translations_if_needed()
     
     # 国际化配置
     from flask_babel import Babel
@@ -238,6 +273,92 @@ def create_app():
         return response
 
     # 语言切换路由
+    @app.route('/debug/language')
+    def debug_language():
+        """调试语言设置"""
+        from flask_babel import get_locale as babel_get_locale
+        
+        current_locale = str(babel_get_locale())
+        url_lang = request.args.get('lang', '无')
+        cookie_lang = request.cookies.get('language', '无')
+        session_lang = session.get('user', {}).get('language', '无') if session.get('user') else '未登录'
+        
+        html = f'''
+        <html>
+        <head>
+            <title>语言调试</title>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: Arial; padding: 20px; background: #f5f5f5; }}
+                .info {{ background: white; padding: 20px; border-radius: 8px; margin: 10px 0; }}
+                table {{ border-collapse: collapse; width: 100%; margin: 20px 0; }}
+                th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+                th {{ background-color: #4CAF50; color: white; }}
+                .btn {{ display: inline-block; padding: 10px 20px; margin: 5px; background: #2196F3; color: white; text-decoration: none; border-radius: 4px; }}
+                .btn:hover {{ background: #0b7dda; }}
+                .clear {{ background: #f44336; }}
+                .clear:hover {{ background: #da190b; }}
+            </style>
+        </head>
+        <body>
+            <h1>🔍 语言设置调试信息</h1>
+            
+            <div class="info">
+                <h2>当前状态</h2>
+                <table>
+                    <tr><th>项目</th><th>值</th></tr>
+                    <tr><td><strong>当前语言 (Babel)</strong></td><td><strong style="color: red; font-size: 1.2em;">{current_locale}</strong></td></tr>
+                    <tr><td>URL参数 (lang)</td><td>{url_lang}</td></tr>
+                    <tr><td>Cookie (language)</td><td>{cookie_lang}</td></tr>
+                    <tr><td>Session用户语言</td><td>{session_lang}</td></tr>
+                    <tr><td>是否登录</td><td>{'是' if session.get('user') else '否'}</td></tr>
+                </table>
+            </div>
+            
+            <div class="info">
+                <h2>测试操作</h2>
+                <a href="/set_language/zh_CN" class="btn">设置为中文 🇨🇳</a>
+                <a href="/set_language/en_US" class="btn">设置为英语 🇺🇸</a>
+                <a href="/set_language/ru_RU" class="btn">设置为俄语 🇷🇺</a>
+                <br><br>
+                <a href="/debug/clear_language" class="btn clear">清除Language Cookie</a>
+                <a href="/debug/clear_session" class="btn clear">清除Session</a>
+                <a href="/debug/language" class="btn">刷新</a>
+                <br><br>
+                <a href="/" class="btn" style="background: #607D8B;">返回首页</a>
+            </div>
+            
+            <div class="info">
+                <h2>优先级说明</h2>
+                <ol>
+                    <li>URL参数 (lang) - 最高优先级</li>
+                    <li>Cookie (language) - 第二优先级</li>
+                    <li>Session用户语言 - 第三优先级</li>
+                    <li>默认语言 (zh_CN) - 最低优先级</li>
+                </ol>
+            </div>
+        </body>
+        </html>
+        '''
+        return html
+    
+    @app.route('/debug/clear_language')
+    def debug_clear_language():
+        """清除语言cookie"""
+        from flask import make_response
+        response = make_response(redirect('/debug/language'))
+        response.set_cookie('language', '', expires=0, path='/')
+        return response
+    
+    @app.route('/debug/clear_session')
+    def debug_clear_session():
+        """清除session中的语言设置"""
+        from flask import make_response
+        if session.get('user'):
+            session['user'].pop('language', None)
+        response = make_response(redirect('/debug/language'))
+        return response
+    
     @app.route('/set_language/<language>')
     def set_language(language):
         from flask import make_response
@@ -245,12 +366,16 @@ def create_app():
             language = 'zh_CN'
         
         response = make_response(redirect(request.referrer or url_for('index')))
-        # 设置cookie，有效期1年
-        response.set_cookie('language', language, max_age=365*24*60*60)
+        # 设置cookie，有效期1年，确保路径为根路径
+        response.set_cookie('language', language, max_age=365*24*60*60, path='/')
         
-        # 如果用户已登录，保存语言偏好到session（未来可以保存到数据库）
+        # 如果用户已登录，保存语言偏好到session
         if session.get('user'):
             session['user']['language'] = language
+        
+        # 调试信息
+        print(f'[语言切换] 切换到: {language}')
+        print(f'[语言切换] Cookie已设置: language={language}')
         
         return response
     

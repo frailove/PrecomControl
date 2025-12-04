@@ -1417,3 +1417,428 @@ msgstr "ISO Number"
 msgid "基础信息"
 msgstr "Basic Information"
 
+# Module names and descriptions
+msgid "管理工艺和非工艺系统基本信息"
+msgstr "Manage basic information of process and non-process systems"
+
+msgid "管理子系统信息和配置"
+msgstr "Manage subsystem information and configuration"
+
+msgid "管理试压包、焊口、检测数据"
+msgstr "Manage pressure test packages, welds, and inspection data"
+
+msgid "数据备份、同步和恢复"
+msgstr "Data backup, synchronization, and recovery"
+
+msgid "按设备/子系统管理人孔开启与复位检查任务"
+msgstr "Manage manhole opening and reset inspection tasks by equipment/subsystem"
+
+msgid "电机 Solo Run 计划、执行与记录管理"
+msgstr "Motor Solo Run planning, execution, and record management"
+
+msgid "仪表台件清单与安装完成情况追踪"
+msgstr "Instrument component list and installation completion tracking"
+
+msgid "回路点位测试计划、执行与结果记录"
+msgstr "Loop point test planning, execution, and result recording"
+
+msgid "动设备最终对中任务与记录管理"
+msgstr "Dynamic equipment final alignment tasks and record management"
+
+msgid "机械联动测试计划与执行情况跟踪"
+msgstr "Mechanical linkage test planning and execution tracking"
+
+msgid "功能测试任务及尾项管理"
+msgstr "Functional test tasks and punch list management"
+
+# Backup Management Page Translations
+msgid "备份与同步管理"
+msgstr "Backup and Synchronization Management"
+
+msgid "备份与同步控制台"
+msgstr "Backup and Synchronization Console"
+
+msgid "自动化备份 + 智能同步流水线，确保导入/恢复可控、可追溯。"
+msgstr "Automated backup + intelligent synchronization pipeline, ensuring controlled and traceable import/recovery."
+
+msgid "最近备份"
+msgstr "Latest Backup"
+
+msgid "最近同步"
+msgstr "Latest Sync"
+
+msgid "暂无记录"
+msgstr "No Records"
+
+msgid "生成、查看、恢复全量备份，保障数据安全"
+msgstr "Create, view, restore full backups, ensure data security"
+
+msgid "历史记录"
+msgstr "History"
+
+msgid "立即备份"
+msgstr "Backup Now"
+
+msgid "同步流水线"
+msgstr "Sync Pipeline"
+
+msgid "焊口导入后的系统/子系统/试压包自动同步"
+msgstr "Automatic synchronization of systems/subsystems/test packages after weld import"
+
+msgid "日志"
+msgstr "Log"
+
+msgid "执行同步"
+msgstr "Execute Sync"
+
+msgid "清理归档、资源占用与趋势一目了然"
+msgstr "Clean archives, resource usage and trends at a glance"
+
+msgid "进入看板"
+msgstr "Enter Dashboard"
+
+msgid "清理预览"
+msgstr "Cleanup Preview"
+
+msgid "快捷操作"
+msgstr "Quick Actions"
+
+msgid "生成全量备份"
+msgstr "Create Full Backup"
+
+msgid "触发同步流水线"
+msgstr "Trigger Sync Pipeline"
+
+msgid "运行完整数据同步流水线"
+msgstr "Run Complete Data Sync Pipeline"
+
+msgid "查看更多备份"
+msgstr "View More Backups"
+
+msgid "数据清理中心"
+msgstr "Data Cleanup Center"
+
+msgid "策略说明"
+msgstr "Strategy Description"
+
+msgid "备份策略"
+msgstr "Backup Strategy"
+
+msgid "自动备份"
+msgstr "Automatic Backup"
+
+msgid "导入前自动执行"
+msgstr "Auto-execute before import"
+
+msgid "手动备份"
+msgstr "Manual Backup"
+
+msgid "任意时间创建"
+msgstr "Create anytime"
+
+msgid "保留策略"
+msgstr "Retention Policy"
+
+msgid "最近 30 天 / 10 份"
+msgstr "Last 30 days / 10 copies"
+
+msgid "同步机制"
+msgstr "Sync Mechanism"
+
+msgid "增量清理"
+msgstr "Incremental Cleanup"
+
+msgid "保留必要历史"
+msgstr "Retain necessary history"
+
+msgid "联动同步"
+msgstr "Linked Sync"
+
+msgid "系统/子系统/试压包"
+msgstr "System/Subsystem/Test Package"
+
+msgid "人工维护"
+msgstr "Manual Maintenance"
+
+msgid "避免遗漏冲突"
+msgstr "Avoid missing conflicts"
+
+msgid "关闭"
+msgstr "Close"
+
+msgid "流水线步骤"
+msgstr "Pipeline Steps"
+
+msgid "备份 → 焊口导入 → 主数据同步 → 聚合刷新 → 数据清理"
+msgstr "Backup → Weld Import → Master Data Sync → Aggregate Refresh → Data Cleanup"
+
+msgid "Excel文件（可选）"
+msgstr "Excel File (Optional)"
+
+msgid "如果不选择文件，将使用默认目录"
+msgstr "If no file is selected, the default directory will be used"
+
+msgid "自动查找所有"
+msgstr "automatically find all"
+
+msgid "文件"
+msgstr "files"
+
+msgid "备份描述（可选）"
+msgstr "Backup Description (Optional)"
+
+msgid "自动生成描述"
+msgstr "Auto-generate description"
+
+msgid "跳过备份步骤"
+msgstr "Skip backup step"
+
+msgid "跳过清理步骤"
+msgstr "Skip cleanup step"
+
+msgid "执行中..."
+msgstr "Executing..."
+
+msgid "取消"
+msgstr "Cancel"
+
+msgid "开始执行"
+msgstr "Start Execution"
+
+# Missing translation entries
+msgid "系统管理员"
+msgstr "System Administrator"
+
+msgid "备份管理"
+msgstr "Backup Management"
+
+msgid "数据统计"
+msgstr "Data Dashboard"
+
+# Test Package Management Page Headers and Content
+msgid "焊口 / DIN 进度"
+msgstr "Weld / DIN Progress"
+
+msgid "资料准备"
+msgstr "Document Preparation"
+
+msgid "阶段状态"
+msgstr "Phase Status"
+
+msgid "无焊口数据"
+msgstr "No weld data"
+
+msgid "附件/图纸"
+msgstr "Attachments/Drawings"
+
+msgid "暂无数据"
+msgstr "No data"
+
+# Test Package Status Names
+msgid "施工未完成"
+msgstr "Construction Incomplete"
+
+msgid "现场施工已完成"
+msgstr "On-site Construction Complete"
+
+msgid "资料准备完成"
+msgstr "Documentation Ready"
+
+msgid "试压已完成"
+msgstr "Pressure Test Complete"
+
+# Test Package Status Descriptions
+msgid "焊口或检测未完成"
+msgstr "Welding or inspection incomplete"
+
+msgid "具备试压包资料准备条件"
+msgstr "Ready for test package documentation"
+
+msgid "等待反馈现场试压结果"
+msgstr "Awaiting on-site pressure test results"
+
+# Test Package Edit Page - Drawings and Attachments
+msgid "重新加载"
+msgstr "Reload"
+
+msgid "支持多文件上传、下载和删除，请按照模块编号上传相应资料。"
+msgstr "Supports multiple file upload, download and delete. Upload materials according to module number."
+
+msgid "选择文件"
+msgstr "Select Files"
+
+msgid "大小"
+msgstr "Size"
+
+msgid "尚无附件"
+msgstr "No Attachments"
+
+# Test Package Edit Page - Weld Summary
+msgid "展示试压包焊口总览、DIN进度以及按管线号的详细统计。"
+msgstr "Display overview of test package welds, DIN progress, and detailed statistics by pipeline number."
+
+msgid "焊口总数"
+msgstr "Total Welds"
+
+msgid "已完工焊口"
+msgstr "Completed Welds"
+
+msgid "DIN 总量"
+msgstr "Total DIN"
+
+msgid "DIN 完成量"
+msgstr "Completed DIN"
+
+msgid "存在未能在LineList匹配的管线号，请核对管线清单。"
+msgstr "Pipeline numbers not matched in LineList detected. Please verify the pipeline list."
+
+msgid "管线编号"
+msgstr "Pipeline Number"
+
+msgid "LineList 匹配"
+msgstr "LineList Match"
+
+msgid "NDE 等级"
+msgstr "NDE Grade"
+
+msgid "焊口完成"
+msgstr "Welds Complete"
+
+msgid "DIN 完成"
+msgstr "DIN Complete"
+
+msgid "焊工数"
+msgstr "Welder Count"
+
+msgid "基于NDEPWHTStatus表的最新统计，若焊口未完成则显示NA。"
+msgstr "Latest statistics based on NDEPWHTStatus table. Shows NA if welds are not complete."
+
+msgid "检测类型"
+msgstr "Inspection Type"
+
+msgid "剩余量"
+msgstr "Remaining"
+
+msgid "数据加载中..."
+msgstr "Loading data..."
+
+# Punch List Related
+msgid "跟踪尾项的整改与验证情况。可直接在此新增或删除Punch记录，或通过导入模板批量维护。"
+msgstr "Track punch item rectification and verification. Add or delete Punch records directly, or maintain in bulk via import template."
+
+msgid "注意"
+msgstr "Note"
+
+msgid "PunchNo由系统自动生成。在Excel模板中，新增记录时PunchNo留空；更新或删除已有记录时，请填写对应的PunchNo。删除记录时，将Deleted字段设为Y（不计算在计数中）。"
+msgstr "PunchNo is auto-generated by the system. In Excel template, leave PunchNo blank when adding new records; fill in the corresponding PunchNo when updating or deleting existing records. When deleting, set Deleted field to Y (not counted)."
+
+msgid "下载导入模板"
+msgstr "Download Import Template"
+
+msgid "导入 Punch List"
+msgstr "Import Punch List"
+
+msgid "严重"
+msgstr "Critical"
+
+msgid "重要"
+msgstr "Important"
+
+msgid "一般"
+msgstr "Normal"
+
+msgid "轻微"
+msgstr "Minor"
+
+msgid "未整改"
+msgstr "Not Rectified"
+
+msgid "已整改"
+msgstr "Rectified"
+
+msgid "未验证"
+msgstr "Not Verified"
+
+msgid "已验证"
+msgstr "Verified"
+
+msgid "整改"
+msgstr "Rectification"
+
+msgid "验证"
+msgstr "Verification"
+
+# Pre-commissioning Task Types
+msgid "仪表台件安装"
+msgstr "Instrument Device Installation"
+
+msgid "动设备最终对中"
+msgstr "Dynamic Equipment Final Alignment"
+
+msgid "MRT机械联动测试"
+msgstr "MRT Mechanical Run Test"
+
+# Other Missing Translations
+msgid "暂无任务记录"
+msgstr "No task records"
+
+msgid "存在"
+msgstr "Found"
+
+msgid "条未匹配的管线，请核对LineList。"
+msgstr "unmatched pipelines. Please verify LineList."
+
+msgid "尚未维护 P&ID 清单"
+msgstr "P&ID list not maintained yet"
+
+msgid "未选择文件"
+msgstr "No file selected"
+
+msgid "上传"
+msgstr "Upload"
+
+msgid "上传时间"
+msgstr "Upload Time"
+
+# JavaScript Dynamic Text Translations
+msgid "加载失败，请稍后重试"
+msgstr "Loading failed, please try again later"
+
+msgid "未检测到 ISO 图纸，请检查 WeldingList"
+msgstr "No ISO drawings detected, please check WeldingList"
+
+msgid "已上传"
+msgstr "Uploaded"
+
+msgid "个文件"
+msgstr "files"
+
+msgid "未上传"
+msgstr "Not uploaded"
+
+msgid "附件加载失败"
+msgstr "Attachment loading failed"
+
+msgid "暂无焊口数据"
+msgstr "No weld data"
+
+msgid "焊口数据加载失败"
+msgstr "Weld data loading failed"
+
+msgid "NDE 数据加载失败"
+msgstr "NDE data loading failed"
+
+msgid "暂未登记 Punch 项"
+msgstr "No Punch items registered yet"
+
+msgid "Punch 列表加载失败"
+msgstr "Punch list loading failed"
+
+msgid "已匹配"
+msgstr "Matched"
+
+msgid "未匹配"
+msgstr "Unmatched"
+
+msgid "暂无尾项"
+msgstr "No punch items"

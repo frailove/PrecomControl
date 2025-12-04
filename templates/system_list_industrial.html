@@ -270,7 +270,7 @@
                     <td>
                         {% set test_pct = (stats.test_progress * 100)|round(1) %}
                         <div class="progress-meta">
-                            <span>试压包 {{ stats.tested_packages }}/{{ stats.total_packages }}</span>
+                            <span>{{ _('试压包') }} {{ stats.tested_packages }}/{{ stats.total_packages }}</span>
                             <span>{{ test_pct }}%</span>
                         </div>
                         <div class="progress progress-thin">

@@ -412,6 +412,40 @@
                 font-size: 0.8rem;
             }
         }
+    
+    /* ==================== 自定义文件选择器样式 ==================== */
+    .form-control[type="file"]::file-selector-button {
+        padding: 0.5rem 1rem;
+        margin-right: 1rem;
+        background: var(--primary-blue);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .form-control[type="file"]::file-selector-button:hover {
+        background: var(--primary-blue-dark);
+    }
+    
+    /* Webkit浏览器 */
+    .form-control[type="file"]::-webkit-file-upload-button {
+        padding: 0.5rem 1rem;
+        margin-right: 1rem;
+        background: var(--primary-blue);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .form-control[type="file"]::-webkit-file-upload-button:hover {
+        background: var(--primary-blue-dark);
+    }
     </style>
 {% endblock %}
 
@@ -690,12 +724,12 @@
                         <div class="form-section h-100">
                             <div class="form-section-header">
                                 <i class="bi bi-collection"></i>
-                                <h5>ISO 图纸</h5>
+                                <h5>{{ _('ISO图纸') }}</h5>
                             </div>
                             <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
-                                <p class="text-muted small mb-0">系统会自动从 WeldingList 抓取带有 “ISO” 的图纸编号，亦可补充手动记录。</p>
+                                <p class="text-muted small mb-0">{{ _('系统会自动从WeldingList抓取ISO图纸') }}</p>
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="isoRefreshBtn">
-                                    <i class="bi bi-arrow-repeat"></i> 重新加载
+                                    <i class="bi bi-arrow-repeat"></i> {{ _('重新加载') }}
                                 </button>
                             </div>
                             <form id="isoForm" class="row g-2 align-items-end">
@@ -737,11 +771,11 @@
             
             <div class="tab-pane fade" id="attachments" role="tabpanel">
                 <div class="form-section">
-                    <div class="form-section-header">
-                        <i class="bi bi-paperclip"></i>
-                        <h5>附件管理</h5>
-                    </div>
-                    <p class="text-muted small mb-3">支持多文件上传、下载和删除，请按照模块编号上传相应资料。</p>
+                            <div class="form-section-header">
+                                <i class="bi bi-paperclip"></i>
+                                <h5>{{ _('附件管理') }}</h5>
+                            </div>
+                            <p class="text-muted small mb-3">{{ _('支持多文件上传、下载和删除，请按照模块编号上传相应资料。') }}</p>
                     <div class="accordion" id="attachmentAccordion">
                         {% for module in attachment_modules %}
                         <div class="accordion-item">
@@ -763,12 +797,16 @@
                                     <form class="attachment-upload-form" data-module="{{ module.module }}">
                                         <div class="row g-2 align-items-end">
                                             <div class="col-md-8">
-                                                <label class="form-label">选择文件</label>
-                                                <input type="file" class="form-control" name="files" multiple required>
+                                                <label class="form-label">{{ _('选择文件') }}</label>
+                                                <div class="custom-file-wrapper">
+                                                    <input type="file" class="form-control custom-file-input" name="files" multiple required 
+                                                           data-choose-text="{{ _('选择文件') }}" 
+                                                           data-no-file-text="{{ _('未选择文件') }}">
+                                                </div>
                                             </div>
                                             <div class="col-md-4 text-md-end">
                                                 <button type="submit" class="btn btn-primary w-100">
-                                                    <i class="bi bi-cloud-upload"></i> 上传
+                                                    <i class="bi bi-cloud-upload"></i> {{ _('上传') }}
                                                 </button>
                                             </div>
                                         </div>
@@ -777,15 +815,15 @@
                                         <table class="table table-sm table-hover align-middle">
                                             <thead>
                                                 <tr>
-                                                    <th>文件名</th>
-                                                    <th style="width: 120px;">大小</th>
-                                                    <th style="width: 180px;">上传时间</th>
-                                                    <th style="width: 140px;">操作</th>
+                                                    <th>{{ _('文件名') }}</th>
+                                                    <th style="width: 120px;">{{ _('大小') }}</th>
+                                                    <th style="width: 180px;">{{ _('上传时间') }}</th>
+                                                    <th style="width: 140px;">{{ _('操作') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody data-attachment-body="{{ module.module }}">
                                                 <tr>
-                                                    <td colspan="4" class="text-center text-muted py-3">尚无附件</td>
+                                                    <td colspan="4" class="text-center text-muted py-3">{{ _('尚无附件') }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -800,51 +838,51 @@
             
             <div class="tab-pane fade" id="joint" role="tabpanel">
                 <div class="form-section">
-                    <div class="form-section-header">
-                        <i class="bi bi-box-seam-fill"></i>
-                        <h5>焊口汇总</h5>
-                    </div>
-                    <p class="text-muted small mb-3">展示试压包焊口总览、DIN进度以及按管线号的详细统计。</p>
+                            <div class="form-section-header">
+                                <i class="bi bi-box-seam-fill"></i>
+                                <h5>{{ _('焊口汇总') }}</h5>
+                            </div>
+                            <p class="text-muted small mb-3">{{ _('展示试压包焊口总览、DIN进度以及按管线号的详细统计。') }}</p>
                     <div class="row g-3 mb-3" id="jointSummaryCards">
                         <div class="col-md-3">
                             <div class="stat-card">
                                 <h3 id="totalJoints">-</h3>
-                                <p>焊口总数</p>
+                                <p>{{ _('焊口总数') }}</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
                                 <h3 id="completedJoints">-</h3>
-                                <p>已完工焊口</p>
+                                <p>{{ _('已完工焊口') }}</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
                                 <h3 id="totalDin">-</h3>
-                                <p>DIN 总量</p>
+                                <p>{{ _('DIN 总量') }}</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
                                 <h3 id="completedDin">-</h3>
-                                <p>DIN 完成量</p>
+                                <p>{{ _('DIN 完成量') }}</p>
                             </div>
                         </div>
                     </div>
                     <div class="alert alert-warning d-none" id="pipelineMismatchAlert">
                         <i class="bi bi-exclamation-triangle"></i>
-                        存在未能在 LineList 匹配的管线号，请核对管线清单。
+                        {{ _('存在未能在LineList匹配的管线号，请核对管线清单。') }}
                     </div>
                     <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead>
                                 <tr>
-                                    <th style="width: 180px;">管线编号</th>
-                                    <th style="width: 120px;">LineList 匹配</th>
-                                    <th style="width: 140px;">NDE 等级</th>
-                                    <th style="width: 160px;">焊口完成</th>
-                                    <th style="width: 160px;">DIN 完成</th>
-                                    <th style="width: 120px;">焊工数</th>
+                                    <th style="width: 180px;">{{ _('管线编号') }}</th>
+                                    <th style="width: 120px;">{{ _('LineList 匹配') }}</th>
+                                    <th style="width: 140px;">{{ _('NDE 等级') }}</th>
+                                    <th style="width: 160px;">{{ _('焊口完成') }}</th>
+                                    <th style="width: 160px;">{{ _('DIN 完成') }}</th>
+                                    <th style="width: 120px;">{{ _('焊工数') }}</th>
                                 </tr>
                             </thead>
                             <tbody id="pipelineSummaryBody">
@@ -859,20 +897,20 @@
                             <i class="bi bi-activity"></i>
                             <h5>NDE / PWHT Backlog Status</h5>
                         </div>
-                        <p class="text-muted small mb-3">基于 NDEPWHTStatus 表的最新统计，若焊口未完成则显示 “N/A”。</p>
+                        <p class="text-muted small mb-3">{{ _('基于NDEPWHTStatus表的最新统计，若焊口未完成则显示NA。') }}</p>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover align-middle">
                                 <thead>
                                     <tr>
-                                        <th style="width: 140px;">检测类型</th>
-                                        <th style="width: 140px;">总量</th>
-                                        <th style="width: 140px;">完成量</th>
-                                        <th style="width: 140px;">剩余量</th>
+                                        <th style="width: 140px;">{{ _('检测类型') }}</th>
+                                        <th style="width: 140px;">{{ _('总量') }}</th>
+                                        <th style="width: 140px;">{{ _('完成量') }}</th>
+                                        <th style="width: 140px;">{{ _('剩余量') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ndeStatusBody">
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-3">数据加载中...</td>
+                                        <td colspan="4" class="text-center text-muted py-3">{{ _('数据加载中...') }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -888,15 +926,15 @@
                         <h5>Punch List</h5>
                     </div>
                     <p class="text-muted small mb-2">
-                        跟踪尾项的整改与验证情况。可直接在此新增或删除 Punch 记录，或通过导入模板批量维护。
-                        <br><strong>注意：</strong>Punch No. 由系统自动生成。在Excel模板中，新增记录时PunchNo留空；更新或删除已有记录时，请填写对应的PunchNo。删除记录时，将Deleted字段设为Y（不计算在计数中）。
+                        {{ _('跟踪尾项的整改与验证情况。可直接在此新增或删除Punch记录，或通过导入模板批量维护。') }}
+                        <br><strong>{{ _('注意') }}：</strong>{{ _('PunchNo由系统自动生成。在Excel模板中，新增记录时PunchNo留空；更新或删除已有记录时，请填写对应的PunchNo。删除记录时，将Deleted字段设为Y（不计算在计数中）。') }}
                     </p>
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                         <a class="btn btn-outline-secondary" target="_blank" href="/test_packages/{{ test_package.TestPackageID }}/punch/import/template">
-                            <i class="bi bi-download"></i> 下载导入模板
+                            <i class="bi bi-download"></i> {{ _('下载导入模板') }}
                         </a>
                         <button type="button" class="btn btn-outline-primary" id="punchImportBtn">
-                            <i class="bi bi-upload"></i> 导入 Punch List
+                            <i class="bi bi-upload"></i> {{ _('导入 Punch List') }}
                         </button>
                         <input type="file" id="punchImportInput" accept=".xlsx,.xls" hidden>
                         <div class="text-muted small" id="punchImportStatus"></div>
@@ -915,23 +953,23 @@
                             <input type="text" class="form-control" name="RevNo">
                         </div>
                         <div class="col-12">
-                            <label class="form-label required">描述</label>
+                            <label class="form-label required">{{ _('描述') }}</label>
                             <input type="text" class="form-control" name="Description" required>
                         </div>
                         <div class="col-lg-2 col-md-4">
                             <label class="form-label required">Category</label>
                             <select class="form-select" name="Category" required>
-                                <option value="">选择</option>
-                                <option value="A">A - 严重</option>
-                                <option value="B">B - 重要</option>
-                                <option value="C">C - 一般</option>
-                                <option value="D">D - 轻微</option>
+                                <option value="">{{ _('选择') }}</option>
+                                <option value="A">A - {{ _('严重') }}</option>
+                                <option value="B">B - {{ _('重要') }}</option>
+                                <option value="C">C - {{ _('一般') }}</option>
+                                <option value="D">D - {{ _('轻微') }}</option>
                             </select>
                         </div>
                         <div class="col-lg-2 col-md-4">
                             <label class="form-label required">Cause</label>
                             <select class="form-select" name="Cause" required>
-                                <option value="">选择</option>
+                                <option value="">{{ _('选择') }}</option>
                                 <option value="N">N</option>
                                 <option value="F">F</option>
                                 <option value="E">E</option>
@@ -944,20 +982,20 @@
                         <div class="col-lg-2 col-md-6">
                             <label class="form-label">Rectified</label>
                             <select class="form-select" name="Rectified">
-                                <option value="N">N - 未整改</option>
-                                <option value="Y">Y - 已整改</option>
+                                <option value="N">N - {{ _('未整改') }}</option>
+                                <option value="Y">Y - {{ _('已整改') }}</option>
                             </select>
                         </div>
                         <div class="col-lg-2 col-md-6">
                             <label class="form-label">Verified</label>
                             <select class="form-select" name="Verified">
-                                <option value="N">N - 未验证</option>
-                                <option value="Y">Y - 已验证</option>
+                                <option value="N">N - {{ _('未验证') }}</option>
+                                <option value="Y">Y - {{ _('已验证') }}</option>
                             </select>
                         </div>
                         <div class="col-lg-2 text-lg-end">
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-plus-circle"></i> 新增
+                                <i class="bi bi-plus-circle"></i> {{ _('新增') }}
                             </button>
                         </div>
                     </form>
@@ -968,12 +1006,12 @@
                                     <th style="width: 70px;">ID</th>
                                     <th style="width: 110px;">Punch No.</th>
                                     <th>ISO/Tag</th>
-                                    <th>描述</th>
+                                    <th>{{ _('描述') }}</th>
                                     <th style="width: 80px;">Category</th>
                                     <th style="width: 80px;">Cause</th>
-                                    <th style="width: 120px;">整改</th>
-                                    <th style="width: 120px;">验证</th>
-                                    <th style="width: 140px;">操作</th>
+                                    <th style="width: 120px;">{{ _('整改') }}</th>
+                                    <th style="width: 120px;">{{ _('验证') }}</th>
+                                    <th style="width: 140px;">{{ _('操作') }}</th>
                                 </tr>
                             </thead>
                             <tbody id="punchTableBody">
@@ -1052,12 +1090,12 @@
         function loadPidList() {
             const tbody = document.getElementById('pidTableBody');
             if (!tbody) return;
-            renderEmptyRow(tbody, 4, '数据加载中...');
+            renderEmptyRow(tbody, 4, "{{ _('数据加载中...') }}");
             fetch(`/api/test_packages/${testPackageId}/pid_list`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data || data.length === 0) {
-                        renderEmptyRow(tbody, 4, '尚未维护 P&ID 清单');
+                        renderEmptyRow(tbody, 4, "{{ _('尚未维护 P&ID 清单') }}");
                         return;
                     }
                     tbody.innerHTML = '';
@@ -1080,12 +1118,12 @@
         function loadIsoList() {
             const tbody = document.getElementById('isoTableBody');
             if (!tbody) return;
-            renderEmptyRow(tbody, 4, '数据加载中...');
+            renderEmptyRow(tbody, 4, "{{ _('数据加载中...') }}");
             fetch(`/api/test_packages/${testPackageId}/iso_list`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data || data.length === 0) {
-                        renderEmptyRow(tbody, 4, '未检测到 ISO 图纸，请检查 WeldingList');
+                        renderEmptyRow(tbody, 4, "{{ _('未检测到 ISO 图纸，请检查 WeldingList') }}");
                         return;
                     }
                     tbody.innerHTML = '';
@@ -1110,16 +1148,16 @@
             if (!iconContainer) return;
             
             if (count > 0) {
-                iconContainer.innerHTML = `<i class="bi bi-check-circle-fill text-success" title="已上传 (${count} 个文件)"></i>`;
+                iconContainer.innerHTML = `<i class="bi bi-check-circle-fill text-success" title="{{ _('已上传') }} (${count} {{ _('个文件') }})"></i>`;
             } else {
-                iconContainer.innerHTML = `<i class="bi bi-x-circle-fill text-danger" title="未上传"></i>`;
+                iconContainer.innerHTML = `<i class="bi bi-x-circle-fill text-danger" title="{{ _('未上传') }}"></i>`;
             }
         }
 
         function loadAttachmentModule(moduleName) {
             const tbody = document.querySelector(`[data-attachment-body="${moduleName}"]`);
             if (!tbody) return;
-            renderEmptyRow(tbody, 4, '数据加载中...');
+            renderEmptyRow(tbody, 4, "{{ _('数据加载中...') }}");
             fetch(`/api/test_packages/${testPackageId}/attachments/${moduleName}`)
                 .then(res => res.json())
                 .then(data => {
@@ -1127,7 +1165,7 @@
                     updateAttachmentStatusIcon(moduleName, count);
                     
                     if (!data || data.length === 0) {
-                        renderEmptyRow(tbody, 4, '尚无附件');
+                        renderEmptyRow(tbody, 4, "{{ _('尚无附件') }}");
                         return;
                     }
                     tbody.innerHTML = '';
@@ -1150,7 +1188,7 @@
                     });
                 })
                 .catch(() => {
-                    renderEmptyRow(tbody, 4, '附件加载失败');
+                    renderEmptyRow(tbody, 4, "{{ _('附件加载失败') }}");
                     updateAttachmentStatusIcon(moduleName, 0);
                 });
         }
@@ -1163,7 +1201,7 @@
             const pipelineBody = document.getElementById('pipelineSummaryBody');
             const alertBox = document.getElementById('pipelineMismatchAlert');
             if (!totalJoints || !pipelineBody) return;
-            renderEmptyRow(pipelineBody, 6, '数据加载中...');
+            renderEmptyRow(pipelineBody, 6, "{{ _('数据加载中...') }}");
             fetch(`/api/test_packages/${testPackageId}/joint_summary`)
                 .then(res => res.json())
                 .then(data => {
@@ -1175,12 +1213,12 @@
                     }
                     if (data.unmatched_count && alertBox) {
                         alertBox.classList.remove('d-none');
-                        alertBox.innerHTML = `<i class="bi bi-exclamation-triangle"></i> 存在 ${data.unmatched_count} 条未匹配的管线，请核对 LineList。`;
+                        alertBox.innerHTML = `<i class="bi bi-exclamation-triangle"></i> {{ _('存在') }} ${data.unmatched_count} {{ _('条未匹配的管线，请核对LineList。') }}`;
                     } else if (alertBox) {
                         alertBox.classList.add('d-none');
                     }
                     if (!data.pipelines || data.pipelines.length === 0) {
-                        renderEmptyRow(pipelineBody, 6, '暂无焊口数据');
+                        renderEmptyRow(pipelineBody, 6, "{{ _('暂无焊口数据') }}");
                         return;
                     }
                     pipelineBody.innerHTML = '';
@@ -1191,7 +1229,7 @@
                         tr.innerHTML = `
                             <td>${item.pipeline_no}</td>
                             <td>
-                                ${item.matched ? '<span class="badge bg-success">已匹配</span>' : '<span class="badge bg-warning text-dark">未匹配</span>'}
+                                ${item.matched ? '<span class="badge bg-success">{{ _("已匹配") }}</span>' : '<span class="badge bg-warning text-dark">{{ _("未匹配") }}</span>'}
                             </td>
                             <td>${item.nde_grade || '-'}</td>
                             <td>
@@ -1211,7 +1249,7 @@
                         pipelineBody.appendChild(tr);
                     });
                 })
-                .catch(() => renderEmptyRow(pipelineBody, 6, '焊口数据加载失败'));
+                .catch(() => renderEmptyRow(pipelineBody, 6, "{{ _('焊口数据加载失败') }}"));
         }
 
         function formatNdeValue(value) {
@@ -1222,12 +1260,12 @@
         function loadNdeStatus() {
             const tbody = document.getElementById('ndeStatusBody');
             if (!tbody) return;
-            renderEmptyRow(tbody, 4, '数据加载中...');
+            renderEmptyRow(tbody, 4, "{{ _('数据加载中...') }}");
             fetch(`/api/test_packages/${testPackageId}/nde_pwht_status`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data) {
-                        renderEmptyRow(tbody, 4, '暂无数据');
+                        renderEmptyRow(tbody, 4, "{{ _('暂无数据') }}");
                         return;
                     }
                     const order = ['VT', 'RT', 'PT', 'UT', 'MT', 'PMI', 'FT', 'HT', 'PWHT'];
@@ -1255,24 +1293,24 @@
                         tbody.appendChild(tr);
                     });
                 })
-                .catch(() => renderEmptyRow(tbody, 4, 'NDE 数据加载失败'));
+                .catch(() => renderEmptyRow(tbody, 4, "{{ _('NDE 数据加载失败') }}"));
         }
 
         function loadPunchList() {
             const tbody = document.getElementById('punchTableBody');
             if (!tbody) return;
-            renderEmptyRow(tbody, 9, '数据加载中...');
+            renderEmptyRow(tbody, 9, "{{ _('数据加载中...') }}");
             fetch(`/api/test_packages/${testPackageId}/punch_list`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data || data.length === 0) {
-                        renderEmptyRow(tbody, 9, '暂未登记 Punch 项');
+                        renderEmptyRow(tbody, 9, "{{ _('暂未登记 Punch 项') }}");
                         return;
                     }
                     tbody.innerHTML = '';
                     data.forEach(item => {
-                        const rectifiedBadge = item.Rectified === 'Y' ? '<span class="badge bg-success">已整改</span>' : '<span class="badge bg-warning text-dark">未整改</span>';
-                        const verifiedBadge = item.Verified === 'Y' ? '<span class="badge bg-success">已验证</span>' : '<span class="badge bg-secondary">未验证</span>';
+                        const rectifiedBadge = item.Rectified === 'Y' ? '<span class="badge bg-success">{{ _("已整改") }}</span>' : '<span class="badge bg-warning text-dark">{{ _("未整改") }}</span>';
+                        const verifiedBadge = item.Verified === 'Y' ? '<span class="badge bg-success">{{ _("已验证") }}</span>' : '<span class="badge bg-secondary">{{ _("未验证") }}</span>';
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${item.ID}</td>
@@ -1295,7 +1333,7 @@
                         tbody.appendChild(tr);
                     });
                 })
-                .catch(() => renderEmptyRow(tbody, 9, 'Punch 列表加载失败'));
+                .catch(() => renderEmptyRow(tbody, 9, "{{ _('Punch 列表加载失败') }}"));
         }
 
         document.addEventListener('submit', function(event) {
@@ -1586,6 +1624,54 @@
                       });
                 });
             }
+        });
+        
+        // 自定义文件选择器显示文本（使其支持翻译）
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.custom-file-input').forEach(function(input) {
+                const chooseText = input.dataset.chooseText || '{{ _("选择文件") }}';
+                const noFileText = input.dataset.noFileText || '{{ _("未选择文件") }}';
+                
+                // 创建自定义显示
+                const wrapper = input.parentElement;
+                if (wrapper && wrapper.classList.contains('custom-file-wrapper')) {
+                    // 隐藏原生input，使用自定义button
+                    input.style.display = 'none';
+                    
+                    const customDiv = document.createElement('div');
+                    customDiv.className = 'd-flex gap-2';
+                    customDiv.innerHTML = `
+                        <button type="button" class="btn btn-outline-primary flex-shrink-0 custom-file-btn" style="white-space: nowrap;">
+                            <i class="bi bi-folder2-open"></i> ${chooseText}
+                        </button>
+                        <input type="text" class="form-control custom-file-display" readonly 
+                               placeholder="${noFileText}" style="background: white; cursor: pointer;">
+                    `;
+                    
+                    wrapper.appendChild(customDiv);
+                    
+                    const btn = customDiv.querySelector('.custom-file-btn');
+                    const display = customDiv.querySelector('.custom-file-display');
+                    
+                    // 点击按钮或文本框时触发文件选择
+                    btn.addEventListener('click', () => input.click());
+                    display.addEventListener('click', () => input.click());
+                    
+                    // 文件选择后更新显示
+                    input.addEventListener('change', function() {
+                        const fileCount = this.files.length;
+                        if (fileCount > 0) {
+                            if (fileCount === 1) {
+                                display.value = this.files[0].name;
+                            } else {
+                                display.value = `${fileCount} {{ _("个文件") }}`;
+                            }
+                        } else {
+                            display.value = '';
+                        }
+                    });
+                }
+            });
         });
     </script>
 {% endblock %}

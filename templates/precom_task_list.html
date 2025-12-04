@@ -42,12 +42,12 @@
                 <select class="form-select" name="task_type">
                     <option value="">{{ _('全部任务类型') }}</option>
                     {% set types = [
-                        ('Manhole', '人孔检查'),
-                        ('MotorSolo', '电机单试'),
-                        ('SkidInstall', '仪表台件安装'),
-                        ('LoopTest', '回路测试'),
-                        ('Alignment', '动设备最终对中'),
-                        ('MRT', 'MRT机械联动测试'),
+                        ('Manhole', _('人孔检查')),
+                        ('MotorSolo', _('电机单试')),
+                        ('SkidInstall', _('仪表台件安装')),
+                        ('LoopTest', _('回路测试')),
+                        ('Alignment', _('动设备最终对中')),
+                        ('MRT', _('MRT机械联动测试')),
                         ('FunctionTest', 'Function Test')
                     ] %}
                     {% for code, label in types %}
@@ -119,12 +119,12 @@
                     <tr>
                         <td>{{ t.TaskID }}</td>
                         <td>
-                            {% if t.TaskType == 'Manhole' %}人孔检查
-                            {% elif t.TaskType == 'MotorSolo' %}电机单试
-                            {% elif t.TaskType == 'SkidInstall' %}仪表台件安装
-                            {% elif t.TaskType == 'LoopTest' %}回路测试
-                            {% elif t.TaskType == 'Alignment' %}动设备最终对中
-                            {% elif t.TaskType == 'MRT' %}MRT机械联动测试
+                            {% if t.TaskType == 'Manhole' %}{{ _('人孔检查') }}
+                            {% elif t.TaskType == 'MotorSolo' %}{{ _('电机单试') }}
+                            {% elif t.TaskType == 'SkidInstall' %}{{ _('仪表台件安装') }}
+                            {% elif t.TaskType == 'LoopTest' %}{{ _('回路测试') }}
+                            {% elif t.TaskType == 'Alignment' %}{{ _('动设备最终对中') }}
+                            {% elif t.TaskType == 'MRT' %}{{ _('MRT机械联动测试') }}
                             {% elif t.TaskType == 'FunctionTest' %}Function Test
                             {% else %}{{ t.TaskType }}
                             {% endif %}
@@ -147,17 +147,17 @@
                         <td>{{ t.ActualDate or '-' }}</td>
                         <td>
                             {% if t.Status == '已完成' %}
-                            <span class="badge bg-success">{{ t.Status }}</span>
+                            <span class="badge bg-success">{{ _(t.Status) }}</span>
                             {% elif t.Status == '进行中' %}
-                            <span class="badge bg-warning text-dark">{{ t.Status }}</span>
+                            <span class="badge bg-warning text-dark">{{ _(t.Status) }}</span>
                             {% else %}
-                            <span class="badge bg-secondary">{{ t.Status }}</span>
+                            <span class="badge bg-secondary">{{ _(t.Status) }}</span>
                             {% endif %}
                         </td>
                         <td>
                             <a href="{{ url_for('precom.precom_task_edit', task_id=t.TaskID) }}"
                                class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i> 编辑
+                                <i class="bi bi-pencil"></i> {{ _('编辑') }}
                             </a>
                         </td>
                     </tr>
@@ -165,7 +165,7 @@
                     {% else %}
                     <tr>
                         <td colspan="12" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox"></i> 暂无任务记录
+                            <i class="bi bi-inbox"></i> {{ _('暂无任务记录') }}
                         </td>
                     </tr>
                     {% endif %}

@@ -1,4 +1,5 @@
 from flask import Blueprint, request, render_template, jsonify, redirect, url_for, send_file, current_app
+from flask_babel import gettext as _
 from database import create_connection, ensure_precom_tables
 from models.system import SystemModel
 from models.subsystem import SubsystemModel
@@ -23,15 +24,19 @@ try:
 except ImportError:
     magic = None
 
-TASK_TYPE_LABELS = {
-    'Manhole': '人孔检查',
-    'MotorSolo': '电机单试',
-    'SkidInstall': '仪表台件安装',
-    'LoopTest': '回路测试',
-    'Alignment': '动设备最终对中',
-    'MRT': 'MRT 机械联动测试',
-    'FunctionTest': 'Function Test',
-}
+# 使用gettext进行翻译
+def get_task_type_label(task_type):
+    """获取任务类型的翻译标签"""
+    labels = {
+        'Manhole': _('人孔检查'),
+        'MotorSolo': _('电机单试'),
+        'SkidInstall': _('仪表台件安装'),
+        'LoopTest': _('回路测试'),
+        'Alignment': _('动设备最终对中'),
+        'MRT': _('MRT机械联动测试'),
+        'FunctionTest': 'Function Test',
+    }
+    return labels.get(task_type, _('预试车任务管理'))
 
 
 def _allowed_file(filename: str) -> bool:
@@ -112,7 +117,7 @@ def precom_task_list():
     systems = SystemModel.get_all_systems()
     subsystems = SubsystemModel.get_all_subsystems() if not system_code else SubsystemModel.get_subsystems_by_system(system_code)
 
-    page_title = TASK_TYPE_LABELS.get(task_type, '预试车任务管理')
+    page_title = get_task_type_label(task_type)
 
     conn = create_connection()
     tasks = []
