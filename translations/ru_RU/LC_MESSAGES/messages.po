@@ -637,7 +637,7 @@ msgstr "Подсистемы"
 
 #: templates/base_industrial.html:489
 msgid "试压包"
-msgstr "Пакеты гидроиспытаний"
+msgstr "Пакеты"
 
 #: templates/base_industrial.html:493 templates/precom_task_edit.html:113
 msgid "预试车任务管理"
@@ -885,10 +885,10 @@ msgid "测试类型"
 msgstr "Тип испытания"
 
 msgid "总数量"
-msgstr "Общее количество"
+msgstr "Всего"
 
 msgid "已完成数量"
-msgstr "Выполненное количество"
+msgstr "Выполнено"
 
 msgid "测试计划时间"
 msgstr "Плановая дата испытания"
@@ -999,7 +999,7 @@ msgid "状态"
 msgstr "Статус"
 
 msgid "试压包管理"
-msgstr "Управление пакетами гидроиспытаний"
+msgstr "Пакеты испытаний"
 
 msgid "总试压包数"
 msgstr "Всего пакетов"
@@ -1019,7 +1019,7 @@ msgstr "Задачи ПИ"
 
 # 系统管理页面
 msgid "系统管理"
-msgstr "Управление системами"
+msgstr "Системы"
 
 msgid "新增系统"
 msgstr "Добавить систему"
@@ -1034,7 +1034,7 @@ msgid "查看子系统"
 msgstr "Просмотр подсистем"
 
 msgid "到子系统"
-msgstr "К подсистемам"
+msgstr "Подсистемы"
 
 msgid "系统代码"
 msgstr "Код системы"
@@ -1052,23 +1052,23 @@ msgid "完成进度"
 msgstr "Прогресс"
 
 msgid "总系统数"
-msgstr "Всего систем"
+msgstr "Всего"
 
 msgid "已完成系统"
-msgstr "Завершено систем"
+msgstr "Завершено"
 
 msgid "进行中系统"
 msgstr "В процессе"
 
 # 子系统管理页面
 msgid "子系统管理"
-msgstr "Управление подсистемами"
+msgstr "Подсистемы"
 
 msgid "新增子系统"
 msgstr "Добавить подсистему"
 
 msgid "编辑子系统"
-msgstr "Редактировать подсистему"
+msgstr "Редактировать"
 
 msgid "删除子系统"
 msgstr "Удалить подсистему"
@@ -1086,10 +1086,10 @@ msgid "所属系统"
 msgstr "Родительская система"
 
 msgid "总子系统数"
-msgstr "Всего подсистем"
+msgstr "Всего"
 
 msgid "已完成子系统"
-msgstr "Завершено подсистем"
+msgstr "Завершено"
 
 # 试压包管理页面
 msgid "编辑试压包"
@@ -1187,16 +1187,16 @@ msgid "此操作不可撤销"
 msgstr "Это действие необратимо"
 
 msgid "工艺系统"
-msgstr "Технологические системы"
+msgstr "Технологич."
 
 msgid "非工艺系统"
-msgstr "Нетехнологические системы"
+msgstr "Нетехнологич."
 
 msgid "焊接进度"
-msgstr "Прогресс сварки"
+msgstr "Сварка"
 
 msgid "测试进度"
-msgstr "Прогресс испытаний"
+msgstr "Испытания"
 
 msgid "优先级"
 msgstr "Приоритет"
@@ -1622,7 +1622,7 @@ msgid "系统管理员"
 msgstr "Системный администратор"
 
 msgid "备份管理"
-msgstr "Управление резервным копированием"
+msgstr "Резервные копии"
 
 msgid "数据统计"
 msgstr "Статистика данных"
