@@ -56,22 +56,31 @@ def run_data_sync_pipeline(
     if not os.path.exists(excel_path):
         raise FileNotFoundError(f"找不到焊接数据源路径: {excel_path}")
     
+    # 强制刷新输出，确保实时显示
+    import sys
+    sys.stdout.flush()
+    
     print("\n" + "=" * 70)
     print("数据同步流水线启动")
     print("=" * 70)
+    sys.stdout.flush()
     
     backup_id = None
     if skip_backup:
         print("\n[1/5] 跳过备份步骤（按参数配置）")
+        sys.stdout.flush()
     else:
         print("\n[1/5] 创建导入前备份...")
+        sys.stdout.flush()
         backup_id = create_backup(
             trigger=trigger or 'SCHEDULED',
             description=description or f'自动备份 - {datetime.now():%Y-%m-%d %H:%M:%S}'
         )
         summary['backup_id'] = backup_id
+        sys.stdout.flush()
     
     print("\n[2/5] 导入最新 WeldingList 数据...")
+    sys.stdout.flush()
     # create_welding_table() 会确保 Block 字段存在（如果不存在则添加）
     create_welding_table()
     # 导入时会自动从 DrawingNumber 提取 Block 字段并填充
@@ -79,31 +88,40 @@ def run_data_sync_pipeline(
     if not importer.import_to_database():
         raise RuntimeError("导入WeldingList失败，终止后续步骤。")
     summary['imported_rows'] = len(importer.df) if importer.df is not None else 0
+    sys.stdout.flush()
     
     print("\n[3/5] 同步主数据（试压包 / 系统 / 子系统）...")
+    sys.stdout.flush()
     sync_id = sync_after_import(backup_id=backup_id)
     summary['sync_id'] = sync_id
+    sys.stdout.flush()
     
     print("\n[4/5] 刷新所有聚合表（JointSummary / NDEPWHTStatus / ISODrawingList / SystemWeldingSummary / SubsystemWeldingSummary）...")
+    sys.stdout.flush()
     agg_stats = refresh_all_packages_aggregated_data(verbose=True)
     summary['aggregation'] = agg_stats
+    sys.stdout.flush()
     
     if skip_cleanup:
         print("\n[5/5] 跳过清理步骤（按参数配置）")
+        sys.stdout.flush()
     else:
         print("\n[5/5] 执行数据清理（孤立记录 / 软删除 / 日志 / 旧备份）...")
+        sys.stdout.flush()
         cleaner = DataCleaner()
         cleaner.clean_all(days_to_keep=cleanup_keep_days, permanent_delete=cleanup_permanent_delete)
         summary['cleanup'] = {
             'days_to_keep': cleanup_keep_days,
             'permanent_delete': cleanup_permanent_delete
         }
+        sys.stdout.flush()
     
     summary['finished_at'] = datetime.now().isoformat(timespec='seconds')
     print("\n" + "=" * 70)
     print("数据同步流水线完成")
     print("=" * 70)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
+    sys.stdout.flush()
     
     return summary
 

@@ -55,9 +55,11 @@ class BackupManager:
         cur = conn.cursor(buffered=True, dictionary=True)
         
         try:
+            import sys
             print(f"\n{'='*60}")
             print(f"开始全量备份 [{trigger}]")
             print(f"{'='*60}")
+            sys.stdout.flush()
             
             # 1. 创建备份记录
             backup_time = datetime.now()
@@ -72,6 +74,7 @@ class BackupManager:
             
             backup_id = cur.lastrowid
             print(f"\n备份ID: {backup_id}")
+            sys.stdout.flush()
             
             # 2. 备份每个表
             backup_files = {}
@@ -80,6 +83,7 @@ class BackupManager:
             
             for table_name in self.BACKUP_TABLES:
                 print(f"\n备份表: {table_name}...", end='')
+                sys.stdout.flush()
                 
                 try:
                     # 查询表数据
@@ -103,12 +107,15 @@ class BackupManager:
                         table_counts[table_name] = len(rows)
                         
                         print(f" {len(rows)} 条记录, {file_size/1024:.2f} KB")
+                        sys.stdout.flush()
                     else:
                         print(f" 表为空")
+                        sys.stdout.flush()
                         table_counts[table_name] = 0
                         
                 except Exception as e:
                     print(f" 失败: {e}")
+                    sys.stdout.flush()
                     table_counts[table_name] = 0
             
             # 3. 更新备份记录
@@ -141,6 +148,7 @@ class BackupManager:
             print(f"备份文件总大小: {total_size/1024/1024:.2f} MB")
             print(f"备份时间: {backup_time}")
             print(f"{'='*60}\n")
+            sys.stdout.flush()
             
             return backup_id
             

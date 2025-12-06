@@ -11,6 +11,30 @@ import csv
 import math
 import time
 import logging
+import sys
+
+# 设置标准输出编码为 UTF-8，避免 Windows gbk 编码无法处理 emoji 的问题
+# 同时启用行缓冲，确保输出实时显示（配合 Python -u 参数使用）
+if sys.platform == 'win32':
+    try:
+        # 尝试设置控制台编码为 UTF-8，并启用行缓冲
+        import io
+        # line_buffering=True 确保每行输出后立即刷新，配合 -u 参数实现实时输出
+        sys.stdout = io.TextIOWrapper(
+            sys.stdout.buffer, 
+            encoding='utf-8', 
+            errors='replace',
+            line_buffering=True  # 启用行缓冲，每行输出后立即刷新
+        )
+        sys.stderr = io.TextIOWrapper(
+            sys.stderr.buffer, 
+            encoding='utf-8', 
+            errors='replace',
+            line_buffering=True  # 启用行缓冲
+        )
+    except Exception:
+        # 如果设置失败，忽略（某些环境可能不支持）
+        pass
 
 DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
@@ -154,9 +178,12 @@ class WeldingDataImporter:
                 data_frames.append(raw_df)
                 total_rows += len(raw_df)
                 print(f"SUCCESS: Loaded {len(raw_df)} rows from welding data ({os.path.basename(excel_file)})")
+                sys.stdout.flush()
             if data_frames:
                 self.df = pd.concat(data_frames, ignore_index=True)
-                print(f"📈 合计加载焊口数据 {total_rows} 行，来源文件 {len(data_frames)} 个")
+                # 使用 ASCII 字符避免编码问题（Windows gbk 无法编码 emoji）
+                print(f"合计加载焊口数据 {total_rows} 行，来源文件 {len(data_frames)} 个")
+                sys.stdout.flush()
                 if self.verbose:
                     print("Excel column mapping:")
                     for excel_col, db_col in self.EXCEL_COLUMNS.items():
@@ -167,9 +194,11 @@ class WeldingDataImporter:
                 self._write_invalid_date_log()
             else:
                 print("ERROR: 未成功读取任何焊接数据文件")
+                sys.stdout.flush()
                 self.df = pd.DataFrame()
         except Exception as e:
             print(f"ERROR: Failed to load Excel: {e}")
+            sys.stdout.flush()
             self.df = pd.DataFrame()
 
     def _collect_invalid_dates(self, df, column_name, source_file):
@@ -787,6 +816,7 @@ class WeldingDataImporter:
             except Exception:
                 table_count = None
             print(f"SUCCESS: Table now contains {table_count} rows (recent batch total {total_loaded})")
+            sys.stdout.flush()
             # 诊断：显示前10条警告（若有）
             if self.verbose:
                 try:
