@@ -1,3 +1,11 @@
+"""
+PrecomControl 主应用文件
+
+端口配置说明：
+- 本应用固定使用5000端口
+- 不会占用其他端口（8000、8203、8206等）
+- 所有启动配置均使用5000端口
+"""
 import os
 from flask import Flask, session, redirect, url_for, request, g
 from config import FlaskConfig
@@ -505,8 +513,8 @@ if __name__ == '__main__':
     开发环境直接运行
     生产环境请使用 WSGI 服务器（Gunicorn/Waitress）
     运行方式：
-    - Windows: python start_production.bat 或 waitress-serve --listen=0.0.0.0:5000 wsgi:app
-    - Linux: bash start_production.sh 或 gunicorn -c gunicorn_config.py wsgi:app
+    - Windows: .\start.ps1 -Mode production 或 python -m waitress --listen=0.0.0.0:5000 wsgi:app
+    - Linux: gunicorn -c gunicorn_config.py wsgi:app
     """
     import os
     
@@ -528,10 +536,11 @@ if __name__ == '__main__':
         print("Network access: https://0.0.0.0:5000")
         print("SSL certificate loaded")
         print("\n注意: 这是开发模式，生产环境请使用 WSGI 服务器")
-        print("      Windows: python start_production.bat")
-        print("      Linux: bash start_production.sh")
+        print("      Windows: .\\start.ps1 -Mode production")
+        print("      Linux: gunicorn -c gunicorn_config.py wsgi:app")
         print("=" * 60 + "\n")
         
+        # 固定使用5000端口，确保不占用其他应用端口（8000、8203、8206等）
         app.run(
             debug=debug_mode, 
             host='0.0.0.0', 
@@ -548,8 +557,9 @@ if __name__ == '__main__':
         print("Local access:  http://localhost:5000")
         print("Network access: http://0.0.0.0:5000")
         print("\n注意: 这是开发模式，生产环境请使用 WSGI 服务器")
-        print("      Windows: python start_production.bat")
-        print("      Linux: bash start_production.sh")
+        print("      Windows: .\\start.ps1 -Mode production")
+        print("      Linux: gunicorn -c gunicorn_config.py wsgi:app")
         print("=" * 60 + "\n")
         
+        # 固定使用5000端口，确保不占用其他应用端口（8000、8203、8206等）
         app.run(debug=debug_mode, host='0.0.0.0', port=5000, threaded=True)

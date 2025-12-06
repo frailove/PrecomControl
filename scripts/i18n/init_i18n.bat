@@ -13,15 +13,15 @@ if not exist translations mkdir translations
 
 REM 3. 提取需要翻译的文本
 echo [3/5] 提取翻译文本...
-pybabel extract -F babel.cfg -k _l -o messages.pot .
+pybabel extract -F babel.cfg -k _l -o ..\..\docs\messages.pot .
 
 REM 4. 初始化英语翻译
 echo [4/5] 初始化英语翻译...
-pybabel init -i messages.pot -d translations -l en_US
+pybabel init -i ..\..\docs\messages.pot -d ..\..\translations -l en_US
 
 REM 5. 初始化俄语翻译
 echo [5/5] 初始化俄语翻译...
-pybabel init -i messages.pot -d translations -l ru_RU
+pybabel init -i ..\..\docs\messages.pot -d ..\..\translations -l ru_RU
 
 echo.
 echo ====================================

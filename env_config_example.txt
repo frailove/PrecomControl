@@ -1,0 +1,40 @@
+# 预试车管理系统 - 环境变量配置示例
+# 在 PowerShell 中设置环境变量
+
+# ==================== 数据库配置 ====================
+$env:DB_HOST = "10.78.44.17"
+$env:DB_PORT = "3306"
+$env:DB_NAME = "PRECOMCONTROL"
+$env:DB_USER = "root"
+$env:DB_PASSWORD = "your_database_password_here"
+
+# ==================== Flask 配置 ====================
+# 安全密钥（生产环境必须修改！）
+# 生成方法: python -c "import secrets; print(secrets.token_hex(32))"
+$env:FLASK_SECRET_KEY = "your-secret-key-change-this-in-production"
+
+# 调试模式（生产环境设置为 False）
+$env:FLASK_DEBUG = "False"
+
+# HTTPS 模式（使用 HTTPS 时设置为 True）
+$env:FLASK_HTTPS = "True"
+
+# ==================== 应用配置 ====================
+$env:APP_HOST = "0.0.0.0"
+$env:APP_PORT = "5000"
+$env:WAITRESS_THREADS = "16"
+
+# ==================== 永久设置（重启后仍有效）====================
+# 使用 setx 命令永久设置环境变量（需要管理员权限）
+
+# 设置数据库密码
+setx DB_PASSWORD "your_database_password_here" /M
+
+# 设置 Flask 密钥
+setx FLASK_SECRET_KEY "your-secret-key-change-this-in-production" /M
+
+# 启用 HTTPS
+setx FLASK_HTTPS "True" /M
+
+# 注意: setx 设置的变量需要重新打开终端才能生效
+

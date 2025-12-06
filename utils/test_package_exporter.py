@@ -82,9 +82,29 @@ def copy_dimensions_from_template(target_ws, template_path, template_sheet_name,
         import time
         start_time = time.time()
         
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False
-        excel.DisplayAlerts = False
+        try:
+            excel = win32com.client.Dispatch("Excel.Application")
+            excel.Visible = False
+            excel.DisplayAlerts = False
+        except Exception as e:
+            import pywintypes
+            # 捕获COM错误并提供详细的错误信息
+            if isinstance(e, pywintypes.com_error):
+                error_code = e.args[0] if e.args else None
+                if error_code == -2147221005:
+                    error_msg = (
+                        "Excel COM 组件初始化失败 (错误代码: -2147221005)。\n"
+                        "可能的原因：\n"
+                        "1. Excel 未安装在服务器上\n"
+                        "2. COM 组件注册损坏（运行: excel.exe /regserver）\n"
+                        "3. 权限问题或 DCOM 配置问题"
+                    )
+                    print(f"[ERROR] {error_msg}")
+                else:
+                    print(f"[ERROR] Excel COM 错误：{str(e)}")
+            else:
+                print(f"[ERROR] 无法启动 Excel 应用程序：{str(e)}")
+            raise
         
         # 打开模板文件（只读模式，提高速度）
         wb = excel.Workbooks.Open(template_path, ReadOnly=True, UpdateLinks=False)
@@ -2922,9 +2942,43 @@ def export_test_package_from_template(test_package_data, system_data, subsystem_
                 shutil.copy2(template_path, temp_file.name)
                 
                 # 打开Excel COM
-                excel = win32com.client.Dispatch('Excel.Application')
-                excel.Visible = False
-                excel.DisplayAlerts = False
+                try:
+                    excel = win32com.client.Dispatch('Excel.Application')
+                    excel.Visible = False
+                    excel.DisplayAlerts = False
+                except Exception as e:
+                    import logging
+                    import pywintypes
+                    logger = logging.getLogger(__name__)
+                    
+                    # 捕获COM错误并提供详细的错误信息
+                    if isinstance(e, pywintypes.com_error):
+                        error_code = e.args[0] if e.args else None
+                        if error_code == -2147221005:
+                            error_msg = (
+                                "Excel COM 组件初始化失败 (错误代码: -2147221005 - 无效的类字符串)。\n"
+                                "可能的原因和解决方案：\n"
+                                "1. Excel 未安装：请在服务器上安装 Microsoft Excel\n"
+                                "2. COM 组件注册损坏：请以管理员身份运行以下命令修复：\n"
+                                "   - excel.exe /regserver\n"
+                                "   或重新安装 Office\n"
+                                "3. 权限问题：确保应用程序有权限访问 Excel COM 组件\n"
+                                "4. 如果是在 Web 服务器上运行，请检查 IIS/服务账户的 DCOM 配置"
+                            )
+                        else:
+                            error_msg = f"Excel COM 组件初始化失败：{str(e)}"
+                    else:
+                        error_msg = f"无法启动 Excel 应用程序：{str(e)}"
+                    
+                    logger.error(error_msg)
+                    
+                    # 返回友好的错误响应
+                    from flask import jsonify
+                    return jsonify({
+                        'error': 'Excel COM 组件初始化失败',
+                        'message': error_msg,
+                        'suggestion': '请联系系统管理员检查服务器上的 Excel 安装和配置'
+                    }), 500
                 
                 # 打开模板文件
                 wb = excel.Workbooks.Open(temp_file.name, ReadOnly=False, UpdateLinks=False)

@@ -4,7 +4,7 @@ echo 编译翻译文件
 echo ====================================
 
 echo 编译所有语言的翻译文件...
-pybabel compile -d translations
+pybabel compile -d ..\..\translations
 
 echo.
 echo ====================================

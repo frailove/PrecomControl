@@ -5,11 +5,11 @@ echo ====================================
 
 REM 1. 提取最新的翻译文本
 echo [1/2] 提取最新翻译文本...
-pybabel extract -F babel.cfg -k _l -o messages.pot .
+pybabel extract -F babel.cfg -k _l -o ..\..\docs\messages.pot .
 
 REM 2. 更新现有翻译文件
 echo [2/2] 更新翻译文件...
-pybabel update -i messages.pot -d translations
+pybabel update -i ..\..\docs\messages.pot -d ..\..\translations
 
 echo.
 echo ====================================
