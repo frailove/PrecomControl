@@ -238,13 +238,10 @@ def api_update_user(user_id):
         
         logger.info(f'[API] 更新用户 {user_id}: 完成，客户端IP: {client_ip}')
         
-        # 确保响应正确发送，避免连接重置
+        # 确保响应正确发送
         response = jsonify({'success': True})
-        response_data = response.get_data()
-        response.headers['Connection'] = 'close'  # 明确关闭连接
-        response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        logger.info(f'[API] 准备返回响应，大小: {len(response_data)} 字节，客户端IP: {client_ip}')
+        logger.info(f'[API] 准备返回响应，大小: {len(response.get_data())} 字节，客户端IP: {client_ip}')
         return response
         
     except Exception as exc:
@@ -293,9 +290,6 @@ def api_reset_password(user_id):
         record_audit('USER_RESET_PW', '重置用户密码', session['user'], request, 'UserAccount', str(user_id))
         # 安全：只在响应中返回新密码（仅限管理员重置密码时），不记录到审计日志
         response = jsonify({'success': True, 'new_password': new_password})
-        response_data = response.get_data()
-        response.headers['Connection'] = 'close'
-        response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
         logger.info(f'[API] 重置用户 {user_id} 密码成功，客户端IP: {client_ip}')
         return response
@@ -312,12 +306,9 @@ def api_reset_password(user_id):
         elif 'timeout' in error_msg.lower():
             error_msg = '请求超时，请稍后重试'
         
-        # 确保返回 JSON 响应，避免连接被重置
+        # 确保返回 JSON 响应
         try:
             response = jsonify({'success': False, 'message': error_msg})
-            response_data = response.get_data()
-            response.headers['Connection'] = 'close'
-            response.headers['Content-Length'] = str(len(response_data))
             response.headers['Content-Type'] = 'application/json; charset=utf-8'
             return response, 500
         except Exception as e:
@@ -326,7 +317,7 @@ def api_reset_password(user_id):
                 f'{{"success": false, "message": "{error_msg}"}}',
                 status=500,
                 mimetype='application/json',
-                headers={'Connection': 'close', 'Content-Type': 'application/json; charset=utf-8'}
+                headers={'Content-Type': 'application/json; charset=utf-8'}
             )
 
 
@@ -437,11 +428,8 @@ def api_set_user_modules(user_id):
         
         # 确保响应正确发送，避免连接重置
         response = jsonify({'success': True})
-        response_data = response.get_data()
-        response.headers['Connection'] = 'close'  # 明确关闭连接
-        response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        logger.info(f'[API] 准备返回响应，大小: {len(response_data)} 字节，客户端IP: {client_ip}')
+        logger.info(f'[API] 准备返回响应，大小: {len(response.get_data())} 字节，客户端IP: {client_ip}')
         return response
         
     except Exception as exc:
@@ -456,12 +444,9 @@ def api_set_user_modules(user_id):
         elif 'timeout' in error_msg.lower():
             error_msg = '请求超时，请稍后重试'
         
-        # 确保返回 JSON 响应，避免连接被重置
+        # 确保返回 JSON 响应
         try:
             response = jsonify({'success': False, 'message': error_msg})
-            response_data = response.get_data()
-            response.headers['Connection'] = 'close'
-            response.headers['Content-Length'] = str(len(response_data))
             response.headers['Content-Type'] = 'application/json; charset=utf-8'
             return response, 500
         except Exception as e:
@@ -471,7 +456,7 @@ def api_set_user_modules(user_id):
                 f'{{"success": false, "message": "{error_msg}"}}',
                 status=500,
                 mimetype='application/json',
-                headers={'Connection': 'close', 'Content-Type': 'application/json; charset=utf-8'}
+                headers={'Content-Type': 'application/json; charset=utf-8'}
             )
 
 

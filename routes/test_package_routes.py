@@ -867,7 +867,6 @@ def edit_test_package(test_package_id):
                 logger.info(f'[API] 试压包更新成功: test_package_id={normalized_id}, 客户端IP: {client_ip}')
                 # 确保重定向响应正确发送
                 redirect_response = redirect(f"/test_packages/edit/{normalized_id}?success=1")
-                redirect_response.headers['Connection'] = 'close'
                 logger.info(f'[API] 准备返回重定向响应，客户端IP: {client_ip}')
                 return redirect_response
             logger.error(f'[API] 试压包更新失败: test_package_id={normalized_id}, 客户端IP: {client_ip}')
@@ -1127,7 +1126,6 @@ def delete_test_package(test_package_id):
     logger.info(f'[API] 试压包删除成功: test_package_id={test_package_id}, 客户端IP: {client_ip}')
     
     redirect_response = redirect('/test_packages')
-    redirect_response.headers['Connection'] = 'close'
     return redirect_response
 
 
@@ -1195,7 +1193,6 @@ def delete_pid(test_package_id, pid_id):
     if not conn:
         logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
         response = jsonify({'error': '数据库连接失败'})
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response, 500
     try:
@@ -1206,7 +1203,6 @@ def delete_pid(test_package_id, pid_id):
         
         response = jsonify({'success': True})
         response_data = response.get_data()
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
         return response
@@ -1273,7 +1269,6 @@ def delete_iso(test_package_id, iso_id):
     if not conn:
         logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
         response = jsonify({'error': '数据库连接失败'})
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response, 500
     try:
@@ -1284,7 +1279,6 @@ def delete_iso(test_package_id, iso_id):
         
         response = jsonify({'success': True})
         response_data = response.get_data()
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
         return response
@@ -1395,7 +1389,6 @@ def delete_punch(test_package_id, punch_id):
     if not conn:
         logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
         response = jsonify({'error': '数据库连接失败'})
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response, 500
     try:
@@ -1406,7 +1399,6 @@ def delete_punch(test_package_id, punch_id):
         
         response = jsonify({'success': True})
         response_data = response.get_data()
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
         return response
@@ -2061,19 +2053,16 @@ def upload_attachment(test_package_id, module_name):
     
     if 'files' not in request.files:
         response = jsonify({'error': '未选择文件'})
-        response.headers['Connection'] = 'close'
         return response, 400
     files = request.files.getlist('files')
     if not files:
         response = jsonify({'error': '未选择文件'})
-        response.headers['Connection'] = 'close'
         return response, 400
 
     conn = create_connection()
     if not conn:
         logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
         response = jsonify({'error': '数据库连接失败'})
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response, 500
     try:
@@ -2105,7 +2094,6 @@ def upload_attachment(test_package_id, module_name):
         
         response = jsonify({'success': True, 'files': uploaded})
         response_data = response.get_data()
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
         return response
@@ -2115,7 +2103,6 @@ def upload_attachment(test_package_id, module_name):
         logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
         conn.rollback()
         response = jsonify({'error': str(exc)})
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response, 500
     finally:
@@ -2193,7 +2180,6 @@ def delete_attachment(test_package_id, attachment_id):
     if not conn:
         logger.error(f'[API] 数据库连接失败，客户端IP: {client_ip}')
         response = jsonify({'error': '数据库连接失败'})
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response, 500
     try:
@@ -2226,7 +2212,6 @@ def delete_attachment(test_package_id, attachment_id):
         # 确保响应正确发送，避免连接重置
         response = jsonify({'success': True})
         response_data = response.get_data()
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response_data))
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
         logger.info(f'[API] 准备返回响应，大小: {len(response_data)} 字节，客户端IP: {client_ip}')
@@ -2236,7 +2221,6 @@ def delete_attachment(test_package_id, attachment_id):
         logger.error(f'[API] 删除附件失败: {e}, 客户端IP: {client_ip}')
         logger.error(f'[API] 错误堆栈: {traceback.format_exc()}')
         response = jsonify({'error': str(e)})
-        response.headers['Connection'] = 'close'
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response, 500
     finally:

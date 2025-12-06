@@ -1,4 +1,4 @@
-# 设置焊接记录文件自动同步定时任务
+﻿# 设置焊接记录文件自动同步定时任务
 # 功能：创建 Windows 定时任务，每天凌晨 2:00 自动运行同步脚本
 
 param(
@@ -69,8 +69,11 @@ Write-Host "  脚本路径: $ScriptPath" -ForegroundColor Gray
 
 try {
     # 创建任务动作（执行 PowerShell 脚本）
+    # -WindowStyle Hidden: 隐藏窗口，后台运行
+    # -NoProfile: 不加载配置文件，加快启动速度
+    # -ExecutionPolicy Bypass: 绕过执行策略限制
     $action = New-ScheduledTaskAction -Execute "powershell.exe" `
-        -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`""
+        -Argument "-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`""
     
     # 创建触发器（每天指定时间运行）
     $trigger = New-ScheduledTaskTrigger -Daily -At $Time
@@ -115,4 +118,3 @@ try {
     Write-Host "错误: 创建定时任务失败: $_" -ForegroundColor Red
     exit 1
 }
-

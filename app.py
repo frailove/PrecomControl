@@ -234,12 +234,9 @@ def create_app():
     def after_request(response):
         # 对于 API 请求，添加必要的响应头
         if request.path.startswith('/api/'):
-            # 确保响应完整传输
-            if 'Content-Length' not in response.headers:
-                response.headers['Content-Length'] = str(len(response.get_data()))
-            # 对于 PUT/POST/DELETE 请求，明确关闭连接
-            if request.method in ['PUT', 'POST', 'DELETE', 'PATCH']:
-                response.headers['Connection'] = 'close'
+            # 确保响应完整传输（Content-Length 由 Flask 自动设置，不需要手动设置）
+            # 注意：Connection 是 hop-by-hop 头，不能由 WSGI 应用设置
+            pass
         return response
     
     # 错误处理（生产环境）
@@ -513,7 +510,7 @@ if __name__ == '__main__':
     开发环境直接运行
     生产环境请使用 WSGI 服务器（Gunicorn/Waitress）
     运行方式：
-    - Windows: .\start.ps1 -Mode production 或 python -m waitress --listen=0.0.0.0:5000 wsgi:app
+    - Windows: .\\start.ps1 -Mode production 或 python -m waitress --listen=0.0.0.0:5000 wsgi:app
     - Linux: gunicorn -c gunicorn_config.py wsgi:app
     """
     import os
