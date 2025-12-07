@@ -50,6 +50,39 @@ function Write-Log {
     }
 }
 
+# 从加密文件读取数据库密码
+function Get-DbPasswordFromFile {
+    $scriptDir = Split-Path -Parent $MyInvocation.ScriptName
+    $projectRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
+    $passwordFile = Join-Path $projectRoot "config\db_password.encrypted"
+    
+    if (-not (Test-Path $passwordFile)) {
+        return $null
+    }
+    
+    try {
+        # 读取加密的 Base64 字符串
+        $encrypted = Get-Content $passwordFile -Raw
+        
+        # 转换为字节数组
+        $encryptedBytes = [Convert]::FromBase64String($encrypted)
+        
+        # 使用 DPAPI 解密（CurrentUser 范围）
+        $decryptedBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
+            $encryptedBytes,
+            $null,
+            [System.Security.Cryptography.DataProtectionScope]::CurrentUser
+        )
+        
+        # 转换为字符串
+        $password = [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
+        return $password
+    } catch {
+        Write-Log "警告: 无法从加密文件读取密码: $_" "WARNING"
+        return $null
+    }
+}
+
 # 主函数
 function Sync-WeldingFiles {
     Write-Log "========================================" "INFO"
@@ -207,26 +240,37 @@ function Sync-WeldingFiles {
             
             Write-Log "  使用虚拟环境: $venvPath" "INFO"
             
-            # 检查数据库密码环境变量
+            # 检查数据库密码：优先从环境变量，其次从加密文件，最后提示输入
             if (-not $env:DB_PASSWORD) {
-                Write-Log "  需要数据库密码以进行数据导入" "INFO"
-                Write-Host ""
-                Write-Host "请输入MySQL数据库密码:" -ForegroundColor Cyan
-                Write-Host "(密码输入时不会显示，输入完成后按回车)" -ForegroundColor Gray
-                
-                # 使用 SecureString 读取密码（不在屏幕上显示）
-                Write-Host "数据库密码: " -NoNewline -ForegroundColor Cyan
-                $securePassword = Read-Host -AsSecureString
-                
-                # 将 SecureString 转换为普通字符串（用于环境变量）
-                $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
-                $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-                [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-                
-                # 设置环境变量（仅当前进程有效）
-                $env:DB_PASSWORD = $plainPassword
-                Write-Log "✓ 数据库密码已设置" "SUCCESS"
-                Write-Host ""
+                # 尝试从加密文件读取
+                $encryptedPassword = Get-DbPasswordFromFile
+                if ($encryptedPassword) {
+                    $env:DB_PASSWORD = $encryptedPassword
+                    Write-Log "✓ 已从加密文件读取数据库密码" "SUCCESS"
+                } else {
+                    # 如果加密文件不存在，提示用户输入
+                    Write-Log "  需要数据库密码以进行数据导入" "INFO"
+                    Write-Host ""
+                    Write-Host "提示: 可以运行以下命令预先设置密码（避免每次输入）:" -ForegroundColor Yellow
+                    Write-Host "  .\scripts\maintenance\set_db_password.ps1" -ForegroundColor Gray
+                    Write-Host ""
+                    Write-Host "请输入MySQL数据库密码:" -ForegroundColor Cyan
+                    Write-Host "(密码输入时不会显示，输入完成后按回车)" -ForegroundColor Gray
+                    
+                    # 使用 SecureString 读取密码（不在屏幕上显示）
+                    Write-Host "数据库密码: " -NoNewline -ForegroundColor Cyan
+                    $securePassword = Read-Host -AsSecureString
+                    
+                    # 将 SecureString 转换为普通字符串（用于环境变量）
+                    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+                    $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+                    [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+                    
+                    # 设置环境变量（仅当前进程有效）
+                    $env:DB_PASSWORD = $plainPassword
+                    Write-Log "✓ 数据库密码已设置" "SUCCESS"
+                    Write-Host ""
+                }
             } else {
                 Write-Log "  数据库密码环境变量已设置" "INFO"
             }

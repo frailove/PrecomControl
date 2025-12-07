@@ -47,7 +47,28 @@ Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -
 
 ### 方法三：设置定时任务（自动运行）
 
-#### 1. 创建定时任务（每天凌晨 2:00）
+#### 1. 设置加密的数据库密码（推荐，避免每次输入）
+
+**定时任务运行时无法交互式输入密码，建议预先设置加密密码：**
+
+```powershell
+# 设置加密密码（使用 Windows DPAPI 加密，只有当前用户可以解密）
+.\scripts\maintenance\set_db_password.ps1
+
+# 查看是否已设置（不显示密码值）
+.\scripts\maintenance\set_db_password.ps1 -Show
+
+# 删除加密密码文件
+.\scripts\maintenance\set_db_password.ps1 -Remove
+```
+
+**安全说明：**
+- 密码使用 Windows DPAPI（Data Protection API）加密存储
+- 只有当前用户或机器可以解密，不会明文存储
+- 加密文件存储在 `config\db_password.encrypted`
+- 如果修改了数据库密码，需要重新运行此脚本更新
+
+#### 2. 创建定时任务（每天凌晨 2:00）
 
 ```powershell
 # 以管理员身份运行
@@ -57,10 +78,16 @@ Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -
 .\scripts\maintenance\setup_welding_sync_task.ps1 -Time "03:00"
 ```
 
-#### 2. 管理定时任务
+#### 3. 管理定时任务
 
 ```powershell
-# 查看任务状态
+# 查看任务详细信息（包括运行时间、下次运行时间等）
+.\scripts\maintenance\view_sync_task.ps1
+
+# 修改运行时间（例如：改为每天凌晨 2:00）
+.\scripts\maintenance\view_sync_task.ps1 -Time "02:00"
+
+# 查看任务状态（简单信息）
 Get-ScheduledTask -TaskName "PrecomControl_WeldingSync"
 
 # 手动运行任务
