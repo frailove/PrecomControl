@@ -11,7 +11,7 @@ param(
 
 $TaskName = "PrecomControl_WeldingSync"
 $ScriptPath = "C:\Projects\PrecomControl\scripts\maintenance\sync_welding_files.ps1"
-$TaskDescription = "PrecomControl 焊接记录文件自动同步 - 每天自动同步最新的焊接记录 Excel 文件"
+$TaskDescription = "PrecomControl 焊接记录文件自动同步 - 每天自动同步最新的焊接记录 Excel 文件并导入数据库"
 
 # 检查管理员权限
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -72,8 +72,9 @@ try {
     # -WindowStyle Hidden: 隐藏窗口，后台运行
     # -NoProfile: 不加载配置文件，加快启动速度
     # -ExecutionPolicy Bypass: 绕过执行策略限制
+    # -AutoImport: 同步后自动导入数据到数据库
     $action = New-ScheduledTaskAction -Execute "powershell.exe" `
-        -Argument "-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`""
+        -Argument "-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`" -AutoImport"
     
     # 创建触发器（每天指定时间运行）
     $trigger = New-ScheduledTaskTrigger -Daily -At $Time

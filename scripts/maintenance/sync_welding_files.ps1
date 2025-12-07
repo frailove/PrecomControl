@@ -45,19 +45,32 @@ function Write-Log {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $logMessage = "[$timestamp] [$Level] $Message"
     
-    # 写入日志文件
-    Add-Content -Path $LogPath -Value $logMessage -Encoding UTF8
+    # 写入日志文件（添加错误处理，避免阻塞）
+    try {
+        Add-Content -Path $LogPath -Value $logMessage -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        # 如果日志写入失败，尝试使用 .NET 方法
+        try {
+            [System.IO.File]::AppendAllText($LogPath, "$logMessage`r`n", [System.Text.Encoding]::UTF8)
+        } catch {
+            # 如果还是失败，静默忽略（避免阻塞脚本执行）
+        }
+    }
     
-    # 根据级别输出到控制台
-    switch ($Level) {
-        "ERROR" { Write-Host $logMessage -ForegroundColor Red }
-        "WARNING" { Write-Host $logMessage -ForegroundColor Yellow }
-        "SUCCESS" { Write-Host $logMessage -ForegroundColor Green }
-        default {
-            if ($ShowVerbose) {
-                Write-Host $logMessage -ForegroundColor Cyan
+    # 根据级别输出到控制台（仅在交互式环境中）
+    try {
+        switch ($Level) {
+            "ERROR" { Write-Host $logMessage -ForegroundColor Red -ErrorAction SilentlyContinue }
+            "WARNING" { Write-Host $logMessage -ForegroundColor Yellow -ErrorAction SilentlyContinue }
+            "SUCCESS" { Write-Host $logMessage -ForegroundColor Green -ErrorAction SilentlyContinue }
+            default {
+                if ($ShowVerbose) {
+                    Write-Host $logMessage -ForegroundColor Cyan -ErrorAction SilentlyContinue
+                }
             }
         }
+    } catch {
+        # 在非交互式环境中，Write-Host 可能失败，静默忽略
     }
 }
 
@@ -570,12 +583,16 @@ function Sync-WeldingFiles {
             Write-Log "  正在调用 data_sync_pipeline.py..." "INFO"
             Write-Log "  数据源路径: $TargetPath" "INFO"
             Write-Log "  触发来源: FILE_SYNC_AUTO" "INFO"
-            Write-Host ""
-            Write-Host ("=" * 70) -ForegroundColor Cyan
-            Write-Host "数据同步流水线启动（这可能需要几分钟）" -ForegroundColor Yellow
-            Write-Host "  步骤：[1/5] 备份 → [2/5] 导入 → [3/5] 同步 → [4/5] 聚合 → [5/5] 清理" -ForegroundColor Gray
-            Write-Host ("=" * 70) -ForegroundColor Cyan
-            Write-Host ""
+            try {
+                Write-Host "" -ErrorAction SilentlyContinue
+                Write-Host ("=" * 70) -ForegroundColor Cyan -ErrorAction SilentlyContinue
+                Write-Host "数据同步流水线启动（这可能需要几分钟）" -ForegroundColor Yellow -ErrorAction SilentlyContinue
+                Write-Host "  步骤：[1/5] 备份 → [2/5] 导入 → [3/5] 同步 → [4/5] 聚合 → [5/5] 清理" -ForegroundColor Gray -ErrorAction SilentlyContinue
+                Write-Host ("=" * 70) -ForegroundColor Cyan -ErrorAction SilentlyContinue
+                Write-Host "" -ErrorAction SilentlyContinue
+            } catch {
+                # 在非交互式环境中，Write-Host 可能失败，静默忽略
+            }
             
             # 构建 Python 命令参数
             # --excel: 传递 nordinfo 目录路径，Python 脚本会自动查找所有 WeldingDB_*.xlsx 文件
@@ -602,13 +619,17 @@ function Sync-WeldingFiles {
                 
                 # 检查退出代码
                 if ($exitCode -eq 0) {
-                    Write-Host ""
+                    try {
+                        Write-Host "" -ErrorAction SilentlyContinue
+                    } catch { }
                     Write-Log "========================================" "INFO"
                     Write-Log "✓ 数据同步流水线完成！" "SUCCESS"
                     Write-Log "  备份、导入、同步、聚合、清理全部完成" "SUCCESS"
                     Write-Log "========================================" "INFO"
                 } else {
-                    Write-Host ""
+                    try {
+                        Write-Host "" -ErrorAction SilentlyContinue
+                    } catch { }
                     Write-Log "========================================" "INFO"
                     Write-Log "⚠ 数据同步流水线失败，但文件同步已成功" "WARNING"
                     Write-Log "  退出代码: $exitCode" "WARNING"
@@ -617,7 +638,9 @@ function Sync-WeldingFiles {
                     Write-Log "========================================" "INFO"
                 }
             } catch {
-                Write-Host ""
+                try {
+                    Write-Host "" -ErrorAction SilentlyContinue
+                } catch { }
                 Write-Log "========================================" "INFO"
                 Write-Log "⚠ 数据同步流水线执行出错: $_" "WARNING"
                 Write-Log "  文件同步已成功，但需要手动运行数据同步流水线" "WARNING"
@@ -630,7 +653,14 @@ function Sync-WeldingFiles {
         }
     }
     
-    return ($failCount -eq 0)
+    # 函数执行完成
+    $result = ($failCount -eq 0)
+    if ($result) {
+        Write-Log "同步任务执行成功，准备退出" "INFO"
+    } else {
+        Write-Log "同步任务执行失败，准备退出" "WARNING"
+    }
+    return $result
 }
 
 # 如果只是测试路径，执行路径测试后退出
@@ -719,13 +749,16 @@ if ($TestPath) {
 try {
     $result = Sync-WeldingFiles
     if ($result) {
+        Write-Log "脚本执行成功，退出代码: 0" "INFO"
         exit 0
     } else {
+        Write-Log "脚本执行失败，退出代码: 1" "WARNING"
         exit 1
     }
 } catch {
     Write-Log "未处理的错误: $_" "ERROR"
     Write-Log "错误堆栈: $($_.ScriptStackTrace)" "ERROR"
+    Write-Log "脚本异常退出，退出代码: 1" "ERROR"
     exit 1
 }
 
