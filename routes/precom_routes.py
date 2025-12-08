@@ -3,6 +3,8 @@ from flask_babel import gettext as _
 from database import create_connection, ensure_precom_tables
 from models.system import SystemModel
 from models.subsystem import SubsystemModel
+from routes.system_routes import get_faclist_filter_options
+from routes.system_routes import get_faclist_filter_options
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from io import BytesIO
@@ -116,6 +118,23 @@ def precom_task_list():
 
     systems = SystemModel.get_all_systems()
     subsystems = SubsystemModel.get_all_subsystems() if not system_code else SubsystemModel.get_subsystems_by_system(system_code)
+    # Faclist筛选参数（用于公共筛选组件）
+    filter_subproject = (request.args.get('subproject_code') or '').strip()
+    filter_train = (request.args.get('train') or '').strip()
+    filter_unit = (request.args.get('unit') or '').strip()
+    filter_simpleblk = (request.args.get('simpleblk') or '').strip()
+    filter_mainblock = (request.args.get('mainblock') or '').strip()
+    filter_block = (request.args.get('block') or '').strip()
+    filter_bccquarter = (request.args.get('bccquarter') or '').strip()
+    faclist_options = get_faclist_filter_options(
+        filter_subproject=filter_subproject,
+        filter_train=filter_train,
+        filter_unit=filter_unit,
+        filter_simpleblk=filter_simpleblk,
+        filter_mainblock=filter_mainblock,
+        filter_block=filter_block,
+        filter_bccquarter=filter_bccquarter,
+    )
 
     page_title = get_task_type_label(task_type)
 
@@ -169,9 +188,39 @@ def precom_task_list():
         filter_subsystem=subsystem_code or '',
         filter_block=block or '',
         filter_status=status_filter or '',
+        # Faclist筛选参数与选项
+        filter_subproject=filter_subproject or '',
+        filter_train=filter_train or '',
+        filter_unit=filter_unit or '',
+        filter_simpleblk=filter_simpleblk or '',
+        filter_mainblock=filter_mainblock or '',
+        filter_bccquarter=filter_bccquarter or '',
+        faclist_options=faclist_options,
         page_title=page_title,
         new_task_url=url_for('precom.precom_task_new', task_type=task_type) if task_type else url_for('precom.precom_task_new'),
     )
+
+
+@precom_bp.route('/api/precom/faclist_options')
+def api_precom_faclist_options():
+    """预试车模块 Faclist 级联筛选API，供公共JS调用"""
+    filter_subproject = (request.args.get('subproject_code') or '').strip()
+    filter_train = (request.args.get('train') or '').strip()
+    filter_unit = (request.args.get('unit') or '').strip()
+    filter_simpleblk = (request.args.get('simpleblk') or '').strip()
+    filter_mainblock = (request.args.get('mainblock') or '').strip()
+    filter_block = (request.args.get('block') or '').strip()
+    filter_bccquarter = (request.args.get('bccquarter') or '').strip()
+    options = get_faclist_filter_options(
+        filter_subproject=filter_subproject,
+        filter_train=filter_train,
+        filter_unit=filter_unit,
+        filter_simpleblk=filter_simpleblk,
+        filter_mainblock=filter_mainblock,
+        filter_block=filter_block,
+        filter_bccquarter=filter_bccquarter,
+    )
+    return jsonify(options)
 
 
 @precom_bp.route('/precom/manhole')

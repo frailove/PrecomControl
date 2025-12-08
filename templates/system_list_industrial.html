@@ -79,6 +79,13 @@
         height: 100%;
     }
     
+    /* 表格字体缩小2个等级 */
+    .table-container table,
+    .table-container table th,
+    .table-container table td {
+        font-size: 0.75rem; /* 缩小3个等级：1rem -> 0.875rem -> 0.75rem */
+    }
+    
 </style>
 {% endblock %}
 
@@ -146,7 +153,7 @@
                         <a href="/systems" class="btn btn-secondary">
                             <i class="bi bi-arrow-clockwise"></i> {{ _('重置') }}
                         </a>
-                        <button type="button" class="btn btn-warning" onclick="toggleFaclistFilter()">
+                        <button type="button" class="btn btn-warning" onclick="toggleFaclistFilter('systems')">
                             <i class="bi bi-funnel"></i> {{ _('筛选') }}
                         </button>
                         <a class="btn btn-success" href="/systems/add">
@@ -157,54 +164,10 @@
             </div>
         </div>
         
-        <!-- 第二行：Faclist 高级筛选（可折叠） -->
-        <div id="faclistFilter" style="display: {{ 'block' if (filter_subproject or filter_train or filter_unit or filter_simpleblk or filter_mainblock or filter_block or filter_bccquarter) else 'none' }};">
-            <hr style="margin: 0.75rem 0;">
-            <div class="faclist-scroll">
-                <select class="form-select" name="subproject_code">
-                    <option value="">{{ _('全部') }} SubProject</option>
-                    {% for code in faclist_options.subproject_codes %}
-                    <option value="{{ code }}" {% if code == filter_subproject %}selected{% endif %}>{{ code }}</option>
-                    {% endfor %}
-                </select>
-                <select class="form-select" name="train">
-                    <option value="">{{ _('全部') }} Train</option>
-                    {% for train in faclist_options.trains %}
-                    <option value="{{ train }}" {% if train == filter_train %}selected{% endif %}>{{ train }}</option>
-                    {% endfor %}
-                </select>
-                <select class="form-select" name="unit">
-                    <option value="">{{ _('全部') }} Unit</option>
-                    {% for unit in faclist_options.units %}
-                    <option value="{{ unit }}" {% if unit == filter_unit %}selected{% endif %}>{{ unit }}</option>
-                    {% endfor %}
-                </select>
-                <select class="form-select" name="bccquarter">
-                    <option value="">{{ _('全部') }} Quarter</option>
-                    {% for quarter in faclist_options.bccquarters %}
-                    <option value="{{ quarter }}" {% if quarter == filter_bccquarter %}selected{% endif %}>{{ quarter }}</option>
-                    {% endfor %}
-                </select>
-                <select class="form-select" name="simpleblk">
-                    <option value="">{{ _('全部') }} SimpleBlk</option>
-                    {% for blk in faclist_options.simpleblks %}
-                    <option value="{{ blk }}" {% if blk == filter_simpleblk %}selected{% endif %}>{{ blk }}</option>
-                    {% endfor %}
-                </select>
-                <select class="form-select" name="mainblock">
-                    <option value="">{{ _('全部') }} MainBlock</option>
-                    {% for mainblock in (available_mainblocks or []) %}
-                    <option value="{{ mainblock }}" {% if mainblock == filter_mainblock %}selected{% endif %}>{{ mainblock }}</option>
-                    {% endfor %}
-                </select>
-                <select class="form-select" name="block">
-                    <option value="">{{ _('全部') }} Block</option>
-                    {% for blk in (available_blocks or []) %}
-                    <option value="{{ blk }}" {% if blk == filter_block %}selected{% endif %}>{{ blk }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
+        <!-- 第二行：Faclist 高级筛选（使用公共组件） -->
+        {% set id_prefix = 'systems' %}
+        {% set form_id = 'filterForm' %}
+        {% include 'components/faclist_filter.html' %}
     </form>
 </div>
 
@@ -335,7 +298,7 @@
 {% block scripts %}
 <script>
 // 切换 Faclist 筛选显示
-function toggleFaclistFilter() {
+function toggleFaclistFilter_legacy() {
     var filterDiv = document.getElementById('faclistFilter');
     if (filterDiv.style.display === 'none') {
         filterDiv.style.display = 'block';
@@ -345,175 +308,8 @@ function toggleFaclistFilter() {
 }
 
 $(document).ready(function() {
-    var submitTimer;
-    
-    // Faclist 联动筛选：使用 AJAX 更新选项（无需刷新页面）
-    function updateFaclistOptions(changedField) {
-        var params = {
-            subproject_code: $('select[name="subproject_code"]').val() || '',
-            train: $('select[name="train"]').val() || '',
-            unit: $('select[name="unit"]').val() || '',
-            simpleblk: $('select[name="simpleblk"]').val() || '',
-            mainblock: $('select[name="mainblock"]').val() || '',
-            block: $('select[name="block"]').val() || '',
-            bccquarter: $('select[name="bccquarter"]').val() || ''
-        };
-        
-        $.get('/api/faclist_options', params, function(data) {
-            // 更新项目列表（除了当前字段）
-            if (changedField !== 'subproject_code') {
-                var select = $('select[name="subproject_code"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部项目</option>');
-                $.each(data.subproject_codes || [], function(i, code) {
-                    select.append('<option value="' + code + '">' + code + '</option>');
-                });
-                if (current) select.val(current);
-            }
-            
-            // 更新项目期
-            if (changedField !== 'train') {
-                var select = $('select[name="train"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部项目期</option>');
-                $.each(data.trains || [], function(i, train) {
-                    select.append('<option value="' + train + '">' + train + '</option>');
-                });
-                if (current) select.val(current);
-            }
-            
-            // 更新装置
-            if (changedField !== 'unit') {
-                var select = $('select[name="unit"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部装置</option>');
-                $.each(data.units || [], function(i, unit) {
-                    select.append('<option value="' + unit + '">' + unit + '</option>');
-                });
-                if (current) select.val(current);
-            }
-            
-            // 更新大主项
-            if (changedField !== 'simpleblk') {
-                var simpleSelect = $('select[name="simpleblk"]');
-                var currentSimple = simpleSelect.val();
-                simpleSelect.empty().append('<option value="">全部大主项</option>');
-                $.each(data.simpleblks || [], function(i, blk) {
-                    simpleSelect.append('<option value="' + blk + '">' + blk + '</option>');
-                });
-                if (currentSimple) simpleSelect.val(currentSimple);
-            }
-            
-            // 更新主项
-            if (changedField !== 'mainblock') {
-                var mainSelect = $('select[name="mainblock"]');
-                var currentMain = mainSelect.val();
-                mainSelect.empty().append('<option value="">全部主项</option>');
-                var currentSimpleblk = $('select[name="simpleblk"]').val();
-                var availableMainblocks = [];
-                
-                if (currentSimpleblk && data.mainblocks && data.mainblocks[currentSimpleblk] && data.mainblocks[currentSimpleblk].length > 0) {
-                    // 如果选择了 simpleblk，只显示该 simpleblk 下的 mainblocks
-                    availableMainblocks = data.mainblocks[currentSimpleblk].sort();
-                } else {
-                    // 如果没有选择 simpleblk，显示所有 mainblocks
-                    var allMainblocks = [];
-                    $.each(data.mainblocks || {}, function(simpleblk, mbs) {
-                        $.each(mbs, function(i, mb) {
-                            if (allMainblocks.indexOf(mb) === -1) {
-                                allMainblocks.push(mb);
-                            }
-                        });
-                    });
-                    availableMainblocks = allMainblocks.sort();
-                }
-                
-                $.each(availableMainblocks, function(i, mb) {
-                    mainSelect.append('<option value="' + mb + '">' + mb + '</option>');
-                });
-                
-                // 如果当前值不在新列表中，清空它
-                if (currentMain && availableMainblocks.indexOf(currentMain) === -1) {
-                    mainSelect.val('');
-                    // 同时清空 block
-                    $('select[name="block"]').val('');
-                } else if (currentMain) {
-                    mainSelect.val(currentMain);
-                }
-            }
-            
-            // 更新 CIA 主子项
-            if (changedField !== 'block') {
-                var blockSelect = $('select[name="block"]');
-                var currentBlock = blockSelect.val();
-                blockSelect.empty().append('<option value="">全部CIA主子项</option>');
-                var currentMainblock = $('select[name="mainblock"]').val();
-                if (currentMainblock && data.blocks && data.blocks[currentMainblock]) {
-                    $.each(data.blocks[currentMainblock].sort(), function(i, blk) {
-                        blockSelect.append('<option value="' + blk + '">' + blk + '</option>');
-                    });
-                } else {
-                    var allBlocks = [];
-                    $.each(data.blocks || {}, function(mainblock, blks) {
-                        $.each(blks, function(i, blk) {
-                            if (allBlocks.indexOf(blk) === -1) {
-                                allBlocks.push(blk);
-                            }
-                        });
-                    });
-                    allBlocks.sort();
-                    $.each(allBlocks, function(i, blk) {
-                        blockSelect.append('<option value="' + blk + '">' + blk + '</option>');
-                    });
-                }
-                if (currentBlock) blockSelect.val(currentBlock);
-            }
-            
-            // 更新片区
-            if (changedField !== 'bccquarter') {
-                var select = $('select[name="bccquarter"]');
-                var current = select.val();
-                select.empty().append('<option value="">全部片区</option>');
-                var availableQuarters = data.bccquarters || [];
-                $.each(availableQuarters, function(i, quarter) {
-                    select.append('<option value="' + quarter + '">' + quarter + '</option>');
-                });
-                // 如果当前值不在新列表中，清空它
-                if (current && availableQuarters.indexOf(current) === -1) {
-                    select.val('');
-                } else if (current) {
-                    select.val(current);
-                }
-            }
-        });
-    }
-    
-    // Faclist 字段变化时，通过 AJAX 刷新选项
-    $('select[name="subproject_code"], select[name="train"], select[name="unit"], select[name="simpleblk"], select[name="mainblock"], select[name="block"], select[name="bccquarter"]').change(function() {
-        var changedField = $(this).attr('name');
-        
-        if (changedField === 'simpleblk') {
-            $('select[name="mainblock"]').val('');
-            $('select[name="block"]').val('');
-        } else if (changedField === 'mainblock') {
-            $('select[name="block"]').val('');
-        }
-        
-        clearTimeout(submitTimer);
-        submitTimer = setTimeout(function() {
-            updateFaclistOptions(changedField);
-        }, 300);
-    });
-
-    var hasPreset = false;
-    $('#faclistFilter select').each(function() {
-        if ($(this).val()) {
-            hasPreset = true;
-        }
-    });
-    if (hasPreset) {
-        $('#faclistFilter').show();
-    }
+    // Faclist筛选器现在由公共的 faclist_filter.js 统一管理
+    // 不再需要内联的 updateFaclistOptions 函数和 change 事件监听器
     
     // 系统编码自动补齐
     var systemSearchInput = document.getElementById('systemSearchInput');

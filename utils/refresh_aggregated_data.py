@@ -508,12 +508,18 @@ def refresh_system_and_subsystem_summaries(verbose=True):
             ) w ON w.SystemCode = s.SystemCode
             LEFT JOIN (
                 SELECT
-                    SystemCode,
-                    COUNT(DISTINCT TestPackageID) AS total_packages,
-                    COUNT(DISTINCT CASE WHEN ActualDate IS NOT NULL THEN TestPackageID END) AS tested_packages
-                FROM HydroTestPackageList
-                WHERE SystemCode IS NOT NULL AND TRIM(SystemCode) <> ''
-                GROUP BY SystemCode
+                    h.SystemCode,
+                    COUNT(DISTINCT h.TestPackageID) AS total_packages,
+                    COUNT(DISTINCT CASE WHEN h.ActualDate IS NOT NULL THEN h.TestPackageID END) AS tested_packages
+                FROM HydroTestPackageList h
+                INNER JOIN WeldingList wl ON wl.TestPackageID = h.TestPackageID
+                WHERE h.SystemCode IS NOT NULL 
+                  AND TRIM(h.SystemCode) <> ''
+                  AND h.IsDeleted = FALSE
+                  AND wl.TestPackageID IS NOT NULL
+                  AND TRIM(wl.TestPackageID) <> ''
+                  AND wl.IsDeleted = FALSE
+                GROUP BY h.SystemCode
             ) p ON p.SystemCode = s.SystemCode
             """
         )
@@ -550,12 +556,18 @@ def refresh_system_and_subsystem_summaries(verbose=True):
             ) w ON w.SubSystemCode = sub.SubSystemCode
             LEFT JOIN (
                 SELECT
-                    SubSystemCode,
-                    COUNT(DISTINCT TestPackageID) AS total_packages,
-                    COUNT(DISTINCT CASE WHEN ActualDate IS NOT NULL THEN TestPackageID END) AS tested_packages
-                FROM HydroTestPackageList
-                WHERE SubSystemCode IS NOT NULL AND TRIM(SubSystemCode) <> ''
-                GROUP BY SubSystemCode
+                    h.SubSystemCode,
+                    COUNT(DISTINCT h.TestPackageID) AS total_packages,
+                    COUNT(DISTINCT CASE WHEN h.ActualDate IS NOT NULL THEN h.TestPackageID END) AS tested_packages
+                FROM HydroTestPackageList h
+                INNER JOIN WeldingList wl ON wl.TestPackageID = h.TestPackageID
+                WHERE h.SubSystemCode IS NOT NULL 
+                  AND TRIM(h.SubSystemCode) <> ''
+                  AND h.IsDeleted = FALSE
+                  AND wl.TestPackageID IS NOT NULL
+                  AND TRIM(wl.TestPackageID) <> ''
+                  AND wl.IsDeleted = FALSE
+                GROUP BY h.SubSystemCode
             ) p ON p.SubSystemCode = sub.SubSystemCode
             """
         )

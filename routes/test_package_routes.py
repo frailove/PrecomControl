@@ -854,6 +854,10 @@ def edit_test_package(test_package_id):
                 'TestPressure': request.form.get('TestPressure') or None,
                 'PlannedDate': request.form.get('PlannedDate') or None,
                 'ActualDate': request.form.get('ActualDate') or None,
+                'FlushingPlannedDate': request.form.get('FlushingPlannedDate') or None,
+                'FlushingActualDate': request.form.get('FlushingActualDate') or None,
+                'ReinstatementPlannedDate': request.form.get('ReinstatementPlannedDate') or None,
+                'ReinstatementActualDate': request.form.get('ReinstatementActualDate') or None,
                 'Status': request.form.get('Status') or 'Pending',
                 'Remarks': request.form.get('Remarks') or '',
                 'last_updated_by': 'web'

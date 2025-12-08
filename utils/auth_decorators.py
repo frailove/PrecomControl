@@ -75,6 +75,7 @@ def get_module_code_by_path(path: str) -> str:
     
     # URL路径到模块代码的映射
     path_module_map = {
+        '/dashboard': 'dashboard',
         '/systems': 'systems',
         '/subsystems': 'subsystems',
         '/test_packages': 'test_packages',

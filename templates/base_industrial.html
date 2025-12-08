@@ -830,6 +830,9 @@
         }
     </script>
     
+    <!-- Faclist筛选器公共脚本 - 在所有页面脚本之前加载 -->
+    <script src="{{ url_for('static', filename='faclist_filter.js') }}"></script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

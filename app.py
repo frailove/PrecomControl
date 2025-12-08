@@ -15,6 +15,7 @@ from routes.test_package_routes import test_package_bp
 from routes.backup_routes import backup_bp
 from routes.precom_routes import precom_bp
 from routes.auth_routes import auth_bp
+from routes.dashboard_routes import dashboard_bp
 from database import ensure_user_management_tables, ensure_precom_tables
 from utils.auth_manager import bootstrap_user_management
 from utils.auth_decorators import has_permission
@@ -185,6 +186,7 @@ def create_app():
     app.register_blueprint(test_package_bp)
     app.register_blueprint(precom_bp)
     app.register_blueprint(backup_bp)  # 备份管理路由
+    app.register_blueprint(dashboard_bp)  # 仪表板路由
 
     PUBLIC_ENDPOINTS = {'auth.login', 'static', 'index'}
     # 不需要模块权限检查的端点（账户管理、个人信息等）

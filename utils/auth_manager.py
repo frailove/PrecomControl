@@ -910,6 +910,8 @@ def bootstrap_module_permissions():
     try:
         cur = conn.cursor(dictionary=True)
         modules = [
+            {'code': 'dashboard', 'name': '仪表板', 'display': '仪表板', 'desc': '系统完成状态总览和数据分析',
+             'icon': 'bi-speedometer2', 'route': '/dashboard', 'order': 0},
             {'code': 'systems', 'name': '系统管理', 'display': '系统管理', 'desc': '管理工艺和非工艺系统基本信息', 
              'icon': 'bi-diagram-3-fill', 'route': '/systems', 'order': 1},
             {'code': 'subsystems', 'name': '子系统管理', 'display': '子系统管理', 'desc': '管理子系统信息和配置',

@@ -1,0 +1,112 @@
+{# 
+Faclist级联筛选器公共组件
+
+使用方法 - 在需要的模板中：
+  设置变量 id_prefix 和 form_id
+  然后包含此模板文件
+
+需要传入的变量：
+- faclist_options: 筛选器选项数据
+- filter_subproject, filter_train, filter_unit, filter_simpleblk, filter_mainblock, filter_block, filter_bccquarter: 当前筛选值
+- form_id: 表单ID（可选，默认为空）
+- id_prefix: ID前缀（可选，用于区分多个筛选器，默认为空）
+#}
+{% set id_prefix = id_prefix|default('') %}
+{% set form_id = form_id|default('') %}
+
+<div class="faclist-filter-container" id="{{ id_prefix }}faclistFilter" style="width: 100%; {% if not (filter_subproject or filter_train or filter_unit or filter_simpleblk or filter_mainblock or filter_block or filter_bccquarter) %}display: none;{% else %}display: block;{% endif %}">
+    <div class="faclist-scroll">
+        <select class="form-select form-select-sm faclist-subproject" name="subproject_code" id="{{ id_prefix }}faclistSubproject" data-form-id="{{ form_id }}" data-prefix="{{ id_prefix }}">
+            <option value="">{{ _('全部') }} SubProject</option>
+            {% for code in faclist_options.subproject_codes %}
+            <option value="{{ code }}" {% if code == filter_subproject %}selected{% endif %}>{{ code }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select form-select-sm faclist-train" name="train" id="{{ id_prefix }}faclistTrain" data-form-id="{{ form_id }}" data-prefix="{{ id_prefix }}">
+            <option value="">{{ _('全部') }} Train</option>
+            {% for train in faclist_options.trains %}
+            <option value="{{ train }}" {% if train == filter_train %}selected{% endif %}>{{ train }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select form-select-sm faclist-unit" name="unit" id="{{ id_prefix }}faclistUnit" data-form-id="{{ form_id }}" data-prefix="{{ id_prefix }}">
+            <option value="">{{ _('全部装置') }}</option>
+            {% for unit in faclist_options.units %}
+            <option value="{{ unit }}" {% if unit == filter_unit %}selected{% endif %}>{{ unit }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select form-select-sm faclist-simpleblk" name="simpleblk" id="{{ id_prefix }}faclistSimpleBLK" data-form-id="{{ form_id }}" data-prefix="{{ id_prefix }}">
+            <option value="">{{ _('全部大主项') }}</option>
+            {% for blk in faclist_options.simpleblks %}
+            <option value="{{ blk }}" {% if blk == filter_simpleblk %}selected{% endif %}>{{ blk }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select form-select-sm faclist-mainblock" name="mainblock" id="{{ id_prefix }}faclistMainBlock" data-form-id="{{ form_id }}" data-prefix="{{ id_prefix }}">
+            <option value="">{{ _('全部主项') }}</option>
+            {# 服务器初始渲染：优先使用所选SimpleBLK的主项，否则汇总全部 #}
+            {% set all_mainblocks = [] %}
+            {% if filter_simpleblk and faclist_options.mainblocks.get(filter_simpleblk) %}
+                {% set all_mainblocks = faclist_options.mainblocks[filter_simpleblk] %}
+            {% else %}
+                {% for simpleblk, mainblocks in faclist_options.mainblocks.items() %}
+                    {% for mb in mainblocks %}
+                        {% if mb not in all_mainblocks %}
+                            {% set _ = all_mainblocks.append(mb) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+            {% for mb in all_mainblocks|sort %}
+            <option value="{{ mb }}" {% if mb == filter_mainblock %}selected{% endif %}>{{ mb }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select form-select-sm faclist-block" name="block" id="{{ id_prefix }}faclistBlock" data-form-id="{{ form_id }}" data-prefix="{{ id_prefix }}">
+            <option value="">{{ _('全部CIA主子项') }}</option>
+            {# 服务器初始渲染：优先使用所选MainBlock的Block，否则汇总全部 #}
+            {% set all_blocks = [] %}
+            {% if filter_mainblock and faclist_options.blocks.get(filter_mainblock) %}
+                {% set all_blocks = faclist_options.blocks[filter_mainblock] %}
+            {% else %}
+                {% for key, blocks in faclist_options.blocks.items() %}
+                    {% for b in blocks %}
+                        {% if b not in all_blocks %}
+                            {% set _ = all_blocks.append(b) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+            {% for b in all_blocks|sort %}
+            <option value="{{ b }}" {% if b == filter_block %}selected{% endif %}>{{ b }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select form-select-sm faclist-bccquarter" name="bccquarter" id="{{ id_prefix }}faclistBCCQuarter" data-form-id="{{ form_id }}" data-prefix="{{ id_prefix }}">
+            <option value="">{{ _('全部片区') }}</option>
+            {% for quarter in faclist_options.bccquarters %}
+            <option value="{{ quarter }}" {% if quarter == filter_bccquarter %}selected{% endif %}>{{ quarter }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<style>
+    .faclist-filter-container {
+        width: 100%;
+    }
+    
+    .faclist-scroll {
+        display: flex;
+        gap: 0.6rem;
+        overflow-x: auto;
+        padding: 0.5rem 0;
+        border-top: 1px solid #dee2e6;
+        margin-top: 0.5rem;
+        padding-top: 0.75rem;
+    }
+    
+    .faclist-scroll .form-select {
+        min-width: 150px;
+        white-space: nowrap;
+    }
+</style>
+
+<!-- Faclist筛选器的JavaScript逻辑在 /static/js/faclist_filter.js 中统一管理 -->
+

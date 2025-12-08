@@ -464,7 +464,7 @@ def get_faclist_filter_options(filter_subproject=None, filter_train=None, filter
     
     try:
         cur = conn.cursor(dictionary=True)
-        # 构建 WHERE 条件
+        # 构建 WHERE 条件：所有维度互相影响（只要该维度非空就参与过滤）
         where_clauses = []
         params = []
         

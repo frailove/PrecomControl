@@ -645,14 +645,49 @@
                                     <h5>{{ _('计划与状态') }}</h5>
                                 </div>
                                 
+                                <!-- 试压计划/实际 -->
                                 <div class="mb-3">
-                                    <label for="PlannedDate" class="form-label">{{ _('计划日期') }}</label>
-                                    <input type="date" class="form-control" id="PlannedDate" name="PlannedDate" value="{{ test_package.PlannedDate or '' }}">
+                                    <label class="form-label fw-bold">{{ _('试压') }}</label>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label for="PlannedDate" class="form-label small">{{ _('计划日期') }}</label>
+                                            <input type="date" class="form-control form-control-sm" id="PlannedDate" name="PlannedDate" value="{{ test_package.PlannedDate or '' }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="ActualDate" class="form-label small">{{ _('实际日期') }}</label>
+                                            <input type="date" class="form-control form-control-sm" id="ActualDate" name="ActualDate" value="{{ test_package.ActualDate or '' }}">
+                                        </div>
+                                    </div>
                                 </div>
                                 
+                                <!-- 吹扫计划/实际 -->
                                 <div class="mb-3">
-                                    <label for="ActualDate" class="form-label">{{ _('实际日期') }}</label>
-                                    <input type="date" class="form-control" id="ActualDate" name="ActualDate" value="{{ test_package.ActualDate or '' }}">
+                                    <label class="form-label fw-bold">{{ _('吹扫') }}</label>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label for="FlushingPlannedDate" class="form-label small">{{ _('计划日期') }}</label>
+                                            <input type="date" class="form-control form-control-sm" id="FlushingPlannedDate" name="FlushingPlannedDate" value="{{ test_package.FlushingPlannedDate or '' }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="FlushingActualDate" class="form-label small">{{ _('实际日期') }}</label>
+                                            <input type="date" class="form-control form-control-sm" id="FlushingActualDate" name="FlushingActualDate" value="{{ test_package.FlushingActualDate or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 复位计划/实际 -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">{{ _('复位') }}</label>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label for="ReinstatementPlannedDate" class="form-label small">{{ _('计划日期') }}</label>
+                                            <input type="date" class="form-control form-control-sm" id="ReinstatementPlannedDate" name="ReinstatementPlannedDate" value="{{ test_package.ReinstatementPlannedDate or '' }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="ReinstatementActualDate" class="form-label small">{{ _('实际日期') }}</label>
+                                            <input type="date" class="form-control form-control-sm" id="ReinstatementActualDate" name="ReinstatementActualDate" value="{{ test_package.ReinstatementActualDate or '' }}">
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="mb-3">

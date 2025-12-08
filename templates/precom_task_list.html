@@ -2,6 +2,18 @@
 
 {% block title %}{{ page_title or '预试车任务 - 预试车管理系统' }}{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .table {
+        font-size: 0.625rem; /* 缩小3个等级：1rem -> 0.875rem -> 0.75rem -> 0.625rem */
+    }
+    .table th,
+    .table td {
+        font-size: 0.625rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header d-flex justify-content-between align-items-end">
     <div>
@@ -36,7 +48,7 @@
 
 <!-- 筛选区 -->
 <div class="filter-section mb-3">
-    <form method="get" action="{{ url_for('precom.precom_task_list') }}">
+    <form method="get" action="{{ url_for('precom.precom_task_list') }}" id="precomFilterForm">
         <div class="row g-2">
             <div class="col-md-2">
                 <select class="form-select" name="task_type">
@@ -87,9 +99,17 @@
                     <a href="{{ url_for('precom.precom_task_list') }}" class="btn btn-secondary">
                         <i class="bi bi-arrow-clockwise"></i> {{ _('重置') }}
                     </a>
+                    <button type="button" class="btn btn-warning" onclick="toggleFaclistFilter('precom')">
+                        <i class="bi bi-funnel"></i> {{ _('筛选') }}
+                    </button>
                 </div>
             </div>
         </div>
+        
+        <!-- Faclist高级筛选（公共组件） -->
+        {% set id_prefix = 'precom' %}
+        {% set form_id = 'precomFilterForm' %}
+        {% include 'components/faclist_filter.html' %}
     </form>
 </div>
 

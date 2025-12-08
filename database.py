@@ -14,7 +14,7 @@ _connection_pool = None
 _pool_lock = threading.Lock()
 
 def ensure_hydro_columns():
-    """Ensure HydroTestPackageList has SystemCode/SubSystemCode columns."""
+    """Ensure HydroTestPackageList has SystemCode/SubSystemCode columns and flushing/reinstatement date fields."""
     connection = create_connection()
     if not connection:
         return False
@@ -29,6 +29,23 @@ def ensure_hydro_columns():
         cursor.execute("SHOW COLUMNS FROM HydroTestPackageList LIKE 'SubSystemCode'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE HydroTestPackageList ADD COLUMN SubSystemCode VARCHAR(512) NULL AFTER SystemCode")
+        
+        # 添加吹扫计划/实际日期字段
+        cursor.execute("SHOW COLUMNS FROM HydroTestPackageList LIKE 'FlushingPlannedDate'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE HydroTestPackageList ADD COLUMN FlushingPlannedDate DATE NULL COMMENT '吹扫计划日期' AFTER ActualDate")
+        cursor.execute("SHOW COLUMNS FROM HydroTestPackageList LIKE 'FlushingActualDate'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE HydroTestPackageList ADD COLUMN FlushingActualDate DATE NULL COMMENT '吹扫实际日期' AFTER FlushingPlannedDate")
+        
+        # 添加复位计划/实际日期字段
+        cursor.execute("SHOW COLUMNS FROM HydroTestPackageList LIKE 'ReinstatementPlannedDate'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE HydroTestPackageList ADD COLUMN ReinstatementPlannedDate DATE NULL COMMENT '复位计划日期' AFTER FlushingActualDate")
+        cursor.execute("SHOW COLUMNS FROM HydroTestPackageList LIKE 'ReinstatementActualDate'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE HydroTestPackageList ADD COLUMN ReinstatementActualDate DATE NULL COMMENT '复位实际日期' AFTER ReinstatementPlannedDate")
+        
         connection.commit()
         return True
     except Error:

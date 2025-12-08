@@ -1,0 +1,1107 @@
+{% extends "base_industrial.html" %}
+
+{% block title %}{{ _('仪表板') }} - {{ _('预试车管理系统') }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .stat-card {
+        background: white;
+        padding: 1.25rem;
+        border: 2px solid var(--border-color);
+        border-left: 5px solid var(--primary-blue);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary-blue);
+        margin: 0;
+    }
+    
+    .stat-card p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0.5rem 0 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-card.border-left-success {
+        border-left-color: var(--success-green);
+    }
+    
+    .stat-card.border-left-warning {
+        border-left-color: var(--warning-yellow);
+    }
+    
+    .stat-card.border-left-info {
+        border-left-color: var(--primary-blue-light);
+    }
+    
+    .progress-card {
+        background: white;
+        padding: 1.5rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin-top: 1rem;
+    }
+    
+    .module-selector {
+        background: var(--primary-blue);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .module-selector .btn {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        border: 2px solid rgba(255,255,255,0.3);
+        color: white;
+        background: rgba(255,255,255,0.1);
+        transition: all 0.2s;
+    }
+    
+    .module-selector .btn:hover {
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.5);
+    }
+    
+    .module-selector .btn.active {
+        background: white;
+        color: var(--primary-blue);
+        border-color: white;
+        font-weight: 600;
+    }
+    
+    .level-selector {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .level-selector .btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .period-selector {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .period-selector .btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #e9ecef;
+        margin-top: 0.5rem;
+    }
+    
+    .progress-bar-custom .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+        transition: width 0.3s ease;
+    }
+    
+    .progress-bar-custom .progress-fill.bg-success {
+        background: linear-gradient(90deg, var(--success-green) 0%, #34d399 100%);
+    }
+    
+    .progress-bar-custom .progress-fill.bg-info {
+        background: linear-gradient(90deg, #06b6d4 0%, #22d3ee 100%);
+    }
+    
+    .overview-stats-table {
+        font-size: 0.85rem;
+    }
+    
+    .overview-stats-table th {
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .overview-stats-table td {
+        padding: 0.75rem 0.5rem;
+        vertical-align: middle;
+    }
+    
+    .overview-row {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .overview-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .overview-detail-card {
+        position: fixed;
+        z-index: 1050;
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        padding: 1rem;
+        max-width: 800px;
+        width: 800px;
+        pointer-events: none;
+    }
+    
+    .overview-detail-card .card-header {
+        border-bottom: 2px solid rgba(0,0,0,0.1);
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .overview-detail-card .progress-item {
+        margin-bottom: 0.75rem;
+    }
+    
+    .overview-detail-card .progress-item-compact {
+        margin-bottom: 0.5rem;
+    }
+    
+    .overview-detail-card .progress-item-compact small {
+        font-size: 0.7rem;
+    }
+    
+    
+    /* 表格容器：响应式设计，水平滚动 */
+    .table-container {
+        overflow-x: auto;
+        overflow-y: visible;
+        width: 100%;
+        margin-bottom: 2rem;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 1rem; /* 左右留余量 */
+        margin-left: -1rem;
+        margin-right: -1rem;
+    }
+    
+    /* 表格样式：缩小字体和间距 */
+    .table-container table {
+        font-size: 0.7rem;
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto; /* 自动调整列宽 */
+    }
+    
+    .table-container th,
+    .table-container td {
+        padding: 0.35rem 0.4rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* 代码列更窄 */
+    .table-container th:first-child,
+    .table-container td:first-child {
+        max-width: 100px;
+    }
+    
+    /* 描述列可以更宽 */
+    .table-container th:nth-child(2),
+    .table-container td:nth-child(2) {
+        max-width: 200px;
+    }
+    
+    /* 进度列固定宽度 */
+    .table-container th:nth-child(n+4),
+    .table-container td:nth-child(n+4) {
+        max-width: 80px;
+        width: 80px;
+    }
+    
+    .table-container th {
+        font-size: 0.65rem;
+        font-weight: 600;
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    /* 进度条样式调整 */
+    .table-container .progress {
+        height: 0.4rem;
+        font-size: 0.6rem;
+    }
+    
+    .table-container .progress-bar-custom {
+        height: 4px;
+        margin-top: 0.25rem;
+    }
+    
+    /* 响应式：小屏幕时进一步缩小 */
+    @media (max-width: 1400px) {
+        .table-container table {
+            font-size: 0.65rem;
+        }
+        .table-container th,
+        .table-container td {
+            padding: 0.3rem 0.35rem;
+        }
+    }
+    
+    @media (max-width: 1200px) {
+        .table-container table {
+            font-size: 0.6rem;
+        }
+        .table-container th,
+        .table-container td {
+            padding: 0.25rem 0.3rem;
+        }
+    }
+    
+    /* 分页按钮样式 */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 2rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .pagination .page-link {
+        padding: 0.5rem 0.75rem;
+        margin: 0 0.25rem;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        color: #0d6efd;
+        text-decoration: none;
+    }
+    
+    .pagination .page-link:hover {
+        background-color: #e9ecef;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页面头部 -->
+<div class="page-header d-flex justify-content-between align-items-end mb-4">
+    <div>
+        <h1>
+            <i class="bi bi-speedometer2"></i>
+            {{ _('仪表板') }}
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> {{ _('首页') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('仪表板') }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 模块选择器（蓝色区域） -->
+<div class="module-selector">
+    {% for mod_code, mod_info in module_types.items() %}
+    <a href="/dashboard?module={{ mod_code }}&level={{ level }}" 
+       class="btn {% if module_type == mod_code %}active{% endif %}">
+        <i class="bi {{ mod_info.icon }}"></i> {{ mod_info.name }}
+    </a>
+    {% endfor %}
+</div>
+
+<!-- 层级选择器和筛选器 -->
+<div class="mb-3">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div class="level-selector">
+            <a href="/dashboard?module={{ module_type }}&level=system{% if filter_system %}&system_code={{ filter_system }}{% endif %}{% if filter_subsystem %}&subsystem_code={{ filter_subsystem }}{% endif %}" 
+               class="btn btn-sm {% if level == 'system' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                {{ _('按系统') }}
+            </a>
+            <a href="/dashboard?module={{ module_type }}&level=subsystem{% if filter_system %}&system_code={{ filter_system }}{% endif %}{% if filter_subsystem %}&subsystem_code={{ filter_subsystem }}{% endif %}" 
+               class="btn btn-sm {% if level == 'subsystem' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                {{ _('按子系统') }}
+            </a>
+        </div>
+        
+        <!-- 筛选器表单 -->
+        <div style="flex: 1; min-width: 300px;">
+            <form method="get" action="/dashboard" id="dashboardFilterForm">
+                <input type="hidden" name="module" value="{{ module_type }}">
+                <input type="hidden" name="level" value="{{ level }}">
+                
+                <!-- 第一行：系统、子系统筛选和操作按钮 -->
+                <div class="d-flex gap-2 flex-wrap">
+                    <input type="text" class="form-control form-control-sm" name="system_code" id="dashboardSystemCodeInput"
+                           placeholder="{{ _('全部系统') }}" value="{{ filter_system or '' }}"
+                           list="dashboardSystemCodeAutocompleteList" autocomplete="off" style="width: 150px;">
+                    <datalist id="dashboardSystemCodeAutocompleteList">
+                        {% for sys in systems %}
+                        <option value="{{ sys.SystemCode }}">{{ sys.SystemDescriptionENG }}</option>
+                        {% endfor %}
+                    </datalist>
+                    <input type="text" class="form-control form-control-sm" name="subsystem_code" id="dashboardSubsystemCodeInput"
+                           placeholder="{{ _('全部子系统') }}" value="{{ filter_subsystem or '' }}"
+                           list="dashboardSubsystemCodeAutocompleteList" autocomplete="off" style="width: 150px;">
+                    <datalist id="dashboardSubsystemCodeAutocompleteList">
+                        {% for sub in subsystems %}
+                        <option value="{{ sub.SubSystemCode }}">{{ sub.SubSystemDescriptionENG }}</option>
+                        {% endfor %}
+                    </datalist>
+                <button type="button" class="btn btn-sm btn-warning" onclick="toggleFaclistFilter('dashboard')">
+                    <i class="bi bi-funnel"></i> {{ _('筛选') }}
+                </button>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-search"></i> {{ _('搜索') }}
+                    </button>
+                    <a href="/dashboard?module={{ module_type }}&level={{ level }}" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> {{ _('重置') }}
+                    </a>
+                </div>
+                
+                <!-- Faclist高级筛选（使用公共组件） -->
+                {% set id_prefix = 'dashboard' %}
+                {% set form_id = 'dashboardFilterForm' %}
+                {% include 'components/faclist_filter.html' %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 汇总统计卡片 -->
+{% if module_type == 'overview' %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h3>{{ total_count or 0 }}</h3>
+            <p>{% if level == 'system' %}{{ _('系统总数') }}{% else %}{{ _('子系统总数') }}{% endif %}</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-left-success">
+            <h3>{{ completed_count or 0 }}</h3>
+            <p>{{ _('已完成') }}</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-left-warning">
+            <h3>{{ in_progress_count or 0 }}</h3>
+            <p>{{ _('进行中') }}</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-left-info">
+            <h3>{{ (total_count - completed_count - in_progress_count) or 0 }}</h3>
+            <p>{{ _('未开始') }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if module_type != 'overview' %}
+<!-- 总体统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <h3>{{ total_packages }}</h3>
+            <p>{% if module_type.startswith('precom_') %}{{ _('总数量') }}{% else %}{{ _('总试压包数') }}{% endif %}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-success">
+            <h3>{{ completed_packages }}</h3>
+            <p>{{ _('已完成') }}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-warning">
+            <h3>{{ "%.1f"|format(overall_progress) }}%</h3>
+            <p>{{ _('完成率') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- 总体进度 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="progress-card">
+            <h5 class="mb-3">
+                <i class="bi bi-activity"></i> {{ _('总体进度') }}
+            </h5>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">{{ _('完成率') }}</span>
+                <strong class="text-primary">{{ "%.1f"|format(overall_progress) }}%</strong>
+            </div>
+            <div class="progress-bar-custom">
+                <div class="progress-fill" style="width: {{ overall_progress }}%"></div>
+            </div>
+            <div class="mt-2 text-muted small">
+                {{ completed_packages }} / {{ total_packages }} {% if module_type.startswith('precom_') %}{{ _('任务') }}{% else %}{{ _('试压包') }}{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 图表区域 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> {{ _('计划 vs 实际完成情况') }}
+                </h5>
+                <div class="period-selector">
+                    <button class="btn btn-sm btn-outline-primary period-btn active" data-period="month">
+                        {{ _('按月') }}
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary period-btn" data-period="quarter">
+                        {{ _('按季度') }}
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary period-btn" data-period="year">
+                        {{ _('按年') }}
+                    </button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="combinedChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 统计列表（总览模式显示多列，其他模式显示单列） -->
+<div class="progress-card">
+    <h5 class="mb-3">
+        <i class="bi bi-list-ul"></i> 
+        {% if module_type == 'overview' %}
+            {{ _('总览统计') }}
+        {% elif module_type == 'test' %}
+            {{ _('试压包完成状态') }}
+        {% elif module_type == 'flushing' %}
+            {{ _('吹扫完成状态') }}
+        {% elif module_type == 'reinstatement' %}
+            {{ _('复位完成状态') }}
+        {% endif %}
+    </h5>
+    <div class="table-container">
+        {% if module_type == 'overview' %}
+        <!-- 总览：表格布局，悬停显示详情 -->
+        <table class="table table-hover overview-stats-table">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">{{ _('代码') }}</th>
+                    <th style="width: 200px;">{{ _('描述') }}</th>
+                    <th style="width: 100px;">{{ _('类型') }}</th>
+                    <th style="width: 90px;">{{ _('试压进度') }}</th>
+                    <th style="width: 90px;">{{ _('吹扫进度') }}</th>
+                    <th style="width: 90px;">{{ _('复位进度') }}</th>
+                    <th style="width: 90px;">{{ _('人孔进度') }}</th>
+                    <th style="width: 90px;">{{ _('电机单试') }}</th>
+                    <th style="width: 90px;">{{ _('台件安装') }}</th>
+                    <th style="width: 90px;">{{ _('回路测试') }}</th>
+                    <th style="width: 90px;">{{ _('最终对中') }}</th>
+                    <th style="width: 90px;">{{ _('MRT') }}</th>
+                    <th style="width: 90px;">{{ _('Function Test') }}</th>
+                    <th style="width: 100px;">{{ _('尾项总量') }}</th>
+                    <th style="width: 100px;">{{ _('尾项整改') }}</th>
+                    <th style="width: 100px;">{{ _('尾项确认') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in stats %}
+                <tr class="overview-row" 
+                    data-code="{% if level == 'system' %}{{ item.SystemCode }}{% else %}{{ item.SubSystemCode }}{% endif %}"
+                    data-desc="{% if level == 'system' %}{{ item.SystemDescriptionENG or '-' }}{% else %}{{ item.SubSystemDescriptionENG or '-' }}{% endif %}"
+                    data-test-progress="{{ item.TestProgress or 0 }}"
+                    data-flush-progress="{{ item.FlushProgress or 0 }}"
+                    data-reinst-progress="{{ item.ReinstProgress or 0 }}"
+                    data-manhole-progress="{{ item.ManholeProgress or 0 }}"
+                    data-motor-solo-progress="{{ item.MotorSoloProgress or 0 }}"
+                    data-skid-install-progress="{{ item.SkidInstallProgress or 0 }}"
+                    data-loop-test-progress="{{ item.LoopTestProgress or 0 }}"
+                    data-alignment-progress="{{ item.AlignmentProgress or 0 }}"
+                    data-mrt-progress="{{ item.MRTProgress or 0 }}"
+                    data-function-test-progress="{{ item.FunctionTestProgress or 0 }}"
+                    data-total-packages="{{ item.TotalPackages or 0 }}"
+                    data-tested-packages="{{ item.TestedPackages or 0 }}"
+                    data-flushed-packages="{{ item.FlushedPackages or 0 }}"
+                    data-reinstated-packages="{{ item.ReinstatedPackages or 0 }}"
+                    data-manhole-total="{{ item.ManholeTotal or 0 }}"
+                    data-manhole-done="{{ item.ManholeDone or 0 }}"
+                    data-motor-solo-total="{{ item.MotorSoloTotal or 0 }}"
+                    data-motor-solo-done="{{ item.MotorSoloDone or 0 }}"
+                    data-skid-install-total="{{ item.SkidInstallTotal or 0 }}"
+                    data-skid-install-done="{{ item.SkidInstallDone or 0 }}"
+                    data-loop-test-total="{{ item.LoopTestTotal or 0 }}"
+                    data-loop-test-done="{{ item.LoopTestDone or 0 }}"
+                    data-alignment-total="{{ item.AlignmentTotal or 0 }}"
+                    data-alignment-done="{{ item.AlignmentDone or 0 }}"
+                    data-mrt-total="{{ item.MRTTotal or 0 }}"
+                    data-mrt-done="{{ item.MRTDone or 0 }}"
+                    data-function-test-total="{{ item.FunctionTestTotal or 0 }}"
+                    data-function-test-done="{{ item.FunctionTestDone or 0 }}"
+                    data-punch-total="{{ item.PunchTotal or 0 }}"
+                    data-punch-rectified="{{ item.PunchRectified or 0 }}"
+                    data-punch-verified="{{ item.PunchVerified or 0 }}">
+                    <td><strong>{% if level == 'system' %}{{ item.SystemCode }}{% else %}{{ item.SubSystemCode }}{% endif %}</strong></td>
+                    <td>{% if level == 'system' %}{{ item.SystemDescriptionENG or '-' }}{% else %}{{ item.SubSystemDescriptionENG or '-' }}{% endif %}</td>
+                    <td>
+                        {% if item.ProcessOrNonProcess == 'Process' %}
+                        <span class="badge bg-success">{{ _('工艺') }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ _('非工艺') }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.TestProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.TestProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.FlushProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill bg-success" style="width: {{ item.FlushProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.ReinstProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill bg-info" style="width: {{ item.ReinstProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.ManholeProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.ManholeProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.MotorSoloProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.MotorSoloProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.SkidInstallProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.SkidInstallProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.LoopTestProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.LoopTestProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.AlignmentProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.AlignmentProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.MRTProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.MRTProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ "%.1f"|format(item.FunctionTestProgress or 0) }}%</strong>
+                        <div class="progress-bar-custom mt-1" style="height: 4px;">
+                            <div class="progress-fill" style="width: {{ item.FunctionTestProgress or 0 }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ item.PunchTotal or 0 }}</strong>
+                    </td>
+                    <td class="text-center">
+                        <strong class="text-warning">{{ item.PunchRectified or 0 }}</strong>
+                    </td>
+                    <td class="text-center">
+                        <strong class="text-success">{{ item.PunchVerified or 0 }}</strong>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!-- 悬停详情卡片 -->
+        <div id="overviewDetailCard" class="overview-detail-card" style="display: none;"></div>
+        {% else %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 150px;">{{ _('代码') }}</th>
+                    <th style="width: 250px;">{{ _('描述') }}</th>
+                    <th style="width: 120px;">{{ _('类型') }}</th>
+                    <th style="width: 150px;">{{ _('完成进度') }}</th>
+                    <th style="width: 120px;">{% if module_type.startswith('precom_') %}{{ _('数量') }}{% else %}{{ _('试压包') }}{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in stats %}
+                <tr>
+                    <td><strong>{% if level == 'system' %}{{ item.SystemCode }}{% else %}{{ item.SubSystemCode }}{% endif %}</strong></td>
+                    <td>{% if level == 'system' %}{{ item.SystemDescriptionENG or '-' }}{% else %}{{ item.SubSystemDescriptionENG or '-' }}{% endif %}</td>
+                    <td>
+                        {% if item.ProcessOrNonProcess == 'Process' %}
+                        <span class="badge bg-success">{{ _('工艺系统') }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ _('非工艺系统') }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">{{ _('完成率') }}</small>
+                            <strong>{{ "%.1f"|format(item.Progress or 0) }}%</strong>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" style="width: {{ item.Progress or 0 }}%"></div>
+                        </div>
+                        <small class="text-muted">
+                            {% if module_type.startswith('precom_') %}
+                                {{ item.CompletedQuantity or 0 }} / {{ item.TotalQuantity or 0 }} {{ _('任务') }}
+                            {% elif module_type == 'test' %}
+                                {{ item.TestedPackages or 0 }} / {{ item.TotalPackages or 0 }} {{ _('包') }}
+                            {% else %}
+                                {{ item.CompletedPackages or 0 }} / {{ item.TotalPackages or 0 }} {{ _('包') }}
+                            {% endif %}
+                        </small>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-primary">
+                            {% if module_type.startswith('precom_') %}
+                                {{ item.CompletedQuantity or 0 }}/{{ item.TotalQuantity or 0 }}
+                            {% elif module_type == 'test' %}
+                                {{ item.TestedPackages or 0 }}/{{ item.TotalPackages or 0 }}
+                            {% else %}
+                                {{ item.CompletedPackages or 0 }}/{{ item.TotalPackages or 0 }}
+                            {% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        
+        <!-- 分页 -->
+        {% if pagination and pagination.total_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ pagination.prev_url }}">{{ _('上一页') }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">{{ _('上一页') }}</span>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.window %}
+                <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                    <a class="page-link" href="{{ base_url }}{{ page_num }}">{{ page_num }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ pagination.next_url }}">{{ _('下一页') }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">{{ _('下一页') }}</span>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="text-center text-muted small mt-2">
+                {{ _('显示') }} {{ pagination.start_index }}-{{ pagination.end_index }} {{ _('共') }} {{ total_count }} {{ _('条') }}
+            </div>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    let combinedChart = null;
+    let currentPeriod = 'month';
+    let currentModule = '{{ module_type }}';
+    
+    // 初始化组合图
+    function loadCombinedChart(period) {
+        $.get('/api/dashboard/planned-vs-actual?module=' + currentModule + '&period=' + period, function(response) {
+            if (response.success && response.data) {
+                const data = response.data;
+                
+                if (combinedChart) {
+                    combinedChart.destroy();
+                }
+                
+                const ctx = document.getElementById('combinedChart').getContext('2d');
+                combinedChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: '{{ _("计划") }}',
+                                data: data.planned,
+                                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '{{ _("实际") }}',
+                                data: data.actual,
+                                backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '{{ _("累计计划") }}',
+                                data: data.cumulative_planned,
+                                type: 'line',
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y1',
+                                pointRadius: 3,
+                                pointHoverRadius: 5
+                            },
+                            {
+                                label: '{{ _("累计实际") }}',
+                                data: data.cumulative_actual,
+                                type: 'line',
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y1',
+                                pointRadius: 3,
+                                pointHoverRadius: 5
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            title: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: '{{ _("数量") }}'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                                title: {
+                                    display: true,
+                                    text: '{{ _("累计数量") }}'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    // 总览悬停详情卡片
+    if ($('.overview-row').length > 0) {
+        const detailCard = $('#overviewDetailCard');
+        let hoverTimeout;
+        
+        $('.overview-row').on('mouseenter', function(e) {
+            const row = $(this);
+            clearTimeout(hoverTimeout);
+            
+            hoverTimeout = setTimeout(() => {
+                const code = row.data('code');
+                const desc = row.data('desc');
+                
+                // 构建详情内容
+                let html = `
+                    <div class="card-header">
+                        <h6 class="mb-0"><strong>${code}</strong></h6>
+                        <small class="text-muted">${desc}</small>
+                    </div>
+                    <div class="card-body">
+                        <!-- 横向布局：试压包和预试车任务并排显示 -->
+                        <div class="row g-3">
+                            <!-- 试压包相关 -->
+                            <div class="col-6">
+                                <h6 class="text-muted small mb-2">
+                                    <i class="bi bi-box-seam-fill"></i> {{ _('试压包') }}
+                                </h6>
+                                <div class="progress-item mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small>{{ _('试压') }}</small>
+                                        <strong class="text-primary">${parseFloat(row.data('test-progress')).toFixed(1)}%</strong>
+                                    </div>
+                                    <div class="progress-bar-custom" style="height: 6px;">
+                                        <div class="progress-fill" style="width: ${row.data('test-progress')}%"></div>
+                                    </div>
+                                    <small class="text-muted">${row.data('tested-packages')}/${row.data('total-packages')}</small>
+                                </div>
+                                <div class="progress-item mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small>{{ _('吹扫') }}</small>
+                                        <strong class="text-success">${parseFloat(row.data('flush-progress')).toFixed(1)}%</strong>
+                                    </div>
+                                    <div class="progress-bar-custom" style="height: 6px;">
+                                        <div class="progress-fill bg-success" style="width: ${row.data('flush-progress')}%"></div>
+                                    </div>
+                                    <small class="text-muted">${row.data('flushed-packages')}/${row.data('total-packages')}</small>
+                                </div>
+                                <div class="progress-item">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small>{{ _('复位') }}</small>
+                                        <strong class="text-info">${parseFloat(row.data('reinst-progress')).toFixed(1)}%</strong>
+                                    </div>
+                                    <div class="progress-bar-custom" style="height: 6px;">
+                                        <div class="progress-fill bg-info" style="width: ${row.data('reinst-progress')}%"></div>
+                                    </div>
+                                    <small class="text-muted">${row.data('reinstated-packages')}/${row.data('total-packages')}</small>
+                                </div>
+                            </div>
+                            
+                            <!-- 预试车任务 -->
+                            <div class="col-6">
+                                <h6 class="text-muted small mb-2">
+                                    <i class="bi bi-list-check"></i> {{ _('预试车任务') }}
+                                </h6>
+                                <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="progress-item-compact">
+                                        <small class="d-block mb-1"><i class="bi bi-door-open"></i> {{ _('人孔') }}</small>
+                                        <div class="progress-bar-custom" style="height: 6px;">
+                                            <div class="progress-fill" style="width: ${row.data('manhole-progress')}%"></div>
+                                        </div>
+                                        <small class="text-muted">${row.data('manhole-done')}/${row.data('manhole-total')}</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="progress-item-compact">
+                                        <small class="d-block mb-1"><i class="bi bi-lightning-charge-fill"></i> {{ _('电机单试') }}</small>
+                                        <div class="progress-bar-custom" style="height: 6px;">
+                                            <div class="progress-fill" style="width: ${row.data('motor-solo-progress')}%"></div>
+                                        </div>
+                                        <small class="text-muted">${row.data('motor-solo-done')}/${row.data('motor-solo-total')}</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="progress-item-compact">
+                                        <small class="d-block mb-1"><i class="bi bi-hdd-network"></i> {{ _('台件安装') }}</small>
+                                        <div class="progress-bar-custom" style="height: 6px;">
+                                            <div class="progress-fill" style="width: ${row.data('skid-install-progress')}%"></div>
+                                        </div>
+                                        <small class="text-muted">${row.data('skid-install-done')}/${row.data('skid-install-total')}</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="progress-item-compact">
+                                        <small class="d-block mb-1"><i class="bi bi-activity"></i> {{ _('回路测试') }}</small>
+                                        <div class="progress-bar-custom" style="height: 6px;">
+                                            <div class="progress-fill" style="width: ${row.data('loop-test-progress')}%"></div>
+                                        </div>
+                                        <small class="text-muted">${row.data('loop-test-done')}/${row.data('loop-test-total')}</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="progress-item-compact">
+                                        <small class="d-block mb-1"><i class="bi bi-arrow-repeat"></i> {{ _('最终对中') }}</small>
+                                        <div class="progress-bar-custom" style="height: 6px;">
+                                            <div class="progress-fill" style="width: ${row.data('alignment-progress')}%"></div>
+                                        </div>
+                                        <small class="text-muted">${row.data('alignment-done')}/${row.data('alignment-total')}</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="progress-item-compact">
+                                        <small class="d-block mb-1"><i class="bi bi-diagram-3"></i> {{ _('MRT') }}</small>
+                                        <div class="progress-bar-custom" style="height: 6px;">
+                                            <div class="progress-fill" style="width: ${row.data('mrt-progress')}%"></div>
+                                        </div>
+                                        <small class="text-muted">${row.data('mrt-done')}/${row.data('mrt-total')}</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="progress-item-compact">
+                                        <small class="d-block mb-1"><i class="bi bi-check2-square"></i> {{ _('Function Test') }}</small>
+                                        <div class="progress-bar-custom" style="height: 6px;">
+                                            <div class="progress-fill" style="width: ${row.data('function-test-progress')}%"></div>
+                                        </div>
+                                        <small class="text-muted">${row.data('function-test-done')}/${row.data('function-test-total')}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 尾项统计 -->
+                        <div class="mt-3 pt-3 border-top">
+                            <h6 class="text-muted small mb-2">
+                                <i class="bi bi-exclamation-triangle-fill"></i> {{ _('尾项统计') }}
+                            </h6>
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block">{{ _('总量') }}</small>
+                                    <strong>${row.data('punch-total')}</strong>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">{{ _('整改') }}</small>
+                                    <strong class="text-warning">${row.data('punch-rectified')}</strong>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">{{ _('确认') }}</small>
+                                    <strong class="text-success">${row.data('punch-verified')}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                detailCard.html(html).show();
+                
+                // 定位卡片：在行下方，窗口中间靠右
+                const rowOffset = row.offset();
+                const rowHeight = row.outerHeight();
+                const cardWidth = detailCard.outerWidth() || 600;
+                const cardHeight = detailCard.outerHeight() || 300;
+                const windowWidth = $(window).width();
+                const windowHeight = $(window).height();
+                const scrollTop = $(window).scrollTop();
+                const scrollLeft = $(window).scrollLeft();
+                
+                // 显示在行下方
+                let top = rowOffset.top + rowHeight + 10 - scrollTop;
+                
+                // 窗口中间靠右：计算位置（窗口宽度的60%-80%之间）
+                let left = windowWidth * 0.6 - scrollLeft;
+                
+                // 如果卡片超出右边界，向左调整
+                if (left + cardWidth > windowWidth - 20) {
+                    left = windowWidth - cardWidth - 20 - scrollLeft;
+                }
+                
+                // 如果下方空间不足，显示在行上方
+                if (top + cardHeight > windowHeight - 20) {
+                    top = rowOffset.top - cardHeight - 10 - scrollTop;
+                }
+                
+                // 确保不超出视窗
+                if (top < 20) top = 20;
+                if (left < 20) left = 20;
+                if (left + cardWidth > windowWidth - 20) {
+                    left = windowWidth - cardWidth - 20;
+                }
+                
+                detailCard.css({
+                    left: (left + scrollLeft) + 'px',
+                    top: (top + scrollTop) + 'px'
+                });
+            }, 1000);  // 1秒延迟
+        });
+        
+        $('.overview-row').on('mouseleave', function() {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+                detailCard.hide();
+            }, 200);
+        });
+        
+        detailCard.on('mouseenter', function() {
+            clearTimeout(hoverTimeout);
+        });
+        
+        detailCard.on('mouseleave', function() {
+            detailCard.hide();
+        });
+    }
+    
+    // 期间选择按钮
+    $('.period-btn').on('click', function() {
+        $('.period-btn').removeClass('active');
+        $(this).addClass('active');
+        currentPeriod = $(this).data('period');
+        loadCombinedChart(currentPeriod);
+    });
+    
+    // 初始化加载图表（非总览模式）
+    {% if module_type != 'overview' %}
+    loadCombinedChart('month');
+    {% endif %}
+    
+});
+</script>
+{% endblock %}
