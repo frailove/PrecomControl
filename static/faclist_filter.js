@@ -26,13 +26,13 @@
         // 根据页面确定API URL
         let apiUrl = '/api/dashboard/faclist_options';
         if (baseUrl.includes('/systems')) {
-            apiUrl = '/api/systems/faclist_options';
+            apiUrl = '/api/faclist_options';  // 系统管理使用 /api/faclist_options
         } else if (baseUrl.includes('/subsystems')) {
-            apiUrl = '/api/subsystems/faclist_options';
+            apiUrl = '/subsystems/api/faclist_options';  // 子系统管理使用 /subsystems/api/faclist_options
         } else if (baseUrl.includes('/precom')) {
             apiUrl = '/api/precom/faclist_options';
-        } else if (baseUrl.includes('/test-packages')) {
-            apiUrl = '/api/test-packages/faclist_options';
+        } else if (baseUrl.includes('/test_packages') || baseUrl.includes('/test-packages')) {
+            apiUrl = '/api/faclist_options';  // 试压包管理使用 /api/faclist_options
         }
 
         // 所有维度都参与互相约束：任何一个非空条件都会作为过滤条件传给后端
@@ -213,9 +213,10 @@
                     }
                 });
 
-                // 当值改变时，更新其他字段的选项
+                // 当值改变时，更新所有下游字段的选项（不排除当前字段，使用新值来过滤）
                 sel.addEventListener('change', function() {
-                    updateFaclistOptions(prefix, excludeField);
+                    // 不传 excludeField，这样当前字段的新值会参与过滤，影响所有下游字段
+                    updateFaclistOptions(prefix);
                 });
             });
         });

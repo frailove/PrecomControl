@@ -297,16 +297,6 @@
 
 {% block scripts %}
 <script>
-// 切换 Faclist 筛选显示
-function toggleFaclistFilter_legacy() {
-    var filterDiv = document.getElementById('faclistFilter');
-    if (filterDiv.style.display === 'none') {
-        filterDiv.style.display = 'block';
-    } else {
-        filterDiv.style.display = 'none';
-    }
-}
-
 $(document).ready(function() {
     // Faclist筛选器现在由公共的 faclist_filter.js 统一管理
     // 不再需要内联的 updateFaclistOptions 函数和 change 事件监听器
