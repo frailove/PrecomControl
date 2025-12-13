@@ -166,32 +166,85 @@
         z-index: 1050;
         background: white;
         border: 2px solid var(--border-color);
-        border-radius: 8px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        padding: 1rem;
-        max-width: 800px;
-        width: 800px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        padding: 0.75rem;
+        max-width: 480px;
+        width: 480px;
         pointer-events: none;
+        font-size: 0.85rem;
     }
     
     .overview-detail-card .card-header {
-        border-bottom: 2px solid rgba(0,0,0,0.1);
-        padding-bottom: 0.75rem;
-        margin-bottom: 1rem;
-    }
-    
-    .overview-detail-card .progress-item {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding-bottom: 0.5rem;
         margin-bottom: 0.75rem;
     }
     
-    .overview-detail-card .progress-item-compact {
+    .overview-detail-card .card-header h6 {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .overview-detail-card .card-header small {
+        font-size: 0.75rem;
+    }
+    
+    .overview-detail-card .card-body {
+        padding: 0;
+    }
+    
+    .overview-detail-card .progress-item {
         margin-bottom: 0.5rem;
+    }
+    
+    .overview-detail-card .progress-item small {
+        font-size: 0.75rem;
+    }
+    
+    .overview-detail-card .progress-item-compact {
+        margin-bottom: 0.4rem;
     }
     
     .overview-detail-card .progress-item-compact small {
         font-size: 0.7rem;
     }
     
+    .overview-detail-card .progress-bar-custom {
+        height: 4px !important;
+    }
+    
+    .overview-detail-card h6.text-muted {
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* 总览表格中的链接样式 */
+    .overview-stats-table td.text-center a {
+        display: block;
+        transition: opacity 0.2s;
+    }
+    
+    .overview-stats-table td.text-center a:hover {
+        opacity: 0.7;
+    }
+    
+    .overview-stats-table td.text-center a:hover strong {
+        color: var(--primary-color);
+    }
+    
+    /* 非总览表格中的链接样式 */
+    .table-hover td a {
+        transition: opacity 0.2s;
+    }
+    
+    .table-hover td a:hover {
+        opacity: 0.7;
+    }
+    
+    .table-hover td a:hover .badge {
+        background-color: var(--primary-color) !important;
+    }
     
     /* 表格容器：响应式设计，水平滚动 */
     .table-container {
@@ -210,7 +263,8 @@
         font-size: 0.7rem;
         width: 100%;
         border-collapse: collapse;
-        table-layout: auto; /* 自动调整列宽 */
+        table-layout: fixed; /* 使用固定布局，确保列宽可控 */
+        min-width: 100%; /* 确保表格至少占满容器 */
     }
     
     .table-container th,
@@ -218,7 +272,6 @@
         padding: 0.35rem 0.4rem;
         white-space: nowrap;
         vertical-align: middle;
-        max-width: 150px;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -226,20 +279,29 @@
     /* 代码列更窄 */
     .table-container th:first-child,
     .table-container td:first-child {
-        max-width: 100px;
+        min-width: 80px;
+        width: 100px;
     }
     
     /* 描述列可以更宽 */
     .table-container th:nth-child(2),
     .table-container td:nth-child(2) {
-        max-width: 200px;
+        min-width: 120px;
+        width: 150px;
     }
     
-    /* 进度列固定宽度 */
+    /* 类型列 */
+    .table-container th:nth-child(3),
+    .table-container td:nth-child(3) {
+        min-width: 70px;
+        width: 80px;
+    }
+    
+    /* 进度列：压缩宽度以适应4K分辨率 */
     .table-container th:nth-child(n+4),
     .table-container td:nth-child(n+4) {
-        max-width: 80px;
-        width: 80px;
+        min-width: 70px;
+        width: 75px;
     }
     
     .table-container th {
@@ -260,6 +322,46 @@
     .table-container .progress-bar-custom {
         height: 4px;
         margin-top: 0.25rem;
+    }
+    
+    /* 4K分辨率优化：压缩列宽，确保所有15列都能完整显示 */
+    @media (min-width: 2560px) {
+        .table-container table {
+            font-size: 0.75rem; /* 稍微增大字体，但不过大 */
+            table-layout: fixed; /* 4K下也使用固定布局 */
+        }
+        .table-container th,
+        .table-container td {
+            padding: 0.4rem 0.5rem; /* 适中的内边距 */
+        }
+        /* 代码列：压缩到最小必要宽度 */
+        .table-container th:first-child,
+        .table-container td:first-child {
+            width: 110px;
+        }
+        /* 描述列：压缩但保持可读性 */
+        .table-container th:nth-child(2),
+        .table-container td:nth-child(2) {
+            width: 180px;
+        }
+        /* 类型列：压缩 */
+        .table-container th:nth-child(3),
+        .table-container td:nth-child(3) {
+            width: 85px;
+        }
+        /* 进度列：在4K下压缩到最小，确保所有12个进度列都能显示 */
+        /* 总宽度计算：110 + 180 + 85 + (75 * 12) = 110 + 180 + 85 + 900 = 1275px */
+        .table-container th:nth-child(n+4),
+        .table-container td:nth-child(n+4) {
+            width: 75px;
+        }
+        .table-container th {
+            font-size: 0.7rem;
+        }
+        /* 确保表格总宽度不超过容器 */
+        .table-container {
+            max-width: 100%;
+        }
     }
     
     /* 响应式：小屏幕时进一步缩小 */
@@ -364,7 +466,7 @@
                 <input type="hidden" name="level" value="{{ level }}">
                 
                 <!-- 第一行：系统、子系统筛选和操作按钮 -->
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="d-flex gap-2 flex-wrap align-items-center">
                     <input type="text" class="form-control form-control-sm" name="system_code" id="dashboardSystemCodeInput"
                            placeholder="{{ _('全部系统') }}" value="{{ filter_system or '' }}"
                            list="dashboardSystemCodeAutocompleteList" autocomplete="off" style="width: 150px;">
@@ -381,15 +483,15 @@
                         <option value="{{ sub.SubSystemCode }}">{{ sub.SubSystemDescriptionENG }}</option>
                         {% endfor %}
                     </datalist>
-                <button type="button" class="btn btn-sm btn-warning" onclick="toggleFaclistFilter('dashboard')">
-                    <i class="bi bi-funnel"></i> {{ _('筛选') }}
-                </button>
-                    <button type="submit" class="btn btn-sm btn-primary">
+                    <button type="submit" class="btn btn-sm btn-primary" style="min-width: 80px;">
                         <i class="bi bi-search"></i> {{ _('搜索') }}
                     </button>
-                    <a href="/dashboard?module={{ module_type }}&level={{ level }}" class="btn btn-sm btn-secondary">
+                    <a href="/dashboard?module={{ module_type }}&level={{ level }}" class="btn btn-sm btn-secondary" style="min-width: 80px;">
                         <i class="bi bi-arrow-clockwise"></i> {{ _('重置') }}
                     </a>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="toggleFaclistFilter('dashboard')" style="min-width: 80px;">
+                        <i class="bi bi-funnel"></i> {{ _('筛选') }}
+                    </button>
                 </div>
                 
                 <!-- Faclist高级筛选（使用公共组件） -->
@@ -432,26 +534,89 @@
 {% endif %}
 
 {% if module_type != 'overview' %}
-<!-- 总体统计卡片 -->
+<!-- 总体统计卡片：根据模块类型显示不同数据 -->
 <div class="row g-3 mb-4">
+    {% if module_type == 'test' %}
+    <!-- 试压包模块：展示焊接数据 -->
     <div class="col-md-4">
         <div class="stat-card">
-            <h3>{{ total_packages }}</h3>
-            <p>{% if module_type.startswith('precom_') %}{{ _('总数量') }}{% else %}{{ _('总试压包数') }}{% endif %}</p>
+            <h3>{{ "%.1f"|format(total_welding_din or 0) }}</h3>
+            <p>{{ _('总焊接量') }} (DIN)</p>
         </div>
     </div>
     <div class="col-md-4">
         <div class="stat-card border-left-success">
-            <h3>{{ completed_packages }}</h3>
-            <p>{{ _('已完成') }}</p>
+            <h3>{{ "%.1f"|format(completed_welding_din or 0) }}</h3>
+            <p>{{ _('已完成焊接量') }} (DIN)</p>
         </div>
     </div>
     <div class="col-md-4">
         <div class="stat-card border-left-warning">
-            <h3>{{ "%.1f"|format(overall_progress) }}%</h3>
-            <p>{{ _('完成率') }}</p>
+            <h3>{{ "%.1f"|format(welding_progress or 0) }}%</h3>
+            <p>{{ _('焊接完成率') }}</p>
         </div>
     </div>
+    {% elif module_type == 'flushing' %}
+    <!-- 吹扫模块：展示试压包数据 -->
+    <div class="col-md-4">
+        <div class="stat-card">
+            <h3>{{ card_total_packages or 0 }}</h3>
+            <p>{{ _('总试压包数') }}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-success">
+            <h3>{{ card_completed_packages or 0 }}</h3>
+            <p>{{ _('已完成试压包数') }}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-warning">
+            <h3>{{ "%.1f"|format(card_progress or 0) }}%</h3>
+            <p>{{ _('试压包完成率') }}</p>
+        </div>
+    </div>
+    {% elif module_type == 'reinstatement' %}
+    <!-- 复位模块：展示吹扫数据 -->
+    <div class="col-md-4">
+        <div class="stat-card">
+            <h3>{{ card_total_packages or 0 }}</h3>
+            <p>{{ _('总吹扫数') }}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-success">
+            <h3>{{ card_completed_packages or 0 }}</h3>
+            <p>{{ _('已完成吹扫数') }}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-warning">
+            <h3>{{ "%.1f"|format(card_progress or 0) }}%</h3>
+            <p>{{ _('吹扫完成率') }}</p>
+        </div>
+    </div>
+    {% elif module_type.startswith('precom_') %}
+    <!-- 预试车任务模块：展示施工进度数据（加权） -->
+    <div class="col-md-4">
+        <div class="stat-card">
+            <h3>{{ card_total_packages or 0 }}</h3>
+            <p>{{ _('总施工量') }}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-success">
+            <h3>{{ card_completed_packages or 0 }}</h3>
+            <p>{{ _('已完成施工量') }}</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card border-left-warning">
+            <h3>{{ "%.1f"|format(card_progress or 0) }}%</h3>
+            <p>{{ _('施工完成率') }}</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- 总体进度 -->
@@ -523,22 +688,22 @@
         <table class="table table-hover overview-stats-table">
             <thead>
                 <tr>
-                    <th style="width: 120px;">{{ _('代码') }}</th>
-                    <th style="width: 200px;">{{ _('描述') }}</th>
-                    <th style="width: 100px;">{{ _('类型') }}</th>
-                    <th style="width: 90px;">{{ _('试压进度') }}</th>
-                    <th style="width: 90px;">{{ _('吹扫进度') }}</th>
-                    <th style="width: 90px;">{{ _('复位进度') }}</th>
-                    <th style="width: 90px;">{{ _('人孔进度') }}</th>
-                    <th style="width: 90px;">{{ _('电机单试') }}</th>
-                    <th style="width: 90px;">{{ _('台件安装') }}</th>
-                    <th style="width: 90px;">{{ _('回路测试') }}</th>
-                    <th style="width: 90px;">{{ _('最终对中') }}</th>
-                    <th style="width: 90px;">{{ _('MRT') }}</th>
-                    <th style="width: 90px;">{{ _('Function Test') }}</th>
-                    <th style="width: 100px;">{{ _('尾项总量') }}</th>
-                    <th style="width: 100px;">{{ _('尾项整改') }}</th>
-                    <th style="width: 100px;">{{ _('尾项确认') }}</th>
+                    <th style="width: 100px;">{{ _('代码') }}</th>
+                    <th style="width: 150px;">{{ _('描述') }}</th>
+                    <th style="width: 80px;">{{ _('类型') }}</th>
+                    <th style="width: 75px;">{{ _('试压进度') }}</th>
+                    <th style="width: 75px;">{{ _('吹扫进度') }}</th>
+                    <th style="width: 75px;">{{ _('复位进度') }}</th>
+                    <th style="width: 75px;">{{ _('人孔进度') }}</th>
+                    <th style="width: 75px;">{{ _('电机单试') }}</th>
+                    <th style="width: 75px;">{{ _('台件安装') }}</th>
+                    <th style="width: 75px;">{{ _('回路测试') }}</th>
+                    <th style="width: 75px;">{{ _('最终对中') }}</th>
+                    <th style="width: 75px;">{{ _('MRT') }}</th>
+                    <th style="width: 75px;">{{ _('Function Test') }}</th>
+                    <th style="width: 75px;">{{ _('尾项总量') }}</th>
+                    <th style="width: 75px;">{{ _('尾项整改') }}</th>
+                    <th style="width: 75px;">{{ _('尾项确认') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -587,64 +752,94 @@
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.TestProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.TestProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=test&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看试压包详情') }}">
+                            <strong>{{ "%.1f"|format(item.TestProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.TestProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.FlushProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill bg-success" style="width: {{ item.FlushProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=flushing&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看吹扫详情') }}">
+                            <strong>{{ "%.1f"|format(item.FlushProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill bg-success" style="width: {{ item.FlushProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.ReinstProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill bg-info" style="width: {{ item.ReinstProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=reinstatement&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看复位详情') }}">
+                            <strong>{{ "%.1f"|format(item.ReinstProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill bg-info" style="width: {{ item.ReinstProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.ManholeProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.ManholeProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=precom_manhole&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看人孔检查详情') }}">
+                            <strong>{{ "%.1f"|format(item.ManholeProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.ManholeProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.MotorSoloProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.MotorSoloProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=precom_motor_solo&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看电机单试详情') }}">
+                            <strong>{{ "%.1f"|format(item.MotorSoloProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.MotorSoloProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.SkidInstallProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.SkidInstallProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=precom_skid_install&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看台件安装详情') }}">
+                            <strong>{{ "%.1f"|format(item.SkidInstallProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.SkidInstallProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.LoopTestProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.LoopTestProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=precom_loop_test&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看回路测试详情') }}">
+                            <strong>{{ "%.1f"|format(item.LoopTestProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.LoopTestProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.AlignmentProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.AlignmentProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=precom_alignment&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看最终对中详情') }}">
+                            <strong>{{ "%.1f"|format(item.AlignmentProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.AlignmentProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.MRTProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.MRTProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=precom_mrt&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看MRT详情') }}">
+                            <strong>{{ "%.1f"|format(item.MRTProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.MRTProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
-                        <strong>{{ "%.1f"|format(item.FunctionTestProgress or 0) }}%</strong>
-                        <div class="progress-bar-custom mt-1" style="height: 4px;">
-                            <div class="progress-fill" style="width: {{ item.FunctionTestProgress or 0 }}%"></div>
-                        </div>
+                        <a href="/dashboard?module=precom_function_test&level={{ level }}{% if level == 'system' %}&system_code={% if item.SystemCode %}{{ item.SystemCode }}{% endif %}{% else %}&subsystem_code={% if item.SubSystemCode %}{{ item.SubSystemCode }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark" title="{{ _('点击查看Function Test详情') }}">
+                            <strong>{{ "%.1f"|format(item.FunctionTestProgress or 0) }}%</strong>
+                            <div class="progress-bar-custom mt-1" style="height: 4px;">
+                                <div class="progress-fill" style="width: {{ item.FunctionTestProgress or 0 }}%"></div>
+                            </div>
+                        </a>
                     </td>
                     <td class="text-center">
                         <strong>{{ item.PunchTotal or 0 }}</strong>
@@ -670,12 +865,53 @@
                     <th style="width: 120px;">{{ _('类型') }}</th>
                     <th style="width: 150px;">{{ _('完成进度') }}</th>
                     <th style="width: 120px;">{% if module_type.startswith('precom_') %}{{ _('数量') }}{% else %}{{ _('试压包') }}{% endif %}</th>
+                    <th style="width: 100px;">{{ _('尾项总量') }}</th>
+                    <th style="width: 100px;">{{ _('尾项整改') }}</th>
+                    <th style="width: 100px;">{{ _('尾项确认') }}</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in stats %}
+                {% set current_code = item.SystemCode if level == 'system' else item.SubSystemCode %}
+                {% set base_params = [] %}
+                {% if level == 'system' and item.SystemCode %}
+                    {% set base_params = base_params + ['system_code=' + item.SystemCode] %}
+                {% elif level == 'subsystem' and item.SubSystemCode %}
+                    {% set base_params = base_params + ['subsystem_code=' + item.SubSystemCode] %}
+                    {% if item.SystemCode %}
+                        {% set base_params = base_params + ['system_code=' + item.SystemCode] %}
+                    {% endif %}
+                {% endif %}
+                {% if filter_subproject %}
+                    {% set base_params = base_params + ['subproject_code=' + filter_subproject] %}
+                {% endif %}
+                {% if filter_train %}
+                    {% set base_params = base_params + ['train=' + filter_train] %}
+                {% endif %}
+                {% if filter_unit %}
+                    {% set base_params = base_params + ['unit=' + filter_unit] %}
+                {% endif %}
+                {% if filter_simpleblk %}
+                    {% set base_params = base_params + ['simpleblk=' + filter_simpleblk] %}
+                {% endif %}
+                {% if filter_mainblock %}
+                    {% set base_params = base_params + ['mainblock=' + filter_mainblock] %}
+                {% endif %}
+                {% if filter_block %}
+                    {% set base_params = base_params + ['block=' + filter_block] %}
+                {% endif %}
+                {% if filter_bccquarter %}
+                    {% set base_params = base_params + ['bccquarter=' + filter_bccquarter] %}
+                {% endif %}
+                {% set query_string = base_params|join('&') %}
                 <tr>
-                    <td><strong>{% if level == 'system' %}{{ item.SystemCode }}{% else %}{{ item.SubSystemCode }}{% endif %}</strong></td>
+                    <td>
+                        <a href="{% if level == 'system' %}/systems{% if query_string %}?{{ query_string }}{% endif %}{% else %}/subsystems{% if query_string %}?{{ query_string }}{% endif %}{% endif %}" 
+                           class="text-decoration-none text-dark fw-bold" 
+                           title="{% if level == 'system' %}{{ _('点击查看系统详情') }}{% else %}{{ _('点击查看子系统详情') }}{% endif %}">
+                            {{ current_code }}
+                        </a>
+                    </td>
                     <td>{% if level == 'system' %}{{ item.SystemDescriptionENG or '-' }}{% else %}{{ item.SubSystemDescriptionENG or '-' }}{% endif %}</td>
                     <td>
                         {% if item.ProcessOrNonProcess == 'Process' %}
@@ -703,15 +939,65 @@
                         </small>
                     </td>
                     <td class="text-center">
-                        <span class="badge bg-primary">
-                            {% if module_type.startswith('precom_') %}
-                                {{ item.CompletedQuantity or 0 }}/{{ item.TotalQuantity or 0 }}
-                            {% elif module_type == 'test' %}
-                                {{ item.TestedPackages or 0 }}/{{ item.TotalPackages or 0 }}
-                            {% else %}
+                        {% if module_type.startswith('precom_') %}
+                            {% set task_type_map = {
+                                'precom_manhole': 'Manhole',
+                                'precom_motor_solo': 'MotorSolo',
+                                'precom_skid_install': 'SkidInstall',
+                                'precom_loop_test': 'LoopTest',
+                                'precom_alignment': 'Alignment',
+                                'precom_mrt': 'MRT',
+                                'precom_function_test': 'FunctionTest'
+                            } %}
+                            {% set task_type = task_type_map.get(module_type, '') %}
+                            {% set precom_params = base_params + ['task_type=' + task_type] %}
+                            <a href="/precom/tasks{% if precom_params|join('&') %}?{{ precom_params|join('&') }}{% endif %}" 
+                               class="text-decoration-none" 
+                               title="{{ _('点击查看预试车任务详情') }}">
+                                <span class="badge bg-primary">
+                                    {{ item.CompletedQuantity or 0 }}/{{ item.TotalQuantity or 0 }}
+                                </span>
+                            </a>
+                        {% elif module_type == 'test' %}
+                            <a href="/test_packages{% if query_string %}?{{ query_string }}{% endif %}" 
+                               class="text-decoration-none" 
+                               title="{{ _('点击查看试压包详情') }}">
+                                <span class="badge bg-primary">
+                                    {{ item.TestedPackages or 0 }}/{{ item.TotalPackages or 0 }}
+                                </span>
+                            </a>
+                        {% elif module_type == 'flushing' %}
+                            {% set flush_params = base_params + ['status=Flushed'] %}
+                            <a href="/test_packages?{{ flush_params|join('&') }}" 
+                               class="text-decoration-none" 
+                               title="{{ _('点击查看吹扫试压包详情') }}">
+                                <span class="badge bg-primary">
+                                    {{ item.CompletedPackages or 0 }}/{{ item.TotalPackages or 0 }}
+                                </span>
+                            </a>
+                        {% elif module_type == 'reinstatement' %}
+                            {% set reinst_params = base_params + ['status=Reinstated'] %}
+                            <a href="/test_packages?{{ reinst_params|join('&') }}" 
+                               class="text-decoration-none" 
+                               title="{{ _('点击查看复位试压包详情') }}">
+                                <span class="badge bg-primary">
+                                    {{ item.CompletedPackages or 0 }}/{{ item.TotalPackages or 0 }}
+                                </span>
+                            </a>
+                        {% else %}
+                            <span class="badge bg-primary">
                                 {{ item.CompletedPackages or 0 }}/{{ item.TotalPackages or 0 }}
-                            {% endif %}
-                        </span>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <strong class="text-danger">{{ item.PunchTotal or 0 }}</strong>
+                    </td>
+                    <td class="text-center">
+                        <strong class="text-warning">{{ item.PunchRectified or 0 }}</strong>
+                    </td>
+                    <td class="text-center">
+                        <strong class="text-success">{{ item.PunchVerified or 0 }}</strong>
                     </td>
                 </tr>
                 {% endfor %}
@@ -881,14 +1167,119 @@ $(document).ready(function() {
     if ($('.overview-row').length > 0) {
         const detailCard = $('#overviewDetailCard');
         let hoverTimeout;
+        let currentRow = null;
+        let updatePositionTimeout;
+        
+        // 更新卡片位置的函数
+        function updateCardPosition(row) {
+            if (!row || !row.length || !detailCard.is(':visible')) {
+                return;
+            }
+            
+            clearTimeout(updatePositionTimeout);
+            updatePositionTimeout = setTimeout(() => {
+                try {
+                    // 检查行是否仍然在DOM中且可见
+                    if (!row.is(':visible') || !row.length) {
+                        detailCard.hide();
+                        return;
+                    }
+                    
+                    const rowOffset = row.offset();
+                    if (!rowOffset) {
+                        return;
+                    }
+                    
+                    const rowHeight = row.outerHeight();
+                    const rowWidth = row.outerWidth();
+                    const cardWidth = detailCard.outerWidth() || 480;
+                    const cardHeight = detailCard.outerHeight() || 300;
+                    const windowWidth = $(window).width();
+                    const windowHeight = $(window).height();
+                    const scrollTop = $(window).scrollTop();
+                    const scrollLeft = $(window).scrollLeft();
+                    
+                    // 计算行在视窗中的位置
+                    const rowTopInViewport = rowOffset.top - scrollTop;
+                    const rowLeftInViewport = rowOffset.left - scrollLeft;
+                    
+                    // 检查行是否在视窗内（允许一些容差）
+                    const viewportMargin = 100;
+                    if (rowTopInViewport < -viewportMargin || 
+                        rowTopInViewport > windowHeight + viewportMargin ||
+                        rowLeftInViewport < -viewportMargin || 
+                        rowLeftInViewport > windowWidth + viewportMargin) {
+                        // 行不在视窗内，隐藏卡片
+                        detailCard.hide();
+                        return;
+                    }
+                    
+                    // 显示在行下方，紧跟行的左侧
+                    let top = rowTopInViewport + rowHeight + 5;
+                    let left = rowLeftInViewport;
+                    
+                    // 如果卡片超出右边界，向左调整
+                    if (left + cardWidth > windowWidth - 20) {
+                        left = rowLeftInViewport + rowWidth - cardWidth;
+                        if (left < 20) {
+                            left = windowWidth - cardWidth - 20;
+                        }
+                    }
+                    
+                    // 如果下方空间不足，显示在行上方
+                    if (top + cardHeight > windowHeight - 20) {
+                        top = rowTopInViewport - cardHeight - 5;
+                        if (top < 20) {
+                            top = rowTopInViewport;
+                            left = rowLeftInViewport + rowWidth + 10;
+                            if (left + cardWidth > windowWidth - 20) {
+                                left = rowLeftInViewport - cardWidth - 10;
+                                if (left < 20) {
+                                    left = 20;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 最终边界检查
+                    if (top < 20) top = 20;
+                    if (left < 20) left = 20;
+                    if (left + cardWidth > windowWidth - 20) {
+                        left = windowWidth - cardWidth - 20;
+                    }
+                    if (top + cardHeight > windowHeight - 20) {
+                        top = windowHeight - cardHeight - 20;
+                    }
+                    
+                    // 使用 fixed 定位，直接使用视窗坐标
+                    detailCard.css({
+                        left: left + 'px',
+                        top: top + 'px'
+                    });
+                } catch (e) {
+                    console.error('Error updating card position:', e);
+                    detailCard.hide();
+                }
+            }, 10);
+        }
         
         $('.overview-row').on('mouseenter', function(e) {
             const row = $(this);
+            currentRow = row;
             clearTimeout(hoverTimeout);
             
             hoverTimeout = setTimeout(() => {
+                // 再次检查行是否仍然有效
+                if (!row.length || !row.is(':visible')) {
+                    return;
+                }
+                
                 const code = row.data('code');
                 const desc = row.data('desc');
+                
+                if (!code) {
+                    return;
+                }
                 
                 // 构建详情内容
                 let html = `
@@ -898,133 +1289,133 @@ $(document).ready(function() {
                     </div>
                     <div class="card-body">
                         <!-- 横向布局：试压包和预试车任务并排显示 -->
-                        <div class="row g-3">
+                        <div class="row g-2">
                             <!-- 试压包相关 -->
                             <div class="col-6">
-                                <h6 class="text-muted small mb-2">
+                                <h6 class="text-muted small mb-1">
                                     <i class="bi bi-box-seam-fill"></i> {{ _('试压包') }}
                                 </h6>
-                                <div class="progress-item mb-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="progress-item mb-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-0">
                                         <small>{{ _('试压') }}</small>
-                                        <strong class="text-primary">${parseFloat(row.data('test-progress')).toFixed(1)}%</strong>
+                                        <strong class="text-primary" style="font-size: 0.8rem;">${parseFloat(row.data('test-progress') || 0).toFixed(1)}%</strong>
                                     </div>
-                                    <div class="progress-bar-custom" style="height: 6px;">
-                                        <div class="progress-fill" style="width: ${row.data('test-progress')}%"></div>
+                                    <div class="progress-bar-custom" style="height: 4px;">
+                                        <div class="progress-fill" style="width: ${row.data('test-progress') || 0}%"></div>
                                     </div>
-                                    <small class="text-muted">${row.data('tested-packages')}/${row.data('total-packages')}</small>
+                                    <small class="text-muted" style="font-size: 0.7rem;">${row.data('tested-packages') || 0}/${row.data('total-packages') || 0}</small>
                                 </div>
-                                <div class="progress-item mb-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="progress-item mb-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-0">
                                         <small>{{ _('吹扫') }}</small>
-                                        <strong class="text-success">${parseFloat(row.data('flush-progress')).toFixed(1)}%</strong>
+                                        <strong class="text-success" style="font-size: 0.8rem;">${parseFloat(row.data('flush-progress') || 0).toFixed(1)}%</strong>
                                     </div>
-                                    <div class="progress-bar-custom" style="height: 6px;">
-                                        <div class="progress-fill bg-success" style="width: ${row.data('flush-progress')}%"></div>
+                                    <div class="progress-bar-custom" style="height: 4px;">
+                                        <div class="progress-fill bg-success" style="width: ${row.data('flush-progress') || 0}%"></div>
                                     </div>
-                                    <small class="text-muted">${row.data('flushed-packages')}/${row.data('total-packages')}</small>
+                                    <small class="text-muted" style="font-size: 0.7rem;">${row.data('flushed-packages') || 0}/${row.data('total-packages') || 0}</small>
                                 </div>
                                 <div class="progress-item">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-0">
                                         <small>{{ _('复位') }}</small>
-                                        <strong class="text-info">${parseFloat(row.data('reinst-progress')).toFixed(1)}%</strong>
+                                        <strong class="text-info" style="font-size: 0.8rem;">${parseFloat(row.data('reinst-progress') || 0).toFixed(1)}%</strong>
                                     </div>
-                                    <div class="progress-bar-custom" style="height: 6px;">
-                                        <div class="progress-fill bg-info" style="width: ${row.data('reinst-progress')}%"></div>
+                                    <div class="progress-bar-custom" style="height: 4px;">
+                                        <div class="progress-fill bg-info" style="width: ${row.data('reinst-progress') || 0}%"></div>
                                     </div>
-                                    <small class="text-muted">${row.data('reinstated-packages')}/${row.data('total-packages')}</small>
+                                    <small class="text-muted" style="font-size: 0.7rem;">${row.data('reinstated-packages') || 0}/${row.data('total-packages') || 0}</small>
                                 </div>
                             </div>
                             
                             <!-- 预试车任务 -->
                             <div class="col-6">
-                                <h6 class="text-muted small mb-2">
+                                <h6 class="text-muted small mb-1">
                                     <i class="bi bi-list-check"></i> {{ _('预试车任务') }}
                                 </h6>
-                                <div class="row g-2">
+                                <div class="row g-1">
                                 <div class="col-6">
                                     <div class="progress-item-compact">
-                                        <small class="d-block mb-1"><i class="bi bi-door-open"></i> {{ _('人孔') }}</small>
-                                        <div class="progress-bar-custom" style="height: 6px;">
-                                            <div class="progress-fill" style="width: ${row.data('manhole-progress')}%"></div>
+                                        <small class="d-block mb-0" style="font-size: 0.7rem;"><i class="bi bi-door-open"></i> {{ _('人孔') }}</small>
+                                        <div class="progress-bar-custom" style="height: 4px;">
+                                            <div class="progress-fill" style="width: ${row.data('manhole-progress') || 0}%"></div>
                                         </div>
-                                        <small class="text-muted">${row.data('manhole-done')}/${row.data('manhole-total')}</small>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${row.data('manhole-done') || 0}/${row.data('manhole-total') || 0}</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="progress-item-compact">
-                                        <small class="d-block mb-1"><i class="bi bi-lightning-charge-fill"></i> {{ _('电机单试') }}</small>
-                                        <div class="progress-bar-custom" style="height: 6px;">
-                                            <div class="progress-fill" style="width: ${row.data('motor-solo-progress')}%"></div>
+                                        <small class="d-block mb-0" style="font-size: 0.7rem;"><i class="bi bi-lightning-charge-fill"></i> {{ _('电机单试') }}</small>
+                                        <div class="progress-bar-custom" style="height: 4px;">
+                                            <div class="progress-fill" style="width: ${row.data('motor-solo-progress') || 0}%"></div>
                                         </div>
-                                        <small class="text-muted">${row.data('motor-solo-done')}/${row.data('motor-solo-total')}</small>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${row.data('motor-solo-done') || 0}/${row.data('motor-solo-total') || 0}</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="progress-item-compact">
-                                        <small class="d-block mb-1"><i class="bi bi-hdd-network"></i> {{ _('台件安装') }}</small>
-                                        <div class="progress-bar-custom" style="height: 6px;">
-                                            <div class="progress-fill" style="width: ${row.data('skid-install-progress')}%"></div>
+                                        <small class="d-block mb-0" style="font-size: 0.7rem;"><i class="bi bi-hdd-network"></i> {{ _('台件安装') }}</small>
+                                        <div class="progress-bar-custom" style="height: 4px;">
+                                            <div class="progress-fill" style="width: ${row.data('skid-install-progress') || 0}%"></div>
                                         </div>
-                                        <small class="text-muted">${row.data('skid-install-done')}/${row.data('skid-install-total')}</small>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${row.data('skid-install-done') || 0}/${row.data('skid-install-total') || 0}</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="progress-item-compact">
-                                        <small class="d-block mb-1"><i class="bi bi-activity"></i> {{ _('回路测试') }}</small>
-                                        <div class="progress-bar-custom" style="height: 6px;">
-                                            <div class="progress-fill" style="width: ${row.data('loop-test-progress')}%"></div>
+                                        <small class="d-block mb-0" style="font-size: 0.7rem;"><i class="bi bi-activity"></i> {{ _('回路测试') }}</small>
+                                        <div class="progress-bar-custom" style="height: 4px;">
+                                            <div class="progress-fill" style="width: ${row.data('loop-test-progress') || 0}%"></div>
                                         </div>
-                                        <small class="text-muted">${row.data('loop-test-done')}/${row.data('loop-test-total')}</small>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${row.data('loop-test-done') || 0}/${row.data('loop-test-total') || 0}</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="progress-item-compact">
-                                        <small class="d-block mb-1"><i class="bi bi-arrow-repeat"></i> {{ _('最终对中') }}</small>
-                                        <div class="progress-bar-custom" style="height: 6px;">
-                                            <div class="progress-fill" style="width: ${row.data('alignment-progress')}%"></div>
+                                        <small class="d-block mb-0" style="font-size: 0.7rem;"><i class="bi bi-arrow-repeat"></i> {{ _('最终对中') }}</small>
+                                        <div class="progress-bar-custom" style="height: 4px;">
+                                            <div class="progress-fill" style="width: ${row.data('alignment-progress') || 0}%"></div>
                                         </div>
-                                        <small class="text-muted">${row.data('alignment-done')}/${row.data('alignment-total')}</small>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${row.data('alignment-done') || 0}/${row.data('alignment-total') || 0}</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="progress-item-compact">
-                                        <small class="d-block mb-1"><i class="bi bi-diagram-3"></i> {{ _('MRT') }}</small>
-                                        <div class="progress-bar-custom" style="height: 6px;">
-                                            <div class="progress-fill" style="width: ${row.data('mrt-progress')}%"></div>
+                                        <small class="d-block mb-0" style="font-size: 0.7rem;"><i class="bi bi-diagram-3"></i> {{ _('MRT') }}</small>
+                                        <div class="progress-bar-custom" style="height: 4px;">
+                                            <div class="progress-fill" style="width: ${row.data('mrt-progress') || 0}%"></div>
                                         </div>
-                                        <small class="text-muted">${row.data('mrt-done')}/${row.data('mrt-total')}</small>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${row.data('mrt-done') || 0}/${row.data('mrt-total') || 0}</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="progress-item-compact">
-                                        <small class="d-block mb-1"><i class="bi bi-check2-square"></i> {{ _('Function Test') }}</small>
-                                        <div class="progress-bar-custom" style="height: 6px;">
-                                            <div class="progress-fill" style="width: ${row.data('function-test-progress')}%"></div>
+                                        <small class="d-block mb-0" style="font-size: 0.7rem;"><i class="bi bi-check2-square"></i> {{ _('Function Test') }}</small>
+                                        <div class="progress-bar-custom" style="height: 4px;">
+                                            <div class="progress-fill" style="width: ${row.data('function-test-progress') || 0}%"></div>
                                         </div>
-                                        <small class="text-muted">${row.data('function-test-done')}/${row.data('function-test-total')}</small>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${row.data('function-test-done') || 0}/${row.data('function-test-total') || 0}</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- 尾项统计 -->
-                        <div class="mt-3 pt-3 border-top">
-                            <h6 class="text-muted small mb-2">
+                        <div class="mt-2 pt-2 border-top">
+                            <h6 class="text-muted small mb-1">
                                 <i class="bi bi-exclamation-triangle-fill"></i> {{ _('尾项统计') }}
                             </h6>
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <small class="text-muted d-block">{{ _('总量') }}</small>
-                                    <strong>${row.data('punch-total')}</strong>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">{{ _('总量') }}</small>
+                                    <strong style="font-size: 0.9rem;">${row.data('punch-total') || 0}</strong>
                                 </div>
                                 <div>
-                                    <small class="text-muted d-block">{{ _('整改') }}</small>
-                                    <strong class="text-warning">${row.data('punch-rectified')}</strong>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">{{ _('整改') }}</small>
+                                    <strong class="text-warning" style="font-size: 0.9rem;">${row.data('punch-rectified') || 0}</strong>
                                 </div>
                                 <div>
-                                    <small class="text-muted d-block">{{ _('确认') }}</small>
-                                    <strong class="text-success">${row.data('punch-verified')}</strong>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">{{ _('确认') }}</small>
+                                    <strong class="text-success" style="font-size: 0.9rem;">${row.data('punch-verified') || 0}</strong>
                                 </div>
                             </div>
                         </div>
@@ -1033,50 +1424,20 @@ $(document).ready(function() {
                 
                 detailCard.html(html).show();
                 
-                // 定位卡片：在行下方，窗口中间靠右
-                const rowOffset = row.offset();
-                const rowHeight = row.outerHeight();
-                const cardWidth = detailCard.outerWidth() || 600;
-                const cardHeight = detailCard.outerHeight() || 300;
-                const windowWidth = $(window).width();
-                const windowHeight = $(window).height();
-                const scrollTop = $(window).scrollTop();
-                const scrollLeft = $(window).scrollLeft();
-                
-                // 显示在行下方
-                let top = rowOffset.top + rowHeight + 10 - scrollTop;
-                
-                // 窗口中间靠右：计算位置（窗口宽度的60%-80%之间）
-                let left = windowWidth * 0.6 - scrollLeft;
-                
-                // 如果卡片超出右边界，向左调整
-                if (left + cardWidth > windowWidth - 20) {
-                    left = windowWidth - cardWidth - 20 - scrollLeft;
-                }
-                
-                // 如果下方空间不足，显示在行上方
-                if (top + cardHeight > windowHeight - 20) {
-                    top = rowOffset.top - cardHeight - 10 - scrollTop;
-                }
-                
-                // 确保不超出视窗
-                if (top < 20) top = 20;
-                if (left < 20) left = 20;
-                if (left + cardWidth > windowWidth - 20) {
-                    left = windowWidth - cardWidth - 20;
-                }
-                
-                detailCard.css({
-                    left: (left + scrollLeft) + 'px',
-                    top: (top + scrollTop) + 'px'
-                });
-            }, 1000);  // 1秒延迟
+                // 立即更新位置
+                updateCardPosition(row);
+            }, 300);  // 减少延迟到300ms
         });
         
         $('.overview-row').on('mouseleave', function() {
+            const row = $(this);
             clearTimeout(hoverTimeout);
             hoverTimeout = setTimeout(() => {
-                detailCard.hide();
+                // 只有在鼠标真正离开行且不在卡片上时才隐藏
+                if (currentRow && currentRow[0] === row[0]) {
+                    detailCard.hide();
+                    currentRow = null;
+                }
             }, 200);
         });
         
@@ -1086,6 +1447,25 @@ $(document).ready(function() {
         
         detailCard.on('mouseleave', function() {
             detailCard.hide();
+            currentRow = null;
+        });
+        
+        // 滚动时更新卡片位置或隐藏
+        let scrollTimeout;
+        $(window).on('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (currentRow && detailCard.is(':visible')) {
+                    updateCardPosition(currentRow);
+                }
+            }, 50);
+        });
+        
+        // 窗口大小改变时更新位置
+        $(window).on('resize', function() {
+            if (currentRow && detailCard.is(':visible')) {
+                updateCardPosition(currentRow);
+            }
         });
     }
     

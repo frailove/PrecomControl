@@ -367,19 +367,9 @@ def refresh_block_summaries(verbose=True):
                 TestedPackages
             )
             SELECT
-                CASE
-                    -- 如果 Block 格式是 B-C-A（例如：00051-00-5100），转换为 A-B-C（例如：5100-00051-00）
-                    WHEN (LENGTH(wl.Block) - LENGTH(REPLACE(wl.Block, '-', ''))) = 2 THEN
-                        CONCAT(
-                            SUBSTRING_INDEX(wl.Block, '-', -1),  -- A: 最后一段
-                            '-',
-                            SUBSTRING_INDEX(wl.Block, '-', 1),    -- B: 第一段
-                            '-',
-                            SUBSTRING_INDEX(SUBSTRING_INDEX(wl.Block, '-', 2), '-', -1)  -- C: 第二段
-                        )
-                    ELSE
-                        wl.Block  -- 如果格式不是 B-C-A，保持原样
-                END AS Block,
+                -- WeldingList 中的 Block 字段已经是正确的 A-B-C 格式（通过 extract_block_from_drawing 提取）
+                -- 直接使用，无需转换
+                wl.Block,
                 wl.SystemCode,
                 COALESCE(SUM(wl.Size), 0) AS TotalDIN,
                 COALESCE(SUM(CASE WHEN wl.WeldDate IS NOT NULL THEN wl.Size ELSE 0 END), 0) AS CompletedDIN,
@@ -416,19 +406,9 @@ def refresh_block_summaries(verbose=True):
                 TestedPackages
             )
             SELECT
-                CASE
-                    -- 如果 Block 格式是 B-C-A（例如：00051-00-5100），转换为 A-B-C（例如：5100-00051-00）
-                    WHEN (LENGTH(wl.Block) - LENGTH(REPLACE(wl.Block, '-', ''))) = 2 THEN
-                        CONCAT(
-                            SUBSTRING_INDEX(wl.Block, '-', -1),  -- A: 最后一段
-                            '-',
-                            SUBSTRING_INDEX(wl.Block, '-', 1),    -- B: 第一段
-                            '-',
-                            SUBSTRING_INDEX(SUBSTRING_INDEX(wl.Block, '-', 2), '-', -1)  -- C: 第二段
-                        )
-                    ELSE
-                        wl.Block  -- 如果格式不是 B-C-A，保持原样
-                END AS Block,
+                -- WeldingList 中的 Block 字段已经是正确的 A-B-C 格式（通过 extract_block_from_drawing 提取）
+                -- 直接使用，无需转换
+                wl.Block,
                 wl.SystemCode,
                 wl.SubSystemCode,
                 COALESCE(SUM(wl.Size), 0) AS TotalDIN,

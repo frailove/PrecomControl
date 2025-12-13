@@ -37,22 +37,113 @@ def get_test_package_stats(level='system', system_code=None, subsystem_code=None
     try:
         cur = conn.cursor(dictionary=True)
         if level == 'system':
-            cur.execute("""
-                SELECT 
-                    s.SystemCode,
-                    s.SystemDescriptionENG,
-                    s.ProcessOrNonProcess,
-                    COALESCE(sws.TotalPackages, 0) AS TotalPackages,
-                    COALESCE(sws.TestedPackages, 0) AS TestedPackages,
-                    CASE 
-                        WHEN sws.TotalPackages > 0 THEN (sws.TestedPackages / sws.TotalPackages) * 100
-                        ELSE 0
-                    END AS Progress
-                FROM SystemList s
-                LEFT JOIN SystemWeldingSummary sws ON sws.SystemCode = s.SystemCode
-                WHERE s.IsDeleted = FALSE
-                ORDER BY s.SystemCode
-            """)
+            where_clauses = ["s.IsDeleted = FALSE"]
+            params = []
+            
+            if system_code:
+                where_clauses.append("s.SystemCode = %s")
+                params.append(system_code)
+            if allowed_system_codes is not None:
+                if len(allowed_system_codes) == 0:
+                    return []
+                placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                where_clauses.append(f"s.SystemCode IN ({placeholders})")
+                params.extend(allowed_system_codes)
+            
+            if matched_blocks:
+                block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                block_params = tuple(matched_blocks)
+                # 构建尾项统计的 WHERE 条件（使用相同的 block 筛选）
+                punch_where = f"""
+                    EXISTS (
+                        SELECT 1 FROM WeldingList wl
+                        WHERE wl.TestPackageID = h.TestPackageID
+                        AND wl.Block IN ({block_placeholders})
+                    )
+                """
+                sql = f"""
+                    SELECT DISTINCT
+                        s.SystemCode,
+                        s.SystemDescriptionENG,
+                        s.ProcessOrNonProcess,
+                        COALESCE(SUM(bss.TotalPackages), 0) AS TotalPackages,
+                        COALESCE(SUM(bss.TestedPackages), 0) AS TestedPackages,
+                        COALESCE(SUM(bss.TotalDIN), 0) AS TotalDIN,
+                        COALESCE(SUM(bss.CompletedDIN), 0) AS CompletedDIN,
+                        CASE 
+                            WHEN SUM(bss.TotalPackages) > 0 THEN (SUM(bss.TestedPackages) / SUM(bss.TotalPackages)) * 100
+                            ELSE 0
+                        END AS Progress,
+                        -- 尾项统计（需要考虑Faclist筛选）
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE
+                                 AND {punch_where})
+                            AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchTotal,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE
+                                 AND {punch_where})
+                            AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchRectified,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE
+                                 AND {punch_where})
+                            AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchVerified
+                    FROM SystemList s
+                    LEFT JOIN BlockSystemSummary bss ON bss.SystemCode = s.SystemCode 
+                        AND bss.Block IN ({block_placeholders})
+                    WHERE {' AND '.join(where_clauses)}
+                    GROUP BY s.SystemCode, s.SystemDescriptionENG, s.ProcessOrNonProcess
+                    ORDER BY s.SystemCode
+                """
+                # 参数顺序：where_clauses 参数 + bss.Block 参数 + 3个尾项统计的 punch_where 参数（每个都需要 block_params）
+                cur.execute(sql, tuple(params) + block_params + block_params + block_params + block_params)
+            else:
+                sql = f"""
+                    SELECT 
+                        s.SystemCode,
+                        s.SystemDescriptionENG,
+                        s.ProcessOrNonProcess,
+                        COALESCE(sws.TotalPackages, 0) AS TotalPackages,
+                        COALESCE(sws.TestedPackages, 0) AS TestedPackages,
+                        COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                        COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
+                        CASE 
+                            WHEN sws.TotalPackages > 0 THEN (sws.TestedPackages / sws.TotalPackages) * 100
+                            ELSE 0
+                        END AS Progress,
+                        -- 尾项统计
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE)
+                            AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchTotal,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE)
+                            AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchRectified,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE)
+                            AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchVerified
+                    FROM SystemList s
+                    LEFT JOIN SystemWeldingSummary sws ON sws.SystemCode = s.SystemCode
+                    WHERE {' AND '.join(where_clauses)}
+                    ORDER BY s.SystemCode
+                """
+                cur.execute(sql, tuple(params))
         else:  # subsystem
             where_clauses = ["sub.IsDeleted = FALSE"]
             params = []
@@ -80,13 +171,35 @@ def get_test_package_stats(level='system', system_code=None, subsystem_code=None
                         sub.ProcessOrNonProcess,
                         COALESCE(SUM(bss.TotalPackages), 0) AS TotalPackages,
                         COALESCE(SUM(bss.TestedPackages), 0) AS TestedPackages,
+                        COALESCE(SUM(sws.TotalDIN), 0) AS TotalDIN,
+                        COALESCE(SUM(sws.CompletedDIN), 0) AS CompletedDIN,
                         CASE 
                             WHEN SUM(bss.TotalPackages) > 0 THEN (SUM(bss.TestedPackages) / SUM(bss.TotalPackages)) * 100
                             ELSE 0
-                        END AS Progress
+                        END AS Progress,
+                        -- 尾项统计
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                            AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchTotal,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                            AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchRectified,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                            AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchVerified
                     FROM SubsystemList sub
                     LEFT JOIN BlockSystemSummary bss ON bss.SystemCode = sub.SystemCode 
                         AND bss.Block IN ({block_placeholders})
+                    LEFT JOIN SubsystemWeldingSummary sws ON sws.SubSystemCode = sub.SubSystemCode
                     WHERE {' AND '.join(where_clauses)}
                     GROUP BY sub.SubSystemCode, sub.SystemCode, sub.SubSystemDescriptionENG, sub.ProcessOrNonProcess
                     ORDER BY sub.SystemCode, sub.SubSystemCode
@@ -101,10 +214,31 @@ def get_test_package_stats(level='system', system_code=None, subsystem_code=None
                         sub.ProcessOrNonProcess,
                         COALESCE(sws.TotalPackages, 0) AS TotalPackages,
                         COALESCE(sws.TestedPackages, 0) AS TestedPackages,
+                        COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                        COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
                         CASE 
                             WHEN sws.TotalPackages > 0 THEN (sws.TestedPackages / sws.TotalPackages) * 100
                             ELSE 0
-                        END AS Progress
+                        END AS Progress,
+                        -- 尾项统计
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                            AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchTotal,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                            AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchRectified,
+                        COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                            WHERE pl.TestPackageID IN 
+                                (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                                 WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                            AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                        ), 0) AS PunchVerified
                     FROM SubsystemList sub
                     LEFT JOIN SubsystemWeldingSummary sws ON sws.SubSystemCode = sub.SubSystemCode
                     WHERE {' AND '.join(where_clauses)}
@@ -155,17 +289,39 @@ def get_flushing_stats(level='system', system_code=None, subsystem_code=None, ma
                     s.ProcessOrNonProcess,
                     COUNT(DISTINCT h.TestPackageID) AS TotalPackages,
                     COUNT(DISTINCT CASE WHEN """ + flush_condition + """ THEN h.TestPackageID END) AS CompletedPackages,
+                    COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                    COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
                     CASE 
                         WHEN COUNT(DISTINCT h.TestPackageID) > 0 
                         THEN (COUNT(DISTINCT CASE WHEN """ + flush_condition + """ THEN h.TestPackageID END) / COUNT(DISTINCT h.TestPackageID)) * 100
                         ELSE 0
-                    END AS Progress
+                    END AS Progress,
+                    -- 尾项统计
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SystemCode = s.SystemCode AND h2.IsDeleted = FALSE)
+                        AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchTotal,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SystemCode = s.SystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchRectified,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SystemCode = s.SystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchVerified
                 FROM SystemList s
                 LEFT JOIN HydroTestPackageList h ON h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE
                 LEFT JOIN TestPackageAttachments tpa ON tpa.TestPackageID = h.TestPackageID 
                     AND tpa.ModuleName = 'Flushing_Certificate'
+                LEFT JOIN SystemWeldingSummary sws ON sws.SystemCode = s.SystemCode
                 WHERE """ + " AND ".join(where_clauses) + """
-                GROUP BY s.SystemCode, s.SystemDescriptionENG, s.ProcessOrNonProcess
+                GROUP BY s.SystemCode, s.SystemDescriptionENG, s.ProcessOrNonProcess, sws.TotalDIN, sws.CompletedDIN
                 ORDER BY s.SystemCode
             """
             cur.execute(sql, tuple(params))
@@ -192,17 +348,39 @@ def get_flushing_stats(level='system', system_code=None, subsystem_code=None, ma
                     sub.ProcessOrNonProcess,
                     COUNT(DISTINCT h.TestPackageID) AS TotalPackages,
                     COUNT(DISTINCT CASE WHEN """ + flush_condition + """ THEN h.TestPackageID END) AS CompletedPackages,
+                    COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                    COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
                     CASE 
                         WHEN COUNT(DISTINCT h.TestPackageID) > 0 
                         THEN (COUNT(DISTINCT CASE WHEN """ + flush_condition + """ THEN h.TestPackageID END) / COUNT(DISTINCT h.TestPackageID)) * 100
                         ELSE 0
-                    END AS Progress
+                    END AS Progress,
+                    -- 尾项统计
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SubSystemCode = sub.SubSystemCode AND h2.IsDeleted = FALSE)
+                        AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchTotal,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SubSystemCode = sub.SubSystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchRectified,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SubSystemCode = sub.SubSystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchVerified
                 FROM SubsystemList sub
                 LEFT JOIN HydroTestPackageList h ON h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE
                 LEFT JOIN TestPackageAttachments tpa ON tpa.TestPackageID = h.TestPackageID 
                     AND tpa.ModuleName = 'Flushing_Certificate'
+                LEFT JOIN SubsystemWeldingSummary sws ON sws.SubSystemCode = sub.SubSystemCode
                 WHERE """ + " AND ".join(where_clauses) + """
-                GROUP BY sub.SubSystemCode, sub.SystemCode, sub.SubSystemDescriptionENG, sub.ProcessOrNonProcess
+                GROUP BY sub.SubSystemCode, sub.SystemCode, sub.SubSystemDescriptionENG, sub.ProcessOrNonProcess, sws.TotalDIN, sws.CompletedDIN
                 ORDER BY sub.SystemCode, sub.SubSystemCode
             """
             cur.execute(sql, tuple(params))
@@ -250,17 +428,39 @@ def get_reinstatement_stats(level='system', system_code=None, subsystem_code=Non
                     s.ProcessOrNonProcess,
                     COUNT(DISTINCT h.TestPackageID) AS TotalPackages,
                     COUNT(DISTINCT CASE WHEN """ + reinst_condition + """ THEN h.TestPackageID END) AS CompletedPackages,
+                    COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                    COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
                     CASE 
                         WHEN COUNT(DISTINCT h.TestPackageID) > 0 
                         THEN (COUNT(DISTINCT CASE WHEN """ + reinst_condition + """ THEN h.TestPackageID END) / COUNT(DISTINCT h.TestPackageID)) * 100
                         ELSE 0
-                    END AS Progress
+                    END AS Progress,
+                    -- 尾项统计
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SystemCode = s.SystemCode AND h2.IsDeleted = FALSE)
+                        AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchTotal,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SystemCode = s.SystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchRectified,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SystemCode = s.SystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchVerified
                 FROM SystemList s
                 LEFT JOIN HydroTestPackageList h ON h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE
                 LEFT JOIN TestPackageAttachments tpa ON tpa.TestPackageID = h.TestPackageID 
                     AND tpa.ModuleName = 'Reinstatement_Check_List'
+                LEFT JOIN SystemWeldingSummary sws ON sws.SystemCode = s.SystemCode
                 WHERE """ + " AND ".join(where_clauses) + """
-                GROUP BY s.SystemCode, s.SystemDescriptionENG, s.ProcessOrNonProcess
+                GROUP BY s.SystemCode, s.SystemDescriptionENG, s.ProcessOrNonProcess, sws.TotalDIN, sws.CompletedDIN
                 ORDER BY s.SystemCode
             """
             cur.execute(sql, tuple(params))
@@ -287,17 +487,39 @@ def get_reinstatement_stats(level='system', system_code=None, subsystem_code=Non
                     sub.ProcessOrNonProcess,
                     COUNT(DISTINCT h.TestPackageID) AS TotalPackages,
                     COUNT(DISTINCT CASE WHEN """ + reinst_condition + """ THEN h.TestPackageID END) AS CompletedPackages,
+                    COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                    COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
                     CASE 
                         WHEN COUNT(DISTINCT h.TestPackageID) > 0 
                         THEN (COUNT(DISTINCT CASE WHEN """ + reinst_condition + """ THEN h.TestPackageID END) / COUNT(DISTINCT h.TestPackageID)) * 100
                         ELSE 0
-                    END AS Progress
+                    END AS Progress,
+                    -- 尾项统计
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SubSystemCode = sub.SubSystemCode AND h2.IsDeleted = FALSE)
+                        AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchTotal,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SubSystemCode = sub.SubSystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchRectified,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h2.TestPackageID FROM HydroTestPackageList h2 
+                             WHERE h2.SubSystemCode = sub.SubSystemCode AND h2.IsDeleted = FALSE)
+                        AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) AS PunchVerified
                 FROM SubsystemList sub
                 LEFT JOIN HydroTestPackageList h ON h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE
                 LEFT JOIN TestPackageAttachments tpa ON tpa.TestPackageID = h.TestPackageID 
                     AND tpa.ModuleName = 'Reinstatement_Check_List'
+                LEFT JOIN SubsystemWeldingSummary sws ON sws.SubSystemCode = sub.SubSystemCode
                 WHERE """ + " AND ".join(where_clauses) + """
-                GROUP BY sub.SubSystemCode, sub.SystemCode, sub.SubSystemDescriptionENG, sub.ProcessOrNonProcess
+                GROUP BY sub.SubSystemCode, sub.SystemCode, sub.SubSystemDescriptionENG, sub.ProcessOrNonProcess, sws.TotalDIN, sws.CompletedDIN
                 ORDER BY sub.SystemCode, sub.SubSystemCode
             """
             cur.execute(sql, tuple(params))
@@ -879,8 +1101,114 @@ def dashboard():
         end_idx = start_idx + per_page
         stats = all_stats[start_idx:end_idx]
         total_packages = sum(item.get('TotalPackages', 0) or 0 for item in all_stats)
-        completed_packages = sum(item.get('CompletedPackages', 0) or 0 for item in all_stats)
+        completed_packages = sum(item.get('TestedPackages', 0) or 0 for item in all_stats)
         overall_progress = (completed_packages / total_packages * 100) if total_packages > 0 else 0
+        # 试压包模块：卡片展示焊接数据（不需要card变量，直接使用welding变量）
+        card_total_packages = 0
+        card_completed_packages = 0
+        card_progress = 0
+        # 计算焊接量统计（考虑Faclist筛选条件和系统筛选）
+        if matched_blocks:
+            # 有Faclist筛选：从BlockSystemSummary/BlockSubsystemSummary计算（所有符合筛选条件的数据）
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                    if level == 'system':
+                        # 使用allowed_system_codes获取所有符合筛选条件的系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM BlockSystemSummary
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND Block IN ({block_placeholders})
+                            """, tuple(allowed_system_codes) + tuple(matched_blocks))
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    else:
+                        # 子系统级别：需要先获取符合筛选条件的子系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            # 获取所有符合筛选条件的子系统代码
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT DISTINCT SubSystemCode
+                                FROM SubsystemList
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND IsDeleted = FALSE
+                            """, tuple(allowed_system_codes))
+                            subsystem_codes = [row['SubSystemCode'] for row in cur.fetchall() if row.get('SubSystemCode')]
+                            if subsystem_codes:
+                                sub_code_placeholders = ','.join(['%s'] * len(subsystem_codes))
+                                cur.execute(f"""
+                                    SELECT 
+                                        COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                        COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                    FROM BlockSubsystemSummary
+                                    WHERE SubSystemCode IN ({sub_code_placeholders})
+                                      AND Block IN ({block_placeholders})
+                                """, tuple(subsystem_codes) + tuple(matched_blocks))
+                            else:
+                                cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        elif system_code:
+            # 无Faclist筛选但有系统筛选：直接从SystemWeldingSummary/SubsystemWeldingSummary查询
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    if level == 'system':
+                        # 系统级别：直接从SystemWeldingSummary查询
+                        cur.execute("""
+                            SELECT 
+                                COALESCE(TotalDIN, 0) AS total_din,
+                                COALESCE(CompletedDIN, 0) AS completed_din
+                            FROM SystemWeldingSummary
+                            WHERE SystemCode = %s
+                        """, (system_code,))
+                    else:
+                        # 子系统级别：如果有subsystem_code，查询该子系统；否则查询该系统下所有子系统
+                        if subsystem_code:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(TotalDIN, 0) AS total_din,
+                                    COALESCE(CompletedDIN, 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SubSystemCode = %s
+                            """, (subsystem_code,))
+                        else:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SystemCode = %s
+                            """, (system_code,))
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        else:
+            # 无任何筛选：从统计数据中汇总（所有数据）
+            total_welding_din = sum(float(item.get('TotalDIN', 0) or 0) for item in all_stats)
+            completed_welding_din = sum(float(item.get('CompletedDIN', 0) or 0) for item in all_stats)
+        welding_progress = (completed_welding_din / total_welding_din * 100) if total_welding_din > 0 else 0
     elif module_type == 'flushing':
         all_stats = get_flushing_stats(level, system_code, subsystem_code, matched_blocks, allowed_system_codes)
         total_count = len(all_stats)
@@ -894,6 +1222,186 @@ def dashboard():
         total_packages = sum(item.get('TotalPackages', 0) or 0 for item in all_stats)
         completed_packages = sum(item.get('CompletedPackages', 0) or 0 for item in all_stats)
         overall_progress = (completed_packages / total_packages * 100) if total_packages > 0 else 0
+        # 吹扫模块：卡片展示试压包数据（总试压包数 = 总试压包总数）
+        # 直接使用 get_flushing_stats 返回的数据，它已经考虑了所有筛选条件
+        # 但需要查询所有试压包（不受吹扫筛选影响），所以需要重新查询
+        conn = create_connection()
+        if conn:
+            try:
+                cur = conn.cursor(dictionary=True)
+                # 构建 WHERE 条件，考虑 Faclist 筛选
+                where_clauses = ["h.IsDeleted = FALSE"]
+                params = []
+                
+                if level == 'system':
+                    if system_code:
+                        where_clauses.append("h.SystemCode = %s")
+                        params.append(system_code)
+                    elif allowed_system_codes and len(allowed_system_codes) > 0:
+                        code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                        where_clauses.append(f"h.SystemCode IN ({code_placeholders})")
+                        params.extend(allowed_system_codes)
+                    
+                    # 如果有 Faclist 筛选（matched_blocks），需要进一步过滤
+                    if matched_blocks and len(matched_blocks) > 0:
+                        block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                        where_clauses.append(f"""
+                            EXISTS (
+                                SELECT 1 FROM WeldingList wl
+                                WHERE wl.TestPackageID = h.TestPackageID
+                                AND wl.Block IN ({block_placeholders})
+                            )
+                        """)
+                        params.extend(matched_blocks)
+                    
+                    cur.execute(f"""
+                        SELECT 
+                            COUNT(DISTINCT h.TestPackageID) AS total_tested,
+                            COUNT(DISTINCT CASE WHEN h.ActualDate IS NOT NULL THEN h.TestPackageID END) AS completed_tested
+                        FROM HydroTestPackageList h
+                        WHERE {' AND '.join(where_clauses)}
+                    """, tuple(params))
+                else:  # subsystem
+                    if subsystem_code:
+                        where_clauses.append("h.SubSystemCode = %s")
+                        params.append(subsystem_code)
+                    elif system_code:
+                        where_clauses.append("h.SystemCode = %s")
+                        params.append(system_code)
+                    elif allowed_system_codes and len(allowed_system_codes) > 0:
+                        code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                        where_clauses.append(f"h.SystemCode IN ({code_placeholders})")
+                        params.extend(allowed_system_codes)
+                    
+                    # 如果有 Faclist 筛选（matched_blocks），需要进一步过滤
+                    if matched_blocks and len(matched_blocks) > 0:
+                        block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                        where_clauses.append(f"""
+                            EXISTS (
+                                SELECT 1 FROM WeldingList wl
+                                WHERE wl.TestPackageID = h.TestPackageID
+                                AND wl.Block IN ({block_placeholders})
+                            )
+                        """)
+                        params.extend(matched_blocks)
+                    
+                    cur.execute(f"""
+                        SELECT 
+                            COUNT(DISTINCT h.TestPackageID) AS total_tested,
+                            COUNT(DISTINCT CASE WHEN h.ActualDate IS NOT NULL THEN h.TestPackageID END) AS completed_tested
+                        FROM HydroTestPackageList h
+                        WHERE {' AND '.join(where_clauses)}
+                    """, tuple(params))
+                
+                row = cur.fetchone() or {}
+                card_total_packages = int(row.get('total_tested', 0) or 0)
+                card_completed_packages = int(row.get('completed_tested', 0) or 0)
+                card_progress = (card_completed_packages / card_total_packages * 100) if card_total_packages > 0 else 0
+            finally:
+                conn.close()
+        else:
+            card_total_packages = 0
+            card_completed_packages = 0
+            card_progress = 0
+        # 计算焊接量统计（考虑Faclist筛选条件和系统筛选）
+        if matched_blocks:
+            # 有Faclist筛选：从BlockSystemSummary/BlockSubsystemSummary计算（所有符合筛选条件的数据）
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                    if level == 'system':
+                        # 使用allowed_system_codes获取所有符合筛选条件的系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM BlockSystemSummary
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND Block IN ({block_placeholders})
+                            """, tuple(allowed_system_codes) + tuple(matched_blocks))
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    else:
+                        # 子系统级别：需要先获取符合筛选条件的子系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT DISTINCT SubSystemCode
+                                FROM SubsystemList
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND IsDeleted = FALSE
+                            """, tuple(allowed_system_codes))
+                            subsystem_codes = [row['SubSystemCode'] for row in cur.fetchall() if row.get('SubSystemCode')]
+                            if subsystem_codes:
+                                sub_code_placeholders = ','.join(['%s'] * len(subsystem_codes))
+                                cur.execute(f"""
+                                    SELECT 
+                                        COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                        COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                    FROM BlockSubsystemSummary
+                                    WHERE SubSystemCode IN ({sub_code_placeholders})
+                                      AND Block IN ({block_placeholders})
+                                """, tuple(subsystem_codes) + tuple(matched_blocks))
+                            else:
+                                cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        elif system_code:
+            # 无Faclist筛选但有系统筛选：直接从SystemWeldingSummary/SubsystemWeldingSummary查询
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    if level == 'system':
+                        cur.execute("""
+                            SELECT 
+                                COALESCE(TotalDIN, 0) AS total_din,
+                                COALESCE(CompletedDIN, 0) AS completed_din
+                            FROM SystemWeldingSummary
+                            WHERE SystemCode = %s
+                        """, (system_code,))
+                    else:
+                        if subsystem_code:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(TotalDIN, 0) AS total_din,
+                                    COALESCE(CompletedDIN, 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SubSystemCode = %s
+                            """, (subsystem_code,))
+                        else:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SystemCode = %s
+                            """, (system_code,))
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        else:
+            # 无任何筛选：从统计数据中汇总（所有数据）
+            total_welding_din = sum(float(item.get('TotalDIN', 0) or 0) for item in all_stats)
+            completed_welding_din = sum(float(item.get('CompletedDIN', 0) or 0) for item in all_stats)
+        welding_progress = (completed_welding_din / total_welding_din * 100) if total_welding_din > 0 else 0
     elif module_type == 'reinstatement':
         all_stats = get_reinstatement_stats(level, system_code, subsystem_code, matched_blocks, allowed_system_codes)
         total_count = len(all_stats)
@@ -907,6 +1415,194 @@ def dashboard():
         total_packages = sum(item.get('TotalPackages', 0) or 0 for item in all_stats)
         completed_packages = sum(item.get('CompletedPackages', 0) or 0 for item in all_stats)
         overall_progress = (completed_packages / total_packages * 100) if total_packages > 0 else 0
+        # 复位模块：卡片展示吹扫数据（总吹扫数 = 总试压包总数，因为吹扫是基于试压包的）
+        # 需要查询所有试压包（作为吹扫的基数）和已完成吹扫的试压包数量
+        conn = create_connection()
+        if conn:
+            try:
+                cur = conn.cursor(dictionary=True)
+                # 检查字段是否存在
+                cur.execute("SHOW COLUMNS FROM HydroTestPackageList LIKE 'FlushingActualDate'")
+                has_flushing_date = cur.fetchone() is not None
+                flush_condition = "(h.FlushingActualDate IS NOT NULL OR tpa.ID IS NOT NULL)" if has_flushing_date else "tpa.ID IS NOT NULL"
+                
+                # 构建 WHERE 条件，考虑 Faclist 筛选
+                where_clauses = ["h.IsDeleted = FALSE"]
+                params = []
+                
+                if level == 'system':
+                    if system_code:
+                        where_clauses.append("h.SystemCode = %s")
+                        params.append(system_code)
+                    elif allowed_system_codes and len(allowed_system_codes) > 0:
+                        code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                        where_clauses.append(f"h.SystemCode IN ({code_placeholders})")
+                        params.extend(allowed_system_codes)
+                    
+                    # 如果有 Faclist 筛选（matched_blocks），需要进一步过滤
+                    if matched_blocks and len(matched_blocks) > 0:
+                        block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                        where_clauses.append(f"""
+                            EXISTS (
+                                SELECT 1 FROM WeldingList wl
+                                WHERE wl.TestPackageID = h.TestPackageID
+                                AND wl.Block IN ({block_placeholders})
+                            )
+                        """)
+                        params.extend(matched_blocks)
+                    
+                    cur.execute(f"""
+                        SELECT 
+                            COUNT(DISTINCT h.TestPackageID) AS total_flushed,
+                            COUNT(DISTINCT CASE WHEN {flush_condition} THEN h.TestPackageID END) AS completed_flushed
+                        FROM HydroTestPackageList h
+                        LEFT JOIN TestPackageAttachments tpa ON tpa.TestPackageID = h.TestPackageID 
+                            AND tpa.ModuleName = 'Flushing_Certificate'
+                        WHERE {' AND '.join(where_clauses)}
+                    """, tuple(params))
+                else:  # subsystem
+                    if subsystem_code:
+                        where_clauses.append("h.SubSystemCode = %s")
+                        params.append(subsystem_code)
+                    elif system_code:
+                        where_clauses.append("h.SystemCode = %s")
+                        params.append(system_code)
+                    elif allowed_system_codes and len(allowed_system_codes) > 0:
+                        code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                        where_clauses.append(f"h.SystemCode IN ({code_placeholders})")
+                        params.extend(allowed_system_codes)
+                    
+                    # 如果有 Faclist 筛选（matched_blocks），需要进一步过滤
+                    if matched_blocks and len(matched_blocks) > 0:
+                        block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                        where_clauses.append(f"""
+                            EXISTS (
+                                SELECT 1 FROM WeldingList wl
+                                WHERE wl.TestPackageID = h.TestPackageID
+                                AND wl.Block IN ({block_placeholders})
+                            )
+                        """)
+                        params.extend(matched_blocks)
+                    
+                    cur.execute(f"""
+                        SELECT 
+                            COUNT(DISTINCT h.TestPackageID) AS total_flushed,
+                            COUNT(DISTINCT CASE WHEN {flush_condition} THEN h.TestPackageID END) AS completed_flushed
+                        FROM HydroTestPackageList h
+                        LEFT JOIN TestPackageAttachments tpa ON tpa.TestPackageID = h.TestPackageID 
+                            AND tpa.ModuleName = 'Flushing_Certificate'
+                        WHERE {' AND '.join(where_clauses)}
+                    """, tuple(params))
+                
+                row = cur.fetchone() or {}
+                card_total_packages = int(row.get('total_flushed', 0) or 0)  # 总试压包数（作为吹扫基数）
+                card_completed_packages = int(row.get('completed_flushed', 0) or 0)  # 已完成吹扫数
+                card_progress = (card_completed_packages / card_total_packages * 100) if card_total_packages > 0 else 0
+            finally:
+                conn.close()
+        else:
+            card_total_packages = 0
+            card_completed_packages = 0
+            card_progress = 0
+        # 计算焊接量统计（考虑Faclist筛选条件和系统筛选）
+        if matched_blocks:
+            # 有Faclist筛选：从BlockSystemSummary/BlockSubsystemSummary计算（所有符合筛选条件的数据）
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                    if level == 'system':
+                        # 使用allowed_system_codes获取所有符合筛选条件的系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM BlockSystemSummary
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND Block IN ({block_placeholders})
+                            """, tuple(allowed_system_codes) + tuple(matched_blocks))
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    else:
+                        # 子系统级别：需要先获取符合筛选条件的子系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT DISTINCT SubSystemCode
+                                FROM SubsystemList
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND IsDeleted = FALSE
+                            """, tuple(allowed_system_codes))
+                            subsystem_codes = [row['SubSystemCode'] for row in cur.fetchall() if row.get('SubSystemCode')]
+                            if subsystem_codes:
+                                sub_code_placeholders = ','.join(['%s'] * len(subsystem_codes))
+                                cur.execute(f"""
+                                    SELECT 
+                                        COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                        COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                    FROM BlockSubsystemSummary
+                                    WHERE SubSystemCode IN ({sub_code_placeholders})
+                                      AND Block IN ({block_placeholders})
+                                """, tuple(subsystem_codes) + tuple(matched_blocks))
+                            else:
+                                cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        elif system_code:
+            # 无Faclist筛选但有系统筛选：直接从SystemWeldingSummary/SubsystemWeldingSummary查询
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    if level == 'system':
+                        cur.execute("""
+                            SELECT 
+                                COALESCE(TotalDIN, 0) AS total_din,
+                                COALESCE(CompletedDIN, 0) AS completed_din
+                            FROM SystemWeldingSummary
+                            WHERE SystemCode = %s
+                        """, (system_code,))
+                    else:
+                        if subsystem_code:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(TotalDIN, 0) AS total_din,
+                                    COALESCE(CompletedDIN, 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SubSystemCode = %s
+                            """, (subsystem_code,))
+                        else:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SystemCode = %s
+                            """, (system_code,))
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        else:
+            # 无任何筛选：从统计数据中汇总（所有数据）
+            total_welding_din = sum(float(item.get('TotalDIN', 0) or 0) for item in all_stats)
+            completed_welding_din = sum(float(item.get('CompletedDIN', 0) or 0) for item in all_stats)
+        welding_progress = (completed_welding_din / total_welding_din * 100) if total_welding_din > 0 else 0
     elif module_type.startswith('precom_'):
         task_type_map = {
             'precom_manhole': 'Manhole',
@@ -932,6 +1628,117 @@ def dashboard():
         overall_progress = (completed_quantity / total_quantity * 100) if total_quantity > 0 else 0
         total_packages = total_quantity
         completed_packages = completed_quantity
+        # 预试车任务模块：卡片展示施工进度数据（加权处理）
+        # 计算加权施工进度：基于 QuantityTotal 和 QuantityDone
+        total_weighted = 0
+        completed_weighted = 0
+        for item in all_stats:
+            qty_total = float(item.get('TotalQuantity', 0) or 0)
+            qty_done = float(item.get('CompletedQuantity', 0) or 0)
+            total_weighted += qty_total
+            completed_weighted += qty_done
+        card_total_packages = int(total_weighted) if total_weighted > 0 else 0
+        card_completed_packages = int(completed_weighted) if completed_weighted > 0 else 0
+        card_progress = (completed_weighted / total_weighted * 100) if total_weighted > 0 else 0
+        # 计算焊接量统计（考虑Faclist筛选条件和系统筛选）
+        if matched_blocks:
+            # 有Faclist筛选：从BlockSystemSummary/BlockSubsystemSummary计算
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    block_placeholders = ','.join(['%s'] * len(matched_blocks))
+                    if level == 'system':
+                        # 使用allowed_system_codes获取所有符合筛选条件的系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM BlockSystemSummary
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND Block IN ({block_placeholders})
+                            """, tuple(allowed_system_codes) + tuple(matched_blocks))
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    else:
+                        # 子系统级别：需要先获取符合筛选条件的子系统代码
+                        if allowed_system_codes and len(allowed_system_codes) > 0:
+                            code_placeholders = ','.join(['%s'] * len(allowed_system_codes))
+                            cur.execute(f"""
+                                SELECT DISTINCT SubSystemCode
+                                FROM SubsystemList
+                                WHERE SystemCode IN ({code_placeholders})
+                                  AND IsDeleted = FALSE
+                            """, tuple(allowed_system_codes))
+                            subsystem_codes = [row['SubSystemCode'] for row in cur.fetchall() if row.get('SubSystemCode')]
+                            if subsystem_codes:
+                                sub_code_placeholders = ','.join(['%s'] * len(subsystem_codes))
+                                cur.execute(f"""
+                                    SELECT 
+                                        COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                        COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                    FROM BlockSubsystemSummary
+                                    WHERE SubSystemCode IN ({sub_code_placeholders})
+                                      AND Block IN ({block_placeholders})
+                                """, tuple(subsystem_codes) + tuple(matched_blocks))
+                            else:
+                                cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                        else:
+                            cur.execute("SELECT 0 AS total_din, 0 AS completed_din")
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        elif system_code:
+            # 无Faclist筛选但有系统筛选：直接从SystemWeldingSummary/SubsystemWeldingSummary查询
+            conn = create_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(dictionary=True)
+                    if level == 'system':
+                        cur.execute("""
+                            SELECT 
+                                COALESCE(TotalDIN, 0) AS total_din,
+                                COALESCE(CompletedDIN, 0) AS completed_din
+                            FROM SystemWeldingSummary
+                            WHERE SystemCode = %s
+                        """, (system_code,))
+                    else:
+                        if subsystem_code:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(TotalDIN, 0) AS total_din,
+                                    COALESCE(CompletedDIN, 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SubSystemCode = %s
+                            """, (subsystem_code,))
+                        else:
+                            cur.execute("""
+                                SELECT 
+                                    COALESCE(SUM(TotalDIN), 0) AS total_din,
+                                    COALESCE(SUM(CompletedDIN), 0) AS completed_din
+                                FROM SubsystemWeldingSummary
+                                WHERE SystemCode = %s
+                            """, (system_code,))
+                    row = cur.fetchone() or {}
+                    total_welding_din = float(row.get('total_din', 0) or 0)
+                    completed_welding_din = float(row.get('completed_din', 0) or 0)
+                finally:
+                    conn.close()
+            else:
+                total_welding_din = 0
+                completed_welding_din = 0
+        else:
+            # 无任何筛选：从统计数据中汇总（所有数据）
+            total_welding_din = sum(float(item.get('TotalDIN', 0) or 0) for item in all_stats)
+            completed_welding_din = sum(float(item.get('CompletedDIN', 0) or 0) for item in all_stats)
+        welding_progress = (completed_welding_din / total_welding_din * 100) if total_welding_din > 0 else 0
     else:
         all_stats = get_overview_stats(level, system_code, subsystem_code, matched_blocks, allowed_system_codes)
         total_count = len(all_stats)
@@ -969,6 +1776,26 @@ def dashboard():
         'window': list(range(max(1, page - 2), min(total_pages, page + 2) + 1))
     }
     
+    # 为非总览模块初始化焊接量统计变量（如果未定义）
+    if module_type != 'overview':
+        try:
+            _ = total_welding_din
+        except NameError:
+            total_welding_din = 0
+        try:
+            _ = completed_welding_din
+        except NameError:
+            completed_welding_din = 0
+        try:
+            _ = welding_progress
+        except NameError:
+            welding_progress = 0
+    
+    # 初始化卡片数据变量（用于模板显示）
+    card_total_packages = card_total_packages if 'card_total_packages' in locals() else 0
+    card_completed_packages = card_completed_packages if 'card_completed_packages' in locals() else 0
+    card_progress = card_progress if 'card_progress' in locals() else 0
+    
     return render_template('dashboard.html',
                          module_type=module_type,
                          level=level,
@@ -976,6 +1803,12 @@ def dashboard():
                          total_packages=total_packages,
                          completed_packages=completed_packages,
                          overall_progress=overall_progress,
+                         total_welding_din=total_welding_din if module_type != 'overview' else 0,
+                         completed_welding_din=completed_welding_din if module_type != 'overview' else 0,
+                         welding_progress=welding_progress if module_type != 'overview' else 0,
+                         card_total_packages=card_total_packages if module_type != 'overview' else 0,
+                         card_completed_packages=card_completed_packages if module_type != 'overview' else 0,
+                         card_progress=card_progress if module_type != 'overview' else 0,
                          module_types=MODULE_TYPES,
                          systems=systems,
                          subsystems=subsystems,
@@ -1102,16 +1935,50 @@ def get_precom_task_stats(task_type, level='system', system_code=None, subsystem
                     s.ProcessOrNonProcess,
                     COALESCE(SUM(pt.QuantityTotal), 0) AS TotalQuantity,
                     COALESCE(SUM(pt.QuantityDone), 0) AS CompletedQuantity,
+                    COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                    COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
                     CASE 
                         WHEN SUM(pt.QuantityTotal) > 0 
                         THEN (SUM(pt.QuantityDone) / SUM(pt.QuantityTotal)) * 100
                         ELSE 0
-                    END AS Progress
+                    END AS Progress,
+                    -- 尾项统计（试压包尾项 + 预试车任务尾项）
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                             WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE)
+                        AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) + 
+                    COALESCE((SELECT COUNT(*) FROM PrecomTaskPunch ptp 
+                        INNER JOIN PrecomTask pt2 ON ptp.TaskID = pt2.TaskID 
+                        WHERE pt2.SystemCode = s.SystemCode AND (ptp.Deleted IS NULL OR ptp.Deleted = 'N')
+                    ), 0) AS PunchTotal,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                             WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE)
+                        AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) + 
+                    COALESCE((SELECT COUNT(*) FROM PrecomTaskPunch ptp 
+                        INNER JOIN PrecomTask pt2 ON ptp.TaskID = pt2.TaskID 
+                        WHERE pt2.SystemCode = s.SystemCode AND ptp.Rectified = 'Y' AND (ptp.Deleted IS NULL OR ptp.Deleted = 'N')
+                    ), 0) AS PunchRectified,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                             WHERE h.SystemCode = s.SystemCode AND h.IsDeleted = FALSE)
+                        AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) + 
+                    COALESCE((SELECT COUNT(*) FROM PrecomTaskPunch ptp 
+                        INNER JOIN PrecomTask pt2 ON ptp.TaskID = pt2.TaskID 
+                        WHERE pt2.SystemCode = s.SystemCode AND ptp.Verified = 'Y' AND (ptp.Deleted IS NULL OR ptp.Deleted = 'N')
+                    ), 0) AS PunchVerified
                 FROM SystemList s
                 LEFT JOIN PrecomTask pt ON pt.SystemCode = s.SystemCode 
                     AND pt.TaskType = %s
+                LEFT JOIN SystemWeldingSummary sws ON sws.SystemCode = s.SystemCode
                 WHERE """ + " AND ".join(where_clauses) + """
-                GROUP BY s.SystemCode, s.SystemDescriptionENG, s.ProcessOrNonProcess
+                GROUP BY s.SystemCode, s.SystemDescriptionENG, s.ProcessOrNonProcess, sws.TotalDIN, sws.CompletedDIN
                 ORDER BY s.SystemCode
             """
             cur.execute(sql, tuple(params))
@@ -1138,16 +2005,50 @@ def get_precom_task_stats(task_type, level='system', system_code=None, subsystem
                     sub.ProcessOrNonProcess,
                     COALESCE(SUM(pt.QuantityTotal), 0) AS TotalQuantity,
                     COALESCE(SUM(pt.QuantityDone), 0) AS CompletedQuantity,
+                    COALESCE(sws.TotalDIN, 0) AS TotalDIN,
+                    COALESCE(sws.CompletedDIN, 0) AS CompletedDIN,
                     CASE 
                         WHEN SUM(pt.QuantityTotal) > 0 
                         THEN (SUM(pt.QuantityDone) / SUM(pt.QuantityTotal)) * 100
                         ELSE 0
-                    END AS Progress
+                    END AS Progress,
+                    -- 尾项统计（试压包尾项 + 预试车任务尾项）
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                             WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                        AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) + 
+                    COALESCE((SELECT COUNT(*) FROM PrecomTaskPunch ptp 
+                        INNER JOIN PrecomTask pt2 ON ptp.TaskID = pt2.TaskID 
+                        WHERE pt2.SubSystemCode = sub.SubSystemCode AND (ptp.Deleted IS NULL OR ptp.Deleted = 'N')
+                    ), 0) AS PunchTotal,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                             WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                        AND pl.Rectified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) + 
+                    COALESCE((SELECT COUNT(*) FROM PrecomTaskPunch ptp 
+                        INNER JOIN PrecomTask pt2 ON ptp.TaskID = pt2.TaskID 
+                        WHERE pt2.SubSystemCode = sub.SubSystemCode AND ptp.Rectified = 'Y' AND (ptp.Deleted IS NULL OR ptp.Deleted = 'N')
+                    ), 0) AS PunchRectified,
+                    COALESCE((SELECT COUNT(*) FROM PunchList pl 
+                        WHERE pl.TestPackageID IN 
+                            (SELECT h.TestPackageID FROM HydroTestPackageList h 
+                             WHERE h.SubSystemCode = sub.SubSystemCode AND h.IsDeleted = FALSE)
+                        AND pl.Verified = 'Y' AND (pl.Deleted IS NULL OR pl.Deleted != 'Y')
+                    ), 0) + 
+                    COALESCE((SELECT COUNT(*) FROM PrecomTaskPunch ptp 
+                        INNER JOIN PrecomTask pt2 ON ptp.TaskID = pt2.TaskID 
+                        WHERE pt2.SubSystemCode = sub.SubSystemCode AND ptp.Verified = 'Y' AND (ptp.Deleted IS NULL OR ptp.Deleted = 'N')
+                    ), 0) AS PunchVerified
                 FROM SubsystemList sub
                 LEFT JOIN PrecomTask pt ON pt.SubSystemCode = sub.SubSystemCode 
                     AND pt.TaskType = %s
+                LEFT JOIN SubsystemWeldingSummary sws ON sws.SubSystemCode = sub.SubSystemCode
                 WHERE """ + " AND ".join(where_clauses) + """
-                GROUP BY sub.SubSystemCode, sub.SystemCode, sub.SubSystemDescriptionENG, sub.ProcessOrNonProcess
+                GROUP BY sub.SubSystemCode, sub.SystemCode, sub.SubSystemDescriptionENG, sub.ProcessOrNonProcess, sws.TotalDIN, sws.CompletedDIN
                 ORDER BY sub.SystemCode, sub.SubSystemCode
             """
             cur.execute(sql, tuple(params))
